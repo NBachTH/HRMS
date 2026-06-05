@@ -1,0 +1,51 @@
+{
+  "version": "2026",
+  "effective_date": "2026-01-01",
+  "living_allowance": {
+    "note": "HT2 — prorated by (actual_days / standard_days)",
+    "eligible_contracts": ["PROBATION", "FIXED_TERM", "INDEFINITE"],
+    "levels": {
+      "DIRECTOR": {
+        "meal": 1500000,
+        "phone": 1000000,
+        "transport": 1500000,
+        "housing": 5000000
+      },
+      "DEPUTY_DIRECTOR": {
+        "meal": 1400000,
+        "phone": 800000,
+        "transport": 1000000,
+        "housing": 3000000
+      },
+      "DEPT_HEAD": {
+        "meal": 1300000,
+        "phone": 500000,
+        "transport": 700000,
+        "housing": 2500000
+      },
+      "SENIOR_STAFF_NV1": {
+        "meal": 1000000,
+        "phone": 300000,
+        "transport": 500000,
+        "housing": 2000000
+      },
+      "NV2": {
+        "meal": 770000,
+        "phone": 200000,
+        "transport": 300000,
+        "housing": 0
+      }
+    }
+  },
+  "japanese_allowance": {
+    "note": "HT1 — fixed monthly, not prorated",
+    "eligible_contracts": ["FIXED_TERM", "INDEFINITE"],
+    "min_contract_months": 12,
+    "excluded_positions": ["JAPANESE_TRANSLATOR"],
+    "excluded_levels": ["DEPT_HEAD", "DEPUTY_DIRECTOR", "DIRECTOR"],
+    "levels": {
+      "N1": 5000000,
+      "N2": 2000000
+    }
+  }
+}

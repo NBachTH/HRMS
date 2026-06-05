@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FACE-Z HRMS — Báo Cáo Đồ Án Tốt Nghiệp</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg: #fafaf8;
+  --ink: #18181b;
+  --ink2: #52525b;
+  --ink3: #a1a1aa;
+  --surface: #ffffff;
+  --surface2: #f4f4f5;
+  --border: #e4e4e7;
+  --border2: #d4d4d8;
+  --red: #dc2626;
+  --red-soft: #fef2f2;
+  --red-mid: #fecaca;
+  --blue: #2563eb;
+  --blue-soft: #eff6ff;
+  --green: #16a34a;
+  --green-soft: #f0fdf4;
+  --amber: #d97706;
+  --amber-soft: #fffbeb;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+/* ── HERO ── */
+.hero {
+  background: var(--ink);
+  padding: 64px 48px 52px;
+  position: relative;
+  overflow: hidden;
+}
+.hero-bg {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 80% at 90% 50%, rgba(220,38,38,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 60% at 10% 80%, rgba(37,99,235,0.08) 0%, transparent 50%);
+}
+.hero-line {
+  position: absolute; top: 0; left: 48px; right: 48px; height: 3px;
+  background: linear-gradient(90deg, var(--red), #f97316, var(--blue));
+}
+.hero-tag {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--red);
+  margin-bottom: 20px;
+  display: flex; align-items: center; gap: 12px;
+}
+.hero-tag::after { content: ''; flex: 1; max-width: 60px; height: 1px; background: rgba(220,38,38,0.4); }
+.hero h1 {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(36px, 5vw, 68px);
+  line-height: 1.05; color: #fafaf8;
+  margin-bottom: 8px;
+  position: relative;
+}
+.hero h1 em { color: var(--red); font-style: italic; }
+.hero-sub {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(18px, 2.5vw, 28px);
+  color: #a1a1aa; font-style: italic;
+  margin-bottom: 24px;
+}
+.hero-desc {
+  max-width: 600px; color: #71717a;
+  font-size: 14px; font-weight: 300;
+  margin-bottom: 32px; line-height: 1.7;
+}
+.hero-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+.pill {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px; font-weight: 500;
+  padding: 5px 12px; border-radius: 2px;
+  border: 1px solid;
+}
+.p-red { color: #fca5a5; border-color: rgba(252,165,165,0.3); background: rgba(220,38,38,0.1); }
+.p-blue { color: #93c5fd; border-color: rgba(147,197,253,0.3); background: rgba(37,99,235,0.1); }
+.p-green { color: #86efac; border-color: rgba(134,239,172,0.3); background: rgba(22,163,74,0.1); }
+.p-amber { color: #fcd34d; border-color: rgba(252,211,77,0.3); background: rgba(217,119,6,0.1); }
+
+/* ── NAV ── */
+.nav {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border2);
+  display: flex; overflow-x: auto;
+  scrollbar-width: none;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+}
+.nav::-webkit-scrollbar { display: none; }
+.nb {
+  padding: 14px 20px;
+  background: none; border: none; border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+  color: var(--ink3); cursor: pointer; white-space: nowrap;
+  transition: all 0.15s;
+}
+.nb:hover { color: var(--ink); }
+.nb.on { color: var(--red); border-bottom-color: var(--red); font-weight: 600; }
+
+/* ── LAYOUT ── */
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 32px; }
+.sec { display: none; padding: 48px 0 72px; }
+.sec.on { display: block; }
+
+/* ── SECTION HEADER ── */
+.sh {
+  display: flex; align-items: flex-end; gap: 20px;
+  margin-bottom: 36px; padding-bottom: 20px;
+  border-bottom: 1px solid var(--border2);
+}
+.sh-n {
+  font-family: 'DM Serif Display', serif;
+  font-size: 80px; line-height: 1; color: var(--border2);
+  margin-bottom: -8px; flex-shrink: 0;
+}
+.sh-t h2 { font-size: 24px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+.sh-t p { font-size: 13px; color: var(--ink3); }
+
+/* ── STAT ROW ── */
+.stats {
+  display: flex; border: 1px solid var(--border2);
+  border-radius: 8px; overflow: hidden; margin-bottom: 28px;
+}
+.stat {
+  flex: 1; padding: 20px; text-align: center;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+}
+.stat:last-child { border-right: none; }
+.sv {
+  font-family: 'DM Serif Display', serif;
+  font-size: 36px; line-height: 1; margin-bottom: 4px;
+}
+.sv.r { color: var(--red); }
+.sv.b { color: var(--blue); }
+.sv.g { color: var(--green); }
+.sv.a { color: var(--amber); }
+.sl { font-size: 12px; color: var(--ink3); font-weight: 500; }
+
+/* ── GRID ── */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+.g3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+@media(max-width:768px){ .g2,.g3 { grid-template-columns: 1fr; } }
+
+/* ── CARD ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px; padding: 22px;
+  position: relative; overflow: hidden;
+  transition: box-shadow 0.2s, transform 0.15s;
+}
+.card:hover { box-shadow: 0 4px 24px rgba(0,0,0,0.07); transform: translateY(-1px); }
+.card-bar { position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+.cb-r { background: var(--red); }
+.cb-b { background: var(--blue); }
+.cb-g { background: var(--green); }
+.cb-a { background: var(--amber); }
+.ci { font-size: 24px; margin-bottom: 10px; }
+.ct { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.cd { font-size: 13px; color: var(--ink2); line-height: 1.55; }
+.tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 12px; }
+.tag {
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  padding: 2px 7px; border-radius: 3px;
+  background: var(--surface2); color: var(--ink3);
+  border: 1px solid var(--border);
+}
+
+/* ── INFO BOX ── */
+.ib {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 18px 22px; margin-bottom: 16px;
+}
+.ib.r { border-left: 4px solid var(--red); }
+.ib.b { border-left: 4px solid var(--blue); }
+.ib.g { border-left: 4px solid var(--green); }
+.ib.a { border-left: 4px solid var(--amber); }
+.ib-t { font-size: 13px; font-weight: 700; color: var(--ink); margin-bottom: 7px; }
+.ib p { font-size: 13px; color: var(--ink2); line-height: 1.65; }
+.ib ul { font-size: 13px; color: var(--ink2); padding-left: 18px; line-height: 1.8; }
+
+/* ── TABLE ── */
+.tbl { width: 100%; border-collapse: collapse; margin-bottom: 24px; overflow: hidden; border-radius: 8px; border: 1px solid var(--border2); }
+.tbl th { background: var(--ink); color: #fafaf8; padding: 10px 16px; text-align: left; font-size: 12px; font-weight: 600; font-family: 'DM Mono', monospace; letter-spacing: 0.04em; }
+.tbl td { padding: 10px 16px; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--ink2); vertical-align: top; }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: var(--surface2); }
+.tbl td:first-child { font-weight: 600; color: var(--ink); }
+.mono { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--blue); }
+
+/* STATUS BADGES */
+.done { display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:600; color:var(--green); background:var(--green-soft); padding:2px 8px; border-radius:4px; }
+.wip  { display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:600; color:var(--amber); background:var(--amber-soft); padding:2px 8px; border-radius:4px; }
+.todo { display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:600; color:var(--ink3); background:var(--surface2); padding:2px 8px; border-radius:4px; }
+.must { font-size:11px; font-weight:600; color:var(--red); background:var(--red-soft); padding:2px 7px; border-radius:3px; }
+.nice { font-size:11px; font-weight:600; color:var(--blue); background:var(--blue-soft); padding:2px 7px; border-radius:3px; }
+
+/* ── CODE ── */
+.code { background:#18181b; border-radius:8px; padding:18px 20px; margin-bottom:16px; overflow-x:auto; }
+.code pre { font-family:'DM Mono',monospace; font-size:12px; line-height:1.75; color:#d4d4d8; margin:0; }
+.ck { color:#f87171; } .cs { color:#86efac; } .ct { color:#93c5fd; } .cc { color:#52525b; }
+.code-lbl { font-family:'DM Mono',monospace; font-size:10px; color:var(--ink3); letter-spacing:0.1em; margin-bottom:8px; text-transform:uppercase; }
+
+/* ── ARCH ── */
+.arch { background:var(--surface); border:1px solid var(--border2); border-radius:8px; padding:28px; margin-bottom:24px; }
+.arch-lbl { font-family:'DM Mono',monospace; font-size:10px; color:var(--ink3); letter-spacing:0.15em; text-transform:uppercase; margin-bottom:20px; }
+.layer { margin-bottom:10px; }
+.layer-name { font-family:'DM Mono',monospace; font-size:10px; font-weight:500; text-transform:uppercase; letter-spacing:0.1em; color:var(--ink3); margin-bottom:7px; }
+.lbs { display:flex; gap:8px; flex-wrap:wrap; }
+.lb { padding:7px 14px; border-radius:4px; font-size:12px; font-weight:600; font-family:'DM Mono',monospace; border:1.5px solid; transition:transform 0.12s; cursor:default; }
+.lb:hover { transform:scale(1.03); }
+.lb-c { background:#fef2f2; color:#b91c1c; border-color:#fca5a5; }
+.lb-g { background:#eff6ff; color:#1d4ed8; border-color:#93c5fd; }
+.lb-s { background:#f0fdf4; color:#15803d; border-color:#86efac; }
+.lb-d { background:#fffbeb; color:#b45309; border-color:#fcd34d; }
+.arr { text-align:center; color:var(--border2); font-size:18px; margin:5px 0; letter-spacing:6px; }
+
+/* ── TIMELINE ── */
+.tl { list-style:none; }
+.tl li { display:flex; gap:16px; padding-bottom:28px; position:relative; }
+.tl li::after { content:''; position:absolute; left:15px; top:34px; bottom:0; width:1px; background:var(--border2); }
+.tl li:last-child::after { display:none; }
+.td {
+  width:32px; height:32px; flex-shrink:0; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:11px; font-weight:700; font-family:'DM Mono',monospace;
+  position:relative; z-index:1; border:2px solid;
+}
+.td1 { background:var(--red-soft); color:var(--red); border-color:var(--red); }
+.td2 { background:var(--blue-soft); color:var(--blue); border-color:var(--blue); }
+.td3 { background:var(--green-soft); color:var(--green); border-color:var(--green); }
+.td4 { background:var(--amber-soft); color:var(--amber); border-color:var(--amber); }
+.td5 { background:var(--surface2); color:var(--ink2); border-color:var(--border2); }
+.tb { flex:1; padding-top:4px; }
+.tb-t { font-size:15px; font-weight:700; color:var(--ink); margin-bottom:2px; }
+.tb-s { font-family:'DM Mono',monospace; font-size:11px; color:var(--red); margin-bottom:6px; }
+.tb-d { font-size:13px; color:var(--ink2); line-height:1.65; }
+
+/* ── CHECKLIST ── */
+.cl { list-style:none; }
+.cl li { padding:8px 0; border-bottom:1px solid var(--border); font-size:13px; color:var(--ink2); display:flex; gap:10px; align-items:flex-start; }
+.cl li:last-child { border-bottom:none; }
+.cl li::before { content:'→'; color:var(--red); font-weight:700; flex-shrink:0; margin-top:1px; }
+
+/* ── FOOTER ── */
+footer { border-top:1px solid var(--border2); background:var(--surface); padding:20px 32px; text-align:center; font-family:'DM Mono',monospace; font-size:11px; color:var(--ink3); letter-spacing:0.05em; }
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-line"></div>
+  <div class="hero-tag">Đồ Án Tốt Nghiệp · Hệ Thống Thông Tin</div>
+  <h1>FACE-Z<br><em>HRMS</em></h1>
+  <div class="hero-sub">Hệ thống quản lý nhân sự doanh nghiệp công nghệ</div>
+  <p class="hero-desc">
+    Xây dựng ứng dụng web quản lý nhân sự cho doanh nghiệp outsourcing & phát triển phần mềm quy mô 1.000+ nhân viên. Kiến trúc Monolithic Modular, tích hợp máy chấm công vật lý, engine tính lương theo pháp luật Việt Nam.
+  </p>
+  <div class="hero-pills">
+    <span class="pill p-red">Java 21 · Spring Boot 3.3</span>
+    <span class="pill p-blue">Next.js 15 · React 19</span>
+    <span class="pill p-green">PostgreSQL · Redis</span>
+    <span class="pill p-amber">Docker · Swagger</span>
+    <span class="pill p-red">1.000+ Nhân viên</span>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav class="nav">
+  <button class="nb on" onclick="go('p1')">Phần 1 — Hiện Trạng</button>
+  <button class="nb" onclick="go('p2')">Phần 2 — Kiến Trúc</button>
+  <button class="nb" onclick="go('p3')">Phần 3 — Chức Năng</button>
+  <button class="nb" onclick="go('p4')">Phần 4 — Công Nghệ</button>
+  <button class="nb" onclick="go('p5')">Phần 5 — CSDL & API</button>
+  <button class="nb" onclick="go('p6')">Phần 6 — Kế Hoạch 8 Tuần</button>
+</nav>
+
+<div class="wrap">
+
+<!-- ═══════════ PHẦN 1 ═══════════ -->
+<div class="sec on" id="p1">
+  <div class="sh">
+    <div class="sh-n">01</div>
+    <div class="sh-t"><h2>Tổng Quan Hệ Thống Hiện Tại</h2><p>Hiện trạng, kiến trúc, công nghệ và hạn chế cần khắc phục</p></div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="sv r">1.000+</div><div class="sl">Nhân viên</div></div>
+    <div class="stat"><div class="sv b">6</div><div class="sl">Module nghiệp vụ</div></div>
+    <div class="stat"><div class="sv g">4</div><div class="sl">Vai trò phân quyền</div></div>
+    <div class="stat"><div class="sv a">8</div><div class="sl">Tuần hoàn thiện</div></div>
+  </div>
+
+  <!-- 1.1 Kiến trúc -->
+  <div class="ib b">
+    <div class="ib-t">1.1 · Kiến Trúc Hệ Thống — Monolithic Modular</div>
+    <p>Dự án xây dựng theo kiến trúc <strong>Monolithic Modular</strong> — tổ chức code theo các module nghiệp vụ độc lập (Employee, Attendance, Payroll, Leave, Department, Auth) nhưng triển khai như một ứng dụng duy nhất. Phù hợp với quy mô team nhỏ, dễ phát triển, debug và deploy. Thiết kế hướng tới khả năng migrate sang Microservices trong giai đoạn phát triển tiếp theo.</p>
+    <p style="margin-top:8px">Hệ thống tổ chức theo <strong>4 tầng</strong>: Presentation Layer (Next.js) → API Layer (Spring Boot REST) → Business Logic Layer (Service classes theo module) → Data Layer (PostgreSQL + Redis).</p>
+  </div>
+
+  <div class="g2">
+    <div>
+      <!-- 1.2 Backend -->
+      <div class="ib r" style="margin-bottom:12px">
+        <div class="ib-t">1.2 · Công Nghệ Back-end</div>
+        <ul>
+          <li><strong>Ngôn ngữ & Framework:</strong> Java 21 LTS, Spring Boot 3.3.x (Spring Framework 6.x)</li>
+          <li><strong>Cơ sở dữ liệu:</strong> PostgreSQL 15 (lưu trữ chính), Redis 7 (cache & session)</li>
+          <li><strong>Bảo mật:</strong> Spring Security 6, JWT (Access Token 15 phút + Refresh Token 7 ngày), BCrypt password hashing</li>
+          <li><strong>Database migration:</strong> Flyway — quản lý version schema</li>
+          <li><strong>API Documentation:</strong> SpringDoc OpenAPI — Swagger UI</li>
+        </ul>
+      </div>
+      <!-- 1.3 Frontend -->
+      <div class="ib b">
+        <div class="ib-t">1.3 · Công Nghệ Front-end</div>
+        <ul>
+          <li><strong>Framework:</strong> Next.js 15 (App Router), React 19</li>
+          <li><strong>Ngôn ngữ:</strong> TypeScript — type-safe API integration</li>
+          <li><strong>Styling:</strong> Tailwind CSS 4, Lucide Icons, Recharts</li>
+          <li><strong>HTTP Client:</strong> Axios — interceptor tự động refresh token</li>
+          <li><strong>State Management:</strong> TanStack Query — server state, caching</li>
+        </ul>
+      </div>
+    </div>
+
+    <div>
+      <!-- Trạng thái tính năng -->
+      <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:10px;">2 · Trạng Thái Tính Năng Hiện Tại</div>
+      <table class="tbl">
+        <thead><tr><th>Tính năng</th><th>Backend</th><th>Frontend</th></tr></thead>
+        <tbody>
+          <tr><td>Auth & RBAC</td><td><span class="done">✓ Xong</span></td><td><span class="done">✓ Xong</span></td></tr>
+          <tr><td>Quản lý nhân viên</td><td><span class="done">✓ Xong</span></td><td><span class="wip">⚠ Thiếu form</span></td></tr>
+          <tr><td>Chấm công</td><td><span class="wip">⚠ Cơ bản</span></td><td><span class="wip">⚠ Chưa đủ</span></td></tr>
+          <tr><td>Nghỉ phép / OT</td><td><span class="wip">⚠ Cơ bản</span></td><td><span class="wip">⚠ Thiếu UI duyệt</span></td></tr>
+          <tr><td>Phòng ban</td><td><span class="done">✓ Xong</span></td><td><span class="wip">⚠ Thiếu form</span></td></tr>
+          <tr><td>Tính lương</td><td><span class="todo">○ Chưa làm</span></td><td><span class="todo">○ Chưa làm</span></td></tr>
+          <tr><td>Dashboard</td><td><span class="wip">⚠ Mock data</span></td><td><span class="wip">⚠ Mock data</span></td></tr>
+          <tr><td>Hợp đồng</td><td><span class="todo">○ Chưa làm</span></td><td><span class="todo">○ Chưa làm</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="ib a">
+      <div class="ib-t">3 · Hạn Chế Hiện Tại</div>
+      <ul>
+        <li>Chưa phát triển đầy đủ giao diện form CRUD cho các module</li>
+        <li>Dashboard sử dụng mock data, chưa kết nối API thực</li>
+        <li>Chưa hoàn thiện module tính lương (BHXH, BHYT, thuế TNCN)</li>
+        <li>Chưa có workflow duyệt/từ chối đa cấp</li>
+        <li>Chưa có module quản lý hợp đồng lao động</li>
+        <li>Chưa có chức năng xuất báo cáo và gửi thông báo email</li>
+        <li>Chưa tích hợp máy chấm công vật lý</li>
+        <li>Chưa có unit test / integration test — coverage hiện tại ~0%</li>
+        <li>Chưa xử lý edge case chấm công: quên check-out, dữ liệu lỗi từ thiết bị</li>
+      </ul>
+    </div>
+    <div class="ib g">
+      <div class="ib-t">4 · Mục Tiêu Đồ Án</div>
+      <div style="font-size:12px;font-weight:600;color:var(--green);margin-bottom:6px;">Cốt lõi — bắt buộc hoàn thành</div>
+      <ul>
+        <li>Hoàn thiện giao diện toàn bộ module hiện có</li>
+        <li>Module tính lương: BHXH, BHYT, thuế TNCN lũy tiến</li>
+        <li>API nhận dữ liệu từ máy chấm công + Device Simulator</li>
+        <li>Workflow duyệt/từ chối đa cấp</li>
+        <li>Xuất báo cáo PDF (payslip) và Excel</li>
+        <li>Dashboard analytics với dữ liệu thực</li>
+        <li>Deploy demo trên Render / Railway</li>
+      </ul>
+      <div style="font-size:12px;font-weight:600;color:var(--blue);margin:10px 0 6px;">Mở rộng — nếu còn thời gian</div>
+      <ul>
+        <li>Gửi thông báo email tự động (payslip, nhắc hạn hợp đồng)</li>
+        <li>Quản lý hợp đồng lao động</li>
+        <li>Unit test coverage &gt; 70% cho service layer</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="ib" style="border-left:4px solid var(--ink)">
+    <div class="ib-t">5 · Hướng Phát Triển Thêm</div>
+    <ul>
+      <li><strong>Chuyển đổi sang kiến trúc Microservices:</strong> Tách hệ thống thành các service độc lập theo domain nghiệp vụ (Employee Service, Attendance Service, Payroll Service), tích hợp API Gateway và Service Discovery sử dụng Spring Cloud Gateway và Eureka Server.</li>
+      <li><strong>Bổ sung xác thực OAuth2 / Social Login:</strong> Tích hợp đăng nhập qua Google Workspace sử dụng Spring Security OAuth2 Client — phù hợp môi trường công ty công nghệ thường dùng Google account. Sau xác thực OAuth2 thành công, hệ thống issue JWT nội bộ và xử lý RBAC bình thường.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ═══════════ PHẦN 2 ═══════════ -->
+<div class="sec" id="p2">
+  <div class="sh">
+    <div class="sh-n">02</div>
+    <div class="sh-t"><h2>Kiến Trúc & Thiết Kế Hệ Thống</h2><p>Tổng thể kiến trúc, luồng dữ liệu và các pattern được áp dụng</p></div>
+  </div>
+
+  <div class="arch">
+    <div class="arch-lbl">// System Architecture — Monolithic Modular · 4-Tier Layered</div>
+    <div class="layer">
+      <div class="layer-name">Presentation Layer</div>
+      <div class="lbs">
+        <div class="lb lb-c">🌐 Next.js 15 Web App</div>
+        <div class="lb lb-c">📱 Mobile Browser (Responsive)</div>
+        <div class="lb lb-c">🏭 Device Simulator (Test tool)</div>
+      </div>
+    </div>
+    <div class="arr">↓ HTTPS / REST API (JSON)</div>
+    <div class="layer">
+      <div class="layer-name">API Layer — Spring Boot 3.3</div>
+      <div class="lbs">
+        <div class="lb lb-g">🔐 Spring Security 6 (JWT + RBAC)</div>
+        <div class="lb lb-g">📋 REST Controllers</div>
+        <div class="lb lb-g">✅ Bean Validation</div>
+        <div class="lb lb-g">📖 Swagger UI (SpringDoc)</div>
+      </div>
+    </div>
+    <div class="arr">↓</div>
+    <div class="layer">
+      <div class="layer-name">Business Logic Layer — Domain Modules</div>
+      <div class="lbs">
+        <div class="lb lb-s">👤 Employee Module</div>
+        <div class="lb lb-s">🕐 Attendance Module</div>
+        <div class="lb lb-s">💰 Payroll Module</div>
+        <div class="lb lb-s">📋 Leave Module</div>
+        <div class="lb lb-s">🏢 Department Module</div>
+        <div class="lb lb-s">📊 Report Module</div>
+        <div class="lb lb-s">🔔 Notification Module</div>
+        <div class="lb lb-s">🔑 Auth Module</div>
+      </div>
+    </div>
+    <div class="arr">↓</div>
+    <div class="layer">
+      <div class="layer-name">Data Layer</div>
+      <div class="lbs">
+        <div class="lb lb-d">🐘 PostgreSQL 15</div>
+        <div class="lb lb-d">⚡ Redis 7 (Cache + Token)</div>
+        <div class="lb lb-d">📁 File Storage (Local/MinIO)</div>
+        <div class="lb lb-d">📧 SMTP (Email)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div>
+      <div class="code-lbl">// Package Structure — Java</div>
+      <div class="code"><pre>
+<span class="cc">com.facez.hrms/</span>
+├── <span class="ct">common/</span>
+│   ├── <span class="cc">exception/   # GlobalExceptionHandler</span>
+│   ├── <span class="cc">response/    # ApiResponse&lt;T&gt; wrapper</span>
+│   └── <span class="cc">util/        # DateUtils, PayrollUtils</span>
+├── <span class="ct">config/</span>
+│   ├── <span class="cc">SecurityConfig.java</span>
+│   ├── <span class="cc">RedisConfig.java</span>
+│   └── <span class="cc">SwaggerConfig.java</span>
+├── <span class="ct">module/</span>
+│   ├── <span class="ct">auth/</span>
+│   │   ├── <span class="cc">controller/  service/</span>
+│   │   ├── <span class="cc">dto/         entity/</span>
+│   │   └── <span class="cc">repository/</span>
+│   ├── <span class="ct">employee/</span>  <span class="cc"># Tương tự auth</span>
+│   ├── <span class="ct">attendance/</span>
+│   ├── <span class="ct">payroll/</span>
+│   ├── <span class="ct">leave/</span>
+│   └── <span class="ct">report/</span>
+└── <span class="cs">HrmsApplication.java</span></pre></div>
+    </div>
+    <div>
+      <div class="code-lbl">// Request Flow — Xin Nghỉ Phép</div>
+      <div class="code"><pre>
+<span class="cc">1. Employee submit form → Next.js</span>
+<span class="ct">2. POST /api/v1/leaves</span>
+   └─ Axios + JWT token (auto-attach)
+
+<span class="cc">3. Spring Security filter:</span>
+   └─ Validate JWT → extract roles
+
+<span class="cc">4. LeaveController → LeaveService</span>
+   ├─ Validate: đủ số ngày phép?
+   ├─ Save LeaveRequest (PENDING)
+   └─ Send email → Manager
+
+<span class="cc">5. Manager duyệt:</span>
+   <span class="ct">PUT /api/v1/leaves/{id}/approve</span>
+   ├─ Update status → APPROVED
+   ├─ Deduct leave balance
+   └─ Notify Employee via email
+
+<span class="cs">6. Response ApiResponse&lt;LeaveDTO&gt;</span>
+   └─ TanStack Query invalidate cache
+      → UI tự động refresh</pre></div>
+
+      <div class="ib b" style="margin-top:12px">
+        <div class="ib-t">🔐 JWT Security Flow</div>
+        <p>Login → Server tạo <strong>Access Token (15 phút)</strong> + <strong>Refresh Token (7 ngày)</strong>, lưu cả hai trong <strong>HttpOnly Cookie</strong> (chống XSS). Khi Access Token hết hạn, Axios interceptor tự động gọi <code>/auth/refresh</code> — user không bị đăng xuất đột ngột. Logout ghi Refresh Token vào Redis blacklist — revoke tức thì, không thể dùng lại.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="ib r">
+    <div class="ib-t">🏭 Tích Hợp Máy Chấm Công Vật Lý — Thiết Kế</div>
+    <p><strong>Luồng:</strong> Máy chấm công (ZKTeco/RFID/Fingerprint) → HTTP POST đến <code>/api/v1/devices/punch</code> → AttendanceService xử lý raw log → ghép cặp CHECK_IN/CHECK_OUT → tính giờ làm, OT → lưu daily_attendance → đồng bộ Payroll khi tính lương tháng.</p>
+    <p style="margin-top:8px"><strong>Device Simulator:</strong> Script Java/Python giả lập máy chấm công, tự động gửi HTTP POST theo kịch bản test (đi đúng giờ, đi trễ, quên check-out, ca đêm). Dùng để test và demo mà không cần phần cứng thật. Đây cũng là điểm kỹ thuật giúp trả lời câu hỏi hội đồng về kiểm thử tích hợp.</p>
+  </div>
+</div>
+
+<!-- ═══════════ PHẦN 3 ═══════════ -->
+<div class="sec" id="p3">
+  <div class="sh">
+    <div class="sh-n">03</div>
+    <div class="sh-t"><h2>Phân Tích Chức Năng Chi Tiết</h2><p>8 module nghiệp vụ, use cases và đặc thù ngành phần mềm</p></div>
+  </div>
+
+  <div class="g2" style="margin-bottom:0">
+    <div class="card"><div class="card-bar cb-r"></div>
+      <div class="ci">🔑</div><div class="ct">Auth & Phân Quyền (RBAC)</div>
+      <div class="cd">Login/Logout JWT + HttpOnly Cookie. 4 roles: SYSTEM_ADMIN, HR_ADMIN, MANAGER, EMPLOYEE. Đổi mật khẩu, tự động khôi phục session. Logout revoke token qua Redis blacklist. <em>(Đã hoàn thiện)</em></div>
+      <div class="tags"><span class="tag">Spring Security 6</span><span class="tag">JWT RS256</span><span class="tag">Redis Blacklist</span></div>
+    </div>
+    <div class="card"><div class="card-bar cb-b"></div>
+      <div class="ci">👤</div><div class="ct">Quản Lý Nhân Viên</div>
+      <div class="cd">CRUD hồ sơ: thông tin cá nhân, liên hệ, phòng ban, chức danh, level (Junior/Mid/Senior/Lead). Hợp đồng lao động với cảnh báo hết hạn. Lịch sử công tác, thăng chức, chuyển bộ phận. Upload hồ sơ số.</div>
+      <div class="tags"><span class="tag">Employee Entity</span><span class="tag">Contract</span><span class="tag">Career History</span></div>
+    </div>
+    <div class="card"><div class="card-bar cb-g"></div>
+      <div class="ci">🕐</div><div class="ct">Chấm Công & Timesheet</div>
+      <div class="cd">API nhận dữ liệu từ máy chấm công vật lý (ZKTeco/RFID). Device Simulator để test. Ghép cặp CHECK_IN/CHECK_OUT, xử lý quên check-out, ca đêm. Timesheet theo dự án — đặc thù công ty phần mềm. Tính OT tự động (x1.5/x2/x3).</div>
+      <div class="tags"><span class="tag">Device API</span><span class="tag">Batch Processing</span><span class="tag">OT Engine</span></div>
+    </div>
+    <div class="card"><div class="card-bar cb-a"></div>
+      <div class="ci">💰</div><div class="ct">Tính Lương & Payslip</div>
+      <div class="cd">Engine tính lương: Lương cơ bản + OT + Phụ cấp (ăn trưa, xăng, điện thoại) + Thưởng KPI − BHXH (8%) − BHYT (1.5%) − BHTN (1%) − Thuế TNCN lũy tiến 7 bậc. Xuất payslip PDF gửi email. Chốt bảng lương tháng.</div>
+      <div class="tags"><span class="tag">Payroll Engine</span><span class="tag">BHXH/PIT</span><span class="tag">iText PDF</span></div>
+    </div>
+    <div class="card"><div class="card-bar cb-r"></div>
+      <div class="ci">📋</div><div class="ct">Quản Lý Nghỉ Phép & OT</div>
+      <div class="cd">Các loại phép: Phép năm (12 ngày), Phép ốm, Nghỉ lễ, Nghỉ không lương, Thai sản. Workflow xét duyệt 2 cấp: Nhân viên → Manager → HR Admin. Số dư phép tự động trừ. Calendar view nhân viên đang nghỉ. OT Request tương tự.</div>
+      <div class="tags"><span class="tag">Approval Workflow</span><span class="tag">Leave Balance</span><span class="tag">Calendar</span></div>
+    </div>
+    <div class="card"><div class="card-bar cb-b"></div>
+      <div class="ci">🏢</div><div class="ct">Quản Lý Phòng Ban & Dự Án</div>
+      <div class="cd">Cây tổ chức (Org Chart) với self-reference. Gán nhân viên vào dự án với % allocation (đặc thù outsourcing: 1 người có thể 40% Project A + 60% Project B). Headcount theo phòng ban.</div>
+      <div class="tags"><span class="tag">Org Chart</span><span class="tag">Project Allocation</span></div>
+    </div>
+    <div class="card"><div class="card-bar cb-g"></div>
+      <div class="ci">📊</div><div class="ct">Báo Cáo & Dashboard</div>
+      <div class="cd">Dashboard HR: headcount trend, chi phí lương, tỷ lệ nghỉ việc, hợp đồng sắp hết hạn. Xuất Excel (Apache POI): bảng lương tổng hợp, danh sách nhân viên, báo cáo chấm công. Xuất PDF (iText): payslip cá nhân.</div>
+      <div class="tags"><span class="tag">Apache POI</span><span class="tag">iText PDF</span><span class="tag">Recharts</span></div>
+    </div>
+    <div class="card"><div class="card-bar cb-a"></div>
+      <div class="ci">🔔</div><div class="ct">Thông Báo Email</div>
+      <div class="cd">Email template HTML (Thymeleaf): payslip tháng, thông báo phép được duyệt/từ chối, cảnh báo hợp đồng sắp hết hạn, nhắc nộp timesheet. Hỗ trợ SMTP Gmail / Office 365.</div>
+      <div class="tags"><span class="tag">Spring Mail</span><span class="tag">Thymeleaf</span><span class="tag">SMTP</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ PHẦN 4 ═══════════ -->
+<div class="sec" id="p4">
+  <div class="sh">
+    <div class="sh-n">04</div>
+    <div class="sh-t"><h2>Giải Pháp Công Nghệ</h2><p>Lý do chọn từng công nghệ và cách phối hợp trong hệ thống</p></div>
+  </div>
+
+  <table class="tbl">
+    <thead><tr><th>Thành Phần</th><th>Công Nghệ</th><th>Phiên Bản</th><th>Lý Do Chọn</th></tr></thead>
+    <tbody>
+      <tr><td>Backend</td><td>Spring Boot</td><td class="mono">Java 21 / Spring Boot 3.3.x</td><td>Java 21 LTS ổn định. Spring Boot 3 tích hợp Security, JPA, Validation. Virtual Threads (Project Loom) cải thiện throughput. Phổ biến doanh nghiệp VN.</td></tr>
+      <tr><td>Security</td><td>Spring Security 6 + JJWT</td><td class="mono">Spring Security 6 / JJWT 0.12</td><td>JWT stateless phù hợp REST API. HttpOnly Cookie lưu token chống XSS. Filter chain dễ cấu hình RBAC per-endpoint.</td></tr>
+      <tr><td>ORM</td><td>Spring Data JPA + Hibernate</td><td class="mono">Hibernate 6.x</td><td>Giảm SQL thủ công. Querydsl cho dynamic query báo cáo phức tạp. Optimistic locking (version field) cho bảng lương.</td></tr>
+      <tr><td>DB Migration</td><td>Flyway</td><td class="mono">Flyway 10.x</td><td>Version control cho schema DB. Script tự động chạy khi startup. Quan trọng khi làm nhóm, đảm bảo DB nhất quán giữa các môi trường.</td></tr>
+      <tr><td>Database</td><td>PostgreSQL</td><td class="mono">PostgreSQL 15</td><td>ACID đảm bảo toàn vẹn dữ liệu lương. UUID primary key. Row-level security. Miễn phí, tài liệu phong phú.</td></tr>
+      <tr><td>Cache</td><td>Redis</td><td class="mono">Redis 7.x</td><td>Lưu Refresh Token + blacklist logout. Cache kết quả tính lương. Spring Cache abstraction dễ tích hợp.</td></tr>
+      <tr><td>API Docs</td><td>SpringDoc OpenAPI</td><td class="mono">SpringDoc 2.x</td><td>Tự động generate Swagger UI. Test API trực tiếp trên browser khi demo cho hội đồng. Tích hợp Spring Security để test authenticated endpoints.</td></tr>
+      <tr><td>Frontend</td><td>Next.js + React</td><td class="mono">Next.js 15 / React 19</td><td>App Router SSR/SSG. TypeScript giảm runtime errors. Vite-based build nhanh. Component-based tái sử dụng cao.</td></tr>
+      <tr><td>UI Library</td><td>Tailwind CSS + Shadcn/UI</td><td class="mono">Tailwind 4 / Shadcn latest</td><td>Utility-first styling linh hoạt. Shadcn/UI component đẹp sẵn cho admin (Table, Form, Dialog, DatePicker). Không vendor lock-in.</td></tr>
+      <tr><td>State</td><td>TanStack Query</td><td class="mono">TanStack Query 5.x</td><td>Server state management: caching, loading/error state tự động, refetch khi focus. Đơn giản hơn Redux cho CRUD operations.</td></tr>
+      <tr><td>PDF</td><td>iText 7 Community</td><td class="mono">iText 7.x</td><td>Tạo payslip PDF layout đẹp, hỗ trợ font Unicode (tiếng Việt), table, header/footer. Template-based.</td></tr>
+      <tr><td>Excel</td><td>Apache POI</td><td class="mono">POI 5.x</td><td>Xuất báo cáo .xlsx với formatting: màu sắc, merge cell, formula. Standard cho Java Excel.</td></tr>
+      <tr><td>Email</td><td>Spring Mail + Thymeleaf</td><td class="mono">Spring Boot Mail Starter</td><td>JavaMailSender built-in. Thymeleaf template cho email HTML đẹp. SMTP Gmail/Office365.</td></tr>
+      <tr><td>Deploy</td><td>Docker + Docker Compose</td><td class="mono">Docker 25 / Compose 2.x</td><td>Chạy toàn bộ stack (App + PostgreSQL + Redis) bằng 1 lệnh. Môi trường nhất quán. Deploy Render/Railway dễ dàng.</td></tr>
+      <tr><td>Testing</td><td>JUnit 5 + Mockito</td><td class="mono">JUnit 5 / Mockito 5</td><td>Unit test Service layer. TestContainers cho integration test với PostgreSQL thật. JaCoCo coverage report.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="ib g">
+    <div class="ib-t">💡 Điểm Kỹ Thuật Nổi Bật — Dành Cho Buổi Bảo Vệ</div>
+    <ul>
+      <li><strong>JWT + HttpOnly Cookie + Redis Blacklist:</strong> Logout thực sự an toàn — nhiều đồ án chỉ xóa token phía client, không revoke server-side</li>
+      <li><strong>Flyway migration:</strong> Thể hiện tư duy quản lý schema chuyên nghiệp, DB đồng bộ giữa mọi môi trường</li>
+      <li><strong>Device Simulator:</strong> Test tích hợp máy chấm công end-to-end không cần phần cứng</li>
+      <li><strong>Payroll Engine:</strong> Công thức thuế TNCN lũy tiến 7 bậc theo đúng quy định pháp luật Việt Nam hiện hành</li>
+      <li><strong>Swagger UI:</strong> Demo API live ngay trước hội đồng — không cần Postman</li>
+      <li><strong>Unified ApiResponse&lt;T&gt;:</strong> Tất cả API trả về format nhất quán — dễ handle error phía frontend</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ═══════════ PHẦN 5 ═══════════ -->
+<div class="sec" id="p5">
+  <div class="sh">
+    <div class="sh-n">05</div>
+    <div class="sh-t"><h2>Thiết Kế CSDL & API</h2><p>Schema các bảng quan trọng, quan hệ dữ liệu và API conventions</p></div>
+  </div>
+
+  <div class="ib b">
+    <div class="ib-t">📐 Nguyên Tắc Thiết Kế Database</div>
+    <p>Chuẩn hóa 3NF. UUID làm primary key. Soft delete (<code>deleted_at</code>) thay hard delete để giữ audit trail. Optimistic locking (<code>version</code> column) cho bảng lương tránh concurrent update. Tất cả bảng có <code>created_at</code>, <code>updated_at</code>, <code>created_by</code> cho truy vết thay đổi.</p>
+  </div>
+
+  <div class="g2">
+    <div>
+      <div class="code-lbl">// Bảng nhân viên & hợp đồng</div>
+      <div class="code"><pre>
+<span class="ck">CREATE TABLE</span> employees (
+  id            <span class="ct">UUID PRIMARY KEY</span>,
+  employee_code <span class="ct">VARCHAR(20) UNIQUE</span>,
+  full_name     <span class="ct">VARCHAR(200) NOT NULL</span>,
+  email         <span class="ct">VARCHAR(100) UNIQUE NOT NULL</span>,
+  department_id <span class="ct">UUID REFERENCES</span> departments(id),
+  position      <span class="ct">VARCHAR(100)</span>,
+  level         <span class="ct">VARCHAR(20)</span>, <span class="cc">-- JUNIOR/MID/SENIOR/LEAD</span>
+  hire_date     <span class="ct">DATE NOT NULL</span>,
+  status        <span class="ct">VARCHAR(20) DEFAULT</span> <span class="cs">'ACTIVE'</span>,
+  created_at    <span class="ct">TIMESTAMPTZ DEFAULT NOW()</span>,
+  deleted_at    <span class="ct">TIMESTAMPTZ</span>,   <span class="cc">-- Soft delete</span>
+  version       <span class="ct">BIGINT DEFAULT 0</span>  <span class="cc">-- Optimistic lock</span>
+);
+
+<span class="ck">CREATE TABLE</span> contracts (
+  id            <span class="ct">UUID PRIMARY KEY</span>,
+  employee_id   <span class="ct">UUID REFERENCES</span> employees(id),
+  type          <span class="ct">VARCHAR(30)</span>, <span class="cc">-- PROBATION/FULLTIME</span>
+  start_date    <span class="ct">DATE NOT NULL</span>,
+  end_date      <span class="ct">DATE</span>,         <span class="cc">-- NULL = không xác định</span>
+  base_salary   <span class="ct">DECIMAL(15,2) NOT NULL</span>,
+  status        <span class="ct">VARCHAR(20)</span>  <span class="cc">-- ACTIVE/EXPIRED</span>
+);</pre></div>
+    </div>
+    <div>
+      <div class="code-lbl">// Bảng chấm công (raw log + xử lý)</div>
+      <div class="code"><pre>
+<span class="cc">-- Raw log từ máy chấm công (append-only)</span>
+<span class="ck">CREATE TABLE</span> attendance_logs (
+  id          <span class="ct">UUID PRIMARY KEY</span>,
+  employee_id <span class="ct">UUID REFERENCES</span> employees(id),
+  device_id   <span class="ct">UUID REFERENCES</span> devices(id),
+  punch_time  <span class="ct">TIMESTAMPTZ NOT NULL</span>,
+  punch_type  <span class="ct">VARCHAR(20)</span>, <span class="cc">-- CHECK_IN/CHECK_OUT</span>
+  raw_data    <span class="ct">JSONB</span>         <span class="cc">-- Dữ liệu thô từ thiết bị</span>
+);
+
+<span class="cc">-- Kết quả đã xử lý (tính giờ làm)</span>
+<span class="ck">CREATE TABLE</span> daily_attendance (
+  id             <span class="ct">UUID PRIMARY KEY</span>,
+  employee_id    <span class="ct">UUID</span>,
+  work_date      <span class="ct">DATE</span>,
+  check_in_time  <span class="ct">TIMESTAMPTZ</span>,
+  check_out_time <span class="ct">TIMESTAMPTZ</span>,
+  hours_worked   <span class="ct">DECIMAL(4,2)</span>,
+  ot_hours       <span class="ct">DECIMAL(4,2)</span>,
+  status         <span class="ct">VARCHAR(20)</span>,
+  <span class="cc">-- PRESENT/ABSENT/LATE/HALF_DAY/FORGOT_CHECKOUT</span>
+  <span class="ct">UNIQUE</span> (employee_id, work_date)
+);</pre></div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div>
+      <div class="code-lbl">// Bảng lương (payroll records)</div>
+      <div class="code"><pre>
+<span class="ck">CREATE TABLE</span> payroll_records (
+  id           <span class="ct">UUID PRIMARY KEY</span>,
+  employee_id  <span class="ct">UUID REFERENCES</span> employees(id),
+  period       <span class="ct">VARCHAR(7) NOT NULL</span>, <span class="cc">-- '2024-09'</span>
+  base_salary  <span class="ct">DECIMAL(15,2)</span>,
+  allowances   <span class="ct">DECIMAL(15,2)</span>,  <span class="cc">-- Tổng phụ cấp</span>
+  ot_pay       <span class="ct">DECIMAL(15,2)</span>,  <span class="cc">-- Lương OT</span>
+  bonus        <span class="ct">DECIMAL(15,2)</span>,  <span class="cc">-- Thưởng KPI</span>
+  bhxh_deduct  <span class="ct">DECIMAL(15,2)</span>,  <span class="cc">-- 8% BHXH</span>
+  bhyt_deduct  <span class="ct">DECIMAL(15,2)</span>,  <span class="cc">-- 1.5% BHYT</span>
+  bhtn_deduct  <span class="ct">DECIMAL(15,2)</span>,  <span class="cc">-- 1% BHTN</span>
+  pit_deduct   <span class="ct">DECIMAL(15,2)</span>,  <span class="cc">-- Thuế TNCN</span>
+  net_salary   <span class="ct">DECIMAL(15,2)</span>,  <span class="cc">-- Thực lĩnh</span>
+  status       <span class="ct">VARCHAR(20)</span>,
+  <span class="cc">-- DRAFT → CONFIRMED → PAID</span>
+  <span class="ct">UNIQUE</span> (employee_id, period)  <span class="cc">-- 1 record/tháng</span>
+);</pre></div>
+    </div>
+    <div>
+      <div class="code-lbl">// API Response Format</div>
+      <div class="code"><pre>
+<span class="cc">// Mọi endpoint đều trả về format này</span>
+<span class="ck">public record</span> <span class="ct">ApiResponse</span>&lt;T&gt;(
+  <span class="ct">boolean</span> success,
+  <span class="ct">String</span>  message,
+  T       data,
+  <span class="ct">String</span>  timestamp
+) {}
+
+<span class="cc">// Success — HTTP 200</span>
+{
+  <span class="cs">"success"</span>: <span class="ct">true</span>,
+  <span class="cs">"message"</span>: <span class="cs">"OK"</span>,
+  <span class="cs">"data"</span>: { <span class="cc">/* payload */</span> },
+  <span class="cs">"timestamp"</span>: <span class="cs">"2024-09-15T10:30:00Z"</span>
+}
+
+<span class="cc">// Error — HTTP 400/401/403/404</span>
+{
+  <span class="cs">"success"</span>: <span class="ct">false</span>,
+  <span class="cs">"message"</span>: <span class="cs">"Leave balance insufficient"</span>,
+  <span class="cs">"data"</span>: {
+    <span class="cs">"code"</span>:      <span class="cs">"LEAVE_BALANCE_INSUFFICIENT"</span>,
+    <span class="cs">"requested"</span>: <span class="ct">5</span>,
+    <span class="cs">"available"</span>: <span class="ct">3</span>
+  }
+}</pre></div>
+    </div>
+  </div>
+
+  <table class="tbl">
+    <thead><tr><th>Module</th><th>Method</th><th>Endpoint</th><th>Mô tả</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr><td>Auth</td><td class="mono">POST</td><td class="mono">/api/v1/auth/login</td><td>Đăng nhập, nhận JWT cookie</td><td>Public</td></tr>
+      <tr><td>Auth</td><td class="mono">POST</td><td class="mono">/api/v1/auth/refresh</td><td>Refresh access token</td><td>All</td></tr>
+      <tr><td>Auth</td><td class="mono">POST</td><td class="mono">/api/v1/auth/logout</td><td>Logout, revoke token Redis</td><td>All</td></tr>
+      <tr><td>Employee</td><td class="mono">GET</td><td class="mono">/api/v1/employees</td><td>Danh sách, phân trang, filter</td><td>HR, Manager</td></tr>
+      <tr><td>Employee</td><td class="mono">POST</td><td class="mono">/api/v1/employees</td><td>Tạo nhân viên mới</td><td>HR</td></tr>
+      <tr><td>Employee</td><td class="mono">GET</td><td class="mono">/api/v1/employees/me</td><td>Thông tin bản thân</td><td>All</td></tr>
+      <tr><td>Attendance</td><td class="mono">POST</td><td class="mono">/api/v1/devices/punch</td><td>Nhận dữ liệu từ máy chấm công</td><td>Device</td></tr>
+      <tr><td>Attendance</td><td class="mono">GET</td><td class="mono">/api/v1/attendance/my</td><td>Bảng công cá nhân theo tháng</td><td>Employee</td></tr>
+      <tr><td>Leave</td><td class="mono">POST</td><td class="mono">/api/v1/leaves</td><td>Tạo đơn xin nghỉ</td><td>Employee</td></tr>
+      <tr><td>Leave</td><td class="mono">PUT</td><td class="mono">/api/v1/leaves/{id}/approve</td><td>Duyệt đơn nghỉ</td><td>Manager, HR</td></tr>
+      <tr><td>Leave</td><td class="mono">GET</td><td class="mono">/api/v1/leaves/balance/me</td><td>Số ngày phép còn lại</td><td>Employee</td></tr>
+      <tr><td>Payroll</td><td class="mono">POST</td><td class="mono">/api/v1/payroll/calculate</td><td>Trigger tính lương tháng</td><td>HR</td></tr>
+      <tr><td>Payroll</td><td class="mono">GET</td><td class="mono">/api/v1/payroll/my</td><td>Payslip cá nhân</td><td>Employee</td></tr>
+      <tr><td>Payroll</td><td class="mono">GET</td><td class="mono">/api/v1/payroll/{id}/pdf</td><td>Download payslip PDF</td><td>Employee, HR</td></tr>
+      <tr><td>Report</td><td class="mono">GET</td><td class="mono">/api/v1/reports/payroll/excel</td><td>Bảng lương tổng hợp Excel</td><td>HR</td></tr>
+      <tr><td>Report</td><td class="mono">GET</td><td class="mono">/api/v1/reports/headcount</td><td>Báo cáo headcount</td><td>HR</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ═══════════ PHẦN 6 ═══════════ -->
+<div class="sec" id="p6">
+  <div class="sh">
+    <div class="sh-n">06</div>
+    <div class="sh-t"><h2>Kế Hoạch Hoàn Thiện — 8 Tuần</h2><p>Lộ trình chi tiết từ hiện tại đến demo bảo vệ đồ án</p></div>
+  </div>
+
+  <ul class="tl">
+    <li>
+      <div class="td td1">W1</div>
+      <div class="tb">
+        <div class="tb-t">Hoàn Thiện UI/UX & Nghiệp Vụ Hiện Có</div>
+        <div class="tb-s">Giai đoạn 1 · Tuần 1</div>
+        <div class="tb-d">Xây dựng Create/Edit Modal/Form cho Employee, Leave, OT, Department. Hoàn thiện workflow Duyệt/Từ chối đa cấp phía Backend. Tích hợp Form Validation (Zod) và Toast notification. Chuẩn hóa error handling toàn bộ frontend.</div>
+      </div>
+    </li>
+    <li>
+      <div class="td td1">W2</div>
+      <div class="tb">
+        <div class="tb-t">Dashboard Thực & Profile Nhân Viên</div>
+        <div class="tb-s">Giai đoạn 1 · Tuần 2</div>
+        <div class="tb-d">Xây dựng API thống kê thực: headcount theo phòng ban, tỷ lệ đi muộn tháng, số đơn chờ duyệt, hợp đồng sắp hết hạn. Chuyển Dashboard từ mock data → Real API. Hoàn thiện trang Profile cá nhân tổng hợp. Quản lý Hợp đồng lao động.</div>
+      </div>
+    </li>
+    <li>
+      <div class="td td2">W3</div>
+      <div class="tb">
+        <div class="tb-t">Payroll Module — Logic Backend</div>
+        <div class="tb-s">Giai đoạn 2 · Tuần 3</div>
+        <div class="tb-d">Thiết lập bảng cấu hình lương: phụ cấp cố định, mức thuế, bảo hiểm. Engine tính lương: <strong>(Giờ làm từ Attendance + OT Approved) → Gross Salary → Trừ BHXH/BHYT/BHTN → Trừ thuế TNCN lũy tiến 7 bậc → Net Salary</strong>. API chốt bảng lương định kỳ hàng tháng. Unit test cho Payroll Engine.</div>
+      </div>
+    </li>
+    <li>
+      <div class="td td2">W4</div>
+      <div class="tb">
+        <div class="tb-t">Payslip PDF & Xuất Báo Cáo Excel</div>
+        <div class="tb-s">Giai đoạn 2 · Tuần 4</div>
+        <div class="tb-d">Tích hợp iText 7 xuất Phiếu lương PDF (font Unicode tiếng Việt, layout chuyên nghiệp). Tích hợp Apache POI xuất Báo cáo bảng lương tổng hợp Excel, Báo cáo chấm công, Danh sách nhân viên. UI trang "My Payslip" cho nhân viên. Email tự động gửi payslip sau khi chốt lương.</div>
+      </div>
+    </li>
+    <li>
+      <div class="td td3">W5</div>
+      <div class="tb">
+        <div class="tb-t">Tích Hợp Máy Chấm Công Vật Lý</div>
+        <div class="tb-s">Giai đoạn 2 · Tuần 5</div>
+        <div class="tb-d">Thiết kế và xây dựng API endpoint <code>POST /api/v1/devices/punch</code> nhận dữ liệu từ máy chấm công. Xử lý batch request tốc độ cao. Thuật toán ghép cặp CHECK_IN/CHECK_OUT, xử lý edge case (quên check-out, ca đêm, dữ liệu lỗi). <strong>Device Simulator</strong>: script giả lập gửi punch data theo nhiều kịch bản test. Log lỗi và retry mechanism.</div>
+      </div>
+    </li>
+    <li>
+      <div class="td td3">W6</div>
+      <div class="tb">
+        <div class="tb-t">Thông Báo Email & Hoàn Thiện Nghiệp Vụ</div>
+        <div class="tb-s">Giai đoạn 3 · Tuần 6</div>
+        <div class="tb-d">Hệ thống email tự động: thông báo phép được duyệt/từ chối, cảnh báo hợp đồng hết hạn (30/15/7 ngày), nhắc nộp timesheet cuối tuần, gửi payslip tháng. Template email HTML đẹp với Thymeleaf. Scheduled Jobs (Spring @Scheduled). Hoàn thiện toàn bộ edge case còn sót.</div>
+      </div>
+    </li>
+    <li>
+      <div class="td td4">W7</div>
+      <div class="tb">
+        <div class="tb-t">Nghiên Cứu Microservices & Testing</div>
+        <div class="tb-s">Giai đoạn 4 · Tuần 7</div>
+        <div class="tb-d">Nghiên cứu và tách thử 2 service (Employee + Attendance) với Spring Cloud Gateway + Eureka — viết vào báo cáo như hướng phát triển đã thực hiện thử nghiệm. Unit test Service layer JUnit 5 + Mockito đạt coverage &gt; 70%. Integration test với TestContainers. Security test cơ bản (SQL injection, XSS, CSRF).</div>
+      </div>
+    </li>
+    <li>
+      <div class="td td5">W8</div>
+      <div class="tb">
+        <div class="tb-t">Deploy Demo & Hoàn Thiện Hồ Sơ</div>
+        <div class="tb-s">Giai đoạn 4 · Tuần 8</div>
+        <div class="tb-d">Docker Compose toàn bộ stack (Backend + Frontend + PostgreSQL + Redis). Deploy lên Render.com hoặc Railway. Load dữ liệu demo thực tế (seed 1.000 nhân viên giả). Quay video demo kịch bản hoàn chỉnh: <strong>Nhân viên chấm công máy → Tính lương → Xuất payslip PDF → Gửi email</strong>. Hoàn thiện báo cáo đồ án và slide thuyết trình.</div>
+      </div>
+    </li>
+  </ul>
+
+  <table class="tbl">
+    <thead><tr><th>Tuần</th><th>Nhiệm Vụ Chính</th><th>Output Cụ Thể</th><th>Ưu Tiên</th></tr></thead>
+    <tbody>
+      <tr><td>W1</td><td>UI/UX Forms + Multi-level Approval</td><td>CRUD modals hoàn chỉnh, workflow duyệt 2 cấp hoạt động</td><td><span class="must">Must</span></td></tr>
+      <tr><td>W2</td><td>Dashboard Real + Contract Module</td><td>Dashboard 6 widget dữ liệu thực, quản lý hợp đồng</td><td><span class="must">Must</span></td></tr>
+      <tr><td>W3</td><td>Payroll Engine Backend</td><td>Tính lương đúng công thức BHXH + thuế TNCN lũy tiến</td><td><span class="must">Must</span></td></tr>
+      <tr><td>W4</td><td>PDF Payslip + Excel Reports</td><td>Payslip PDF tiếng Việt, 3 loại báo cáo Excel</td><td><span class="must">Must</span></td></tr>
+      <tr><td>W5</td><td>Device API + Simulator</td><td>API nhận punch data + simulator test 5 kịch bản</td><td><span class="must">Must</span></td></tr>
+      <tr><td>W6</td><td>Email Notifications + Scheduled Jobs</td><td>4 loại email tự động, scheduled reminder hoạt động</td><td><span class="nice">Nice</span></td></tr>
+      <tr><td>W7</td><td>Microservices Research + Testing</td><td>Unit test coverage &gt;70%, tài liệu microservices</td><td><span class="nice">Nice</span></td></tr>
+      <tr><td>W8</td><td>Deploy + Demo Video + Báo Cáo</td><td>Live demo URL, video 5 phút, báo cáo hoàn chỉnh</td><td><span class="must">Must</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="ib g">
+    <div class="ib-t">🎬 Kịch Bản Demo Cuối Kỳ (5 phút)</div>
+    <ul>
+      <li><strong>Phút 1:</strong> Device Simulator gửi punch data → Dashboard cập nhật real-time attendance</li>
+      <li><strong>Phút 2:</strong> Nhân viên xin nghỉ phép → Manager duyệt → Email thông báo tức thì</li>
+      <li><strong>Phút 3:</strong> HR trigger tính lương tháng → Xem breakdown chi tiết BHXH/thuế</li>
+      <li><strong>Phút 4:</strong> Download payslip PDF → Kiểm tra format tiếng Việt đẹp</li>
+      <li><strong>Phút 5:</strong> Swagger UI — demo 3 API endpoint live với JWT authentication</li>
+    </ul>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<footer>FACE-Z HRMS · Đồ Án Tốt Nghiệp · Java Spring Boot 3 + Next.js 15 · Doanh nghiệp công nghệ 1.000+ nhân viên</footer>
+
+<script>
+function go(id) {
+  document.querySelectorAll('.sec').forEach(s => s.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b => b.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  event.target.classList.add('on');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>

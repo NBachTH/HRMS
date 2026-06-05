@@ -1,0 +1,3 @@
+|employee_id|address|date_of_joining|delete_flag|email          |emergency_contact|name                |phone_number|profile_picture|role        |status|department_id|deleted_at|
+|-----------|-------|---------------|-----------|---------------|-----------------|--------------------|------------|---------------|------------|------|-------------|----------|
+|admin001   |       |2026-03-24     |false      |admin@dummy.org|                 |System Administrator|            |               |SYSTEM_ADMIN|ACTIVE|             |          |

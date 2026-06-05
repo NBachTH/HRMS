@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"c:\\\\HUST\\\\project3\\\\facez-front\\\\src\\\\app\\\\\" -Recurse -Directory | Select-Object -ExpandProperty FullName | Sort-Object)",
+      "Bash(mkdir -p \"c:\\\\HUST\\\\project3\\\\facez-front\\\\src\\\\app\\\\finance\\\\payroll\\\\[id]\")"
+    ],
+    "additionalDirectories": [
+      "c:\\HUST\\project3\\facez-front\\src\\app\\finance\\payroll"
+    ]
+  }
+}

@@ -1,0 +1,7 @@
+|employee_id|created_at             |last_password_hash|password_hash                                               |role        |updated_at             |username   |deleted_at|
+|-----------|-----------------------|------------------|------------------------------------------------------------|------------|-----------------------|-----------|----------|
+|admin001   |2026-03-11 22:41:04.340|                  |$2a$10$9fRSANXibwc9goUT7lpv2eKaHAW6aYTYZ8KBbtrCmFcGDrvcZLuLW|SYSTEM_ADMIN|2026-03-11 22:41:04.340|admin      |          |
+|employee001|2026-03-11 22:41:04.340|                  |$2a$10$9fRSANXibwc9goUT7lpv2eKaHAW6aYTYZ8KBbtrCmFcGDrvcZLuLW|EMPLOYEE    |2026-03-11 22:41:04.340|employee001|          |
+|hr001      |2026-03-11 22:41:04.340|                  |$2a$10$9fRSANXibwc9goUT7lpv2eKaHAW6aYTYZ8KBbtrCmFcGDrvcZLuLW|HR_ADMIN    |2026-03-11 22:41:04.340|hr001      |          |
+|manager001 |2026-03-11 22:41:04.340|                  |$2a$10$9fRSANXibwc9goUT7lpv2eKaHAW6aYTYZ8KBbtrCmFcGDrvcZLuLW|MANAGER     |2026-03-11 22:41:04.340|manager001 |          |
+|leader001  |2026-03-11 22:41:04.340|                  |$2a$10$9fRSANXibwc9goUT7lpv2eKaHAW6aYTYZ8KBbtrCmFcGDrvcZLuLW|LEADER      |2026-03-11 22:41:04.340|leader001  |          |

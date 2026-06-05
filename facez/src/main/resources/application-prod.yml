@@ -1,0 +1,14 @@
+spring:
+  jpa:
+    show-sql: false
+  flyway:
+    out-of-order: false
+
+app:
+  cookie:
+    secure: true
+
+logging:
+  level:
+    root: WARN
+    org.dummy.facez: INFO

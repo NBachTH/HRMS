@@ -1,0 +1,24 @@
+{
+  "version": "2026",
+  "effective_date": "2026-01-01",
+  "legal_basis": "Law 41/2024/QH15 + Decree 188/2025/NĐ-CP + Law 74/2025/QH15",
+  "government_base_salary": 2340000,
+  "insurance_ceiling": 46800000,
+  "employee_rates": {
+    "bhxh": 0.08,
+    "bhyt": 0.015,
+    "bhtn": 0.01,
+    "total": 0.105
+  },
+  "employer_rates": {
+    "bhxh_pension": 0.14,
+    "bhxh_sickness_maternity": 0.03,
+    "bhxh_accident": 0.005,
+    "bhyt": 0.03,
+    "bhtn": 0.01,
+    "total": 0.215
+  },
+  "eligible_contract_types": ["FIXED_TERM", "INDEFINITE"],
+  "probation_exempt": true,
+  "note": "Probation: verify Decree 158/2025/NĐ-CP for current probation BHXH rules"
+}

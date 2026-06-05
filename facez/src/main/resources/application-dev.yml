@@ -1,0 +1,12 @@
+spring:
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  flyway:
+    out-of-order: true
+
+app:
+  jwt:
+    access-exp-ms: 3600000  # 1 hour for dev convenience

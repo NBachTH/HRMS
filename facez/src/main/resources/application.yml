@@ -1,0 +1,73 @@
+server:
+  port: 8084
+  servlet:
+    context-path: /face-z
+
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/postgres}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      repositories:
+        enabled: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: false    # one-time: marks existing schema as baseline without running V1
+    out-of-order: false          # Reject migrations applied out of version order
+    validate-on-migrate: true
+# batch:
+#   jdbc:
+#     initialize-schema: always
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+app:
+  jwt:
+    secret: ${JWT_SECRET:12345678abcdefgh12345678abcdefgh}
+    access-exp-ms: ${JWT_ACCESS_EXP_MS:300000}
+    refresh-exp-ms: ${JWT_REFRESH_EXP_MS:1209600000}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
+  cookie:
+    refresh-token-name: refreshToken
+    secure: true
+    sameSite: Lax
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,loggers,flyway,env
+  endpoint:
+    health:
+      show-details: when-authorized
+    env:
+      show-values: never
+  info:
+    env:
+      enabled: true
+
+logging:
+  level:
+    org:
+      springframework:
+        security: DEBUG
+      flywaydb: DEBUG
+
+#debug: true
