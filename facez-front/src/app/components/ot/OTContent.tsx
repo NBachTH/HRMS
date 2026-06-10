@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { getOTRequests, deleteOTRequest } from '@/app/services/OTRequestService';
 import { OTFormModal } from './OTFormModal';
+import { OTDetailModal } from './OTDetailModal';
 import { useToast } from '@/app/commons/contexts/ToastContext';
 import type { OTRequest } from '@/app/commons/types';
 
@@ -15,6 +16,7 @@ export function OTContent() {
     const [totalPages, setTotalPages] = useState(0);
     const [showCreate, setShowCreate] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+    const [selected, setSelected] = useState<OTRequest | null>(null);
 
     const fetchData = useCallback(async () => {
         setLoading(true);
@@ -100,7 +102,8 @@ export function OTContent() {
                                     {otRequests.length === 0 ? (
                                         <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-400">No OT requests</td></tr>
                                     ) : otRequests.map((ot, i) => (
-                                        <tr key={ot.otRequestId} className="hover:bg-gray-50">
+                                        <tr key={ot.otRequestId} onClick={() => setSelected(ot)}
+                                            className="hover:bg-blue-50/50 cursor-pointer">
                                             <td className="px-6 py-4 text-sm text-gray-900">{i + 1 + page * 20}</td>
                                             <td className="px-6 py-4 text-sm text-gray-500">{ot.startTime ? new Date(ot.startTime).toLocaleString() : '—'}</td>
                                             <td className="px-6 py-4 text-sm text-gray-500">{ot.endTime ? new Date(ot.endTime).toLocaleString() : '—'}</td>
@@ -109,7 +112,7 @@ export function OTContent() {
                                             <td className="px-6 py-4 text-sm">
                                                 {(ot.status === 'TO_APPROVE' || ot.status === 'DRAFT') && (
                                                     <button
-                                                        onClick={() => setDeleteConfirm(ot.otRequestId)}
+                                                        onClick={(e) => { e.stopPropagation(); setDeleteConfirm(ot.otRequestId); }}
                                                         className="text-red-500 hover:text-red-700 text-xs">
                                                         Cancel
                                                     </button>
@@ -135,6 +138,12 @@ export function OTContent() {
                 isOpen={showCreate}
                 onClose={() => setShowCreate(false)}
                 onSuccess={fetchData}
+            />
+
+            <OTDetailModal
+                ot={selected}
+                onClose={() => setSelected(null)}
+                onChanged={fetchData}
             />
 
             {/* Delete confirm */}

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { getLeaves, deleteLeave } from '@/app/services/LeaveService';
+import { LeaveDetailModal } from '@/app/components/leave/LeaveDetailModal';
 import type { LeaveRequest } from '@/app/commons/types';
 
 export function LeaveTable({ refreshKey }: { refreshKey?: number }) {
@@ -10,6 +11,7 @@ export function LeaveTable({ refreshKey }: { refreshKey?: number }) {
     const [error, setError] = useState<string | null>(null);
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
+    const [selected, setSelected] = useState<LeaveRequest | null>(null);
 
     const fetchData = useCallback(async () => {
         setLoading(true);
@@ -77,16 +79,19 @@ export function LeaveTable({ refreshKey }: { refreshKey?: number }) {
                         {leaves.length === 0 ? (
                             <tr><td colSpan={7} className="px-6 py-8 text-center text-gray-400">No leave requests</td></tr>
                         ) : leaves.map((lr, i) => (
-                            <tr key={lr.leaveRequestId} className="hover:bg-gray-50">
+                            <tr key={lr.leaveRequestId} onClick={() => setSelected(lr)}
+                                className="hover:bg-blue-50/50 cursor-pointer">
                                 <td className="px-6 py-4 text-sm text-gray-900">{i + 1 + page * 20}</td>
                                 <td className="px-6 py-4 text-sm text-gray-900 font-medium">{lr.employeeName || lr.employeeId}</td>
-                                <td className="px-6 py-4 text-sm text-gray-500">{lr.reason}</td>
+                                <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{lr.reason}</td>
                                 <td className="px-6 py-4 text-sm text-gray-500">{lr.startTime ? new Date(lr.startTime).toLocaleDateString() : '—'}</td>
                                 <td className="px-6 py-4 text-sm text-gray-500">{lr.endTime ? new Date(lr.endTime).toLocaleDateString() : '—'}</td>
                                 <td className="px-6 py-4 text-sm">{getStatusBadge(lr.status)}</td>
                                 <td className="px-6 py-4 text-sm">
                                     {(lr.status === 'TO_APPROVE' || lr.status === 'DRAFT') && (
-                                        <button onClick={() => handleDelete(lr.leaveRequestId)} className="text-red-500 hover:text-red-700 text-xs">
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleDelete(lr.leaveRequestId); }}
+                                            className="text-red-500 hover:text-red-700 text-xs">
                                             Cancel
                                         </button>
                                     )}
@@ -103,6 +108,12 @@ export function LeaveTable({ refreshKey }: { refreshKey?: number }) {
                     <button disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)} className="px-3 py-1 text-sm border rounded-md disabled:opacity-40">Next</button>
                 </div>
             )}
+
+            <LeaveDetailModal
+                leave={selected}
+                onClose={() => setSelected(null)}
+                onChanged={fetchData}
+            />
         </>
     );
 }
