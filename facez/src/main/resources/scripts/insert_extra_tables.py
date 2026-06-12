@@ -264,7 +264,7 @@ try:
     bulk(
         """
         INSERT INTO notification
-            (id, employee_id, title, message, type, read_flag, created_at)
+            (notification_id, employee_id, title, message, type, read, created_at)
         VALUES %s
         """,
         notif_rows,

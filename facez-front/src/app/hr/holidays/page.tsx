@@ -7,7 +7,7 @@ import { PublicHolidayContent } from '@/app/components/hr/PublicHolidayContent';
 
 export default function PublicHolidaysPage() {
     return (
-        <ProtectedRoute allowedRoles={['HR_ADMIN', 'SYSTEM_ADMIN']}>
+        <ProtectedRoute allowedRoles={['HR_ADMIN', 'FINANCE_ADMIN', 'SYSTEM_ADMIN']}>
             <div className="flex h-screen w-full bg-gray-50">
                 <Sidebar />
                 <div className="flex-1 flex flex-col overflow-hidden">

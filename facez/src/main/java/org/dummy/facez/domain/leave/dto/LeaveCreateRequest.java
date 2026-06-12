@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 
 @Data
 public class LeaveCreateRequest {
-    @NotBlank(message = "Employee ID is required")
+    /** Set server-side from the JWT principal — not required from the client. */
     private String employeeId;
 
     @NotNull(message = "Leave type is required")
@@ -23,4 +23,7 @@ public class LeaveCreateRequest {
 
     @NotNull(message = "End time is required")
     private LocalDateTime endTime;
+
+    /** Half-day leave (0.5 working day). Only meaningful for a single-day range. */
+    private boolean halfDay;
 }

@@ -108,6 +108,16 @@ public class CheckinLogService {
         return responses;
     }
 
+    /** Self-service: only the given employee's raw logs for a single day. */
+    public List<CheckinLogResponse> findByEmployeeAndDate(String employeeId, LocalDate date) {
+        List<CheckinLog> logs = checkinLogRepository.findByEmployeeAndCheckinDate(employeeId, date);
+        List<CheckinLogResponse> responses = new ArrayList<>();
+        for (CheckinLog log : logs) {
+            responses.add(toResponse(log));
+        }
+        return responses;
+    }
+
     private CheckinLogResponse toResponse(CheckinLog log) {
         CheckinLogResponse.CheckinLogResponseBuilder builder = CheckinLogResponse.builder()
                 .logId(log.getLogId())

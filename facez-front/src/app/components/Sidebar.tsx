@@ -15,10 +15,12 @@ import {
     SettingsIcon,
     CheckSquareIcon,
     CalendarCheckIcon,
+    CalendarPlusIcon,
     MonitorIcon,
     ScrollTextIcon,
     BellIcon,
     UserIcon,
+    KeyRoundIcon,
     XCircleIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -46,7 +48,10 @@ export function Sidebar() {
     const buttonContentClass = collapsed ? "justify-center" : "justify-start";
     const expandContentClass = collapsed ? "justify-center" : "justify-between";
 
-    const isManager = role === "MANAGER" || role === "LEADER" || role === "HR_ADMIN";
+    // HR no longer takes part in request approvals → Manager section is for MANAGER/LEADER only.
+    const isManager = role === "MANAGER" || role === "LEADER";
+    // Admin is a special account (not a real employee): no Personal section, only system tasks.
+    const isSystemAdmin = role === "SYSTEM_ADMIN";
 
     const NavButton: React.FC<
         React.ButtonHTMLAttributes<HTMLButtonElement> & { label: string; icon: React.ReactNode }
@@ -54,16 +59,16 @@ export function Sidebar() {
         <button
             {...props}
             title={label}
-            className={`w-full flex items-center ${buttonContentClass} gap-3 px-3 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors`}
+            className={`w-full flex items-center ${buttonContentClass} gap-3 px-3 py-2 text-gray-800 hover:bg-blue-50 hover:text-blue-700 rounded-md transition-colors`}
         >
             <span className="flex-none">{icon}</span>
-            {!collapsed && <span className="ml-1 text-sm">{label}</span>}
+            {!collapsed && <span className="ml-1 text-sm font-medium">{label}</span>}
         </button>
     );
 
     const SectionLabel = ({ label }: { label: string }) =>
         collapsed ? null : (
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 px-3">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-3">
                 {label}
             </p>
         );
@@ -90,31 +95,35 @@ export function Sidebar() {
             </div>
 
             <nav className="flex-1 px-2 space-y-1 overflow-y-auto">
-                {/* PERSONAL — visible to all */}
-                <div className="mb-4">
-                    <SectionLabel label="Personal" />
-                    <NavButton onClick={() => router.push("/employees/dashboard")} label="Dashboard" icon={<BarChart3Icon className="w-5 h-5" />} />
-                    <NavButton onClick={() => router.push("/employees/me")} label="My Profile" icon={<UserIcon className="w-5 h-5" />} />
-                    <NavButton onClick={() => router.push("/employees/attendance")} label="My Attendance" icon={<CalendarIcon className="w-5 h-5" />} />
-                    <NavButton onClick={() => router.push("/employees/leave")} label="Leave Requests" icon={<ClipboardListIcon className="w-5 h-5" />} />
-                    <NavButton onClick={() => router.push("/employees/ot")} label="OT Requests" icon={<ClockIcon className="w-5 h-5" />} />
-                    <NavButton onClick={() => router.push("/employees/payroll")} label="My Payslips" icon={<BanknoteIcon className="w-5 h-5" />} />
-                    <NavButton onClick={() => router.push("/notifications")} label="Notifications" icon={<BellIcon className="w-5 h-5" />} />
-                </div>
+                {/* PERSONAL — all real employees (hidden for the special admin account) */}
+                {!isSystemAdmin && (
+                    <div className="mb-4">
+                        <SectionLabel label="Personal" />
+                        <NavButton onClick={() => router.push("/employees/dashboard")} label="Dashboard" icon={<BarChart3Icon className="w-5 h-5" />} />
+                        <NavButton onClick={() => router.push("/employees/me")} label="My Profile" icon={<UserIcon className="w-5 h-5" />} />
+                        <NavButton onClick={() => router.push("/employees/attendance")} label="My Attendance" icon={<CalendarIcon className="w-5 h-5" />} />
+                        <NavButton onClick={() => router.push("/employees/adjustments")} label="My Attendance Adjustments" icon={<CalendarPlusIcon className="w-5 h-5" />} />
+                        <NavButton onClick={() => router.push("/employees/leave")} label="My Leaves" icon={<ClipboardListIcon className="w-5 h-5" />} />
+                        <NavButton onClick={() => router.push("/employees/ot")} label="My OTs" icon={<ClockIcon className="w-5 h-5" />} />
+                        <NavButton onClick={() => router.push("/employees/payroll")} label="My Payslips" icon={<BanknoteIcon className="w-5 h-5" />} />
+                        <NavButton onClick={() => router.push("/employees/timesheet")} label="My Timesheet" icon={<ScrollTextIcon className="w-5 h-5" />} />
+                        <NavButton onClick={() => router.push("/notifications")} label="Notifications" icon={<BellIcon className="w-5 h-5" />} />
+                    </div>
+                )}
 
-                {/* MANAGER — visible to MANAGER, LEADER, HR_ADMIN */}
+                {/* MANAGER — MANAGER, LEADER */}
                 {isManager && (
                     <div className="mb-4">
                         <SectionLabel label="Manager" />
                         <NavButton onClick={() => router.push("/managers/request")} label="Pending Requests" icon={<ClipboardListIcon className="w-5 h-5" />} />
+                        <NavButton onClick={() => router.push("/managers/adjustments")} label="Attendance Adjustments" icon={<CalendarPlusIcon className="w-5 h-5" />} />
+                        <NavButton onClick={() => router.push("/managers/ot-plan")} label="OT Plans" icon={<ClockIcon className="w-5 h-5" />} />
                         <NavButton onClick={() => router.push("/managers/department")} label="Departments" icon={<BuildingIcon className="w-5 h-5" />} />
-                        {(role === "MANAGER" || role === "LEADER") && (
-                            <NavButton onClick={() => router.push("/hr/attendance")} label="Attendance" icon={<CalendarIcon className="w-5 h-5" />} />
-                        )}
+                        <NavButton onClick={() => router.push("/hr/attendance")} label="Attendance" icon={<CalendarIcon className="w-5 h-5" />} />
                     </div>
                 )}
 
-                {/* HR ADMIN — visible to HR_ADMIN */}
+                {/* HR ADMIN — no request approvals, no devices/checkin-log */}
                 {role === "HR_ADMIN" && (
                     <div className="mb-4">
                         <SectionLabel label="HR Admin" />
@@ -122,9 +131,8 @@ export function Sidebar() {
                         <NavButton onClick={() => router.push("/hr/contract")} label="Contracts" icon={<FileTextIcon className="w-5 h-5" />} />
                         <NavButton onClick={() => router.push("/hr/attendance")} label="Attendance" icon={<CalendarIcon className="w-5 h-5" />} />
                         <NavButton onClick={() => router.push("/hr/attendance/close-period")} label="Close Period" icon={<XCircleIcon className="w-5 h-5" />} />
+                        <NavButton onClick={() => router.push("/hr/timesheet")} label="Timesheets" icon={<ScrollTextIcon className="w-5 h-5" />} />
                         <NavButton onClick={() => router.push("/hr/holidays")} label="Public Holidays" icon={<CalendarCheckIcon className="w-5 h-5" />} />
-                        <NavButton onClick={() => router.push("/hr/devices")} label="Devices" icon={<MonitorIcon className="w-5 h-5" />} />
-                        <NavButton onClick={() => router.push("/hr/checkin-log")} label="Checkin Log" icon={<ScrollTextIcon className="w-5 h-5" />} />
                     </div>
                 )}
 
@@ -134,9 +142,7 @@ export function Sidebar() {
                         <SectionLabel label="Finance" />
                         <NavButton onClick={() => router.push("/finance/payroll")} label="Payroll" icon={<BanknoteIcon className="w-5 h-5" />} />
                         <NavButton onClick={() => router.push("/finance/reports")} label="Reports" icon={<BarChart3Icon className="w-5 h-5" />} />
-                        <NavButton onClick={() => router.push("/hr/contract")} label="Contracts" icon={<FileTextIcon className="w-5 h-5" />} />
-                        <NavButton onClick={() => router.push("/hr/holidays")} label="Public Holidays" icon={<CalendarCheckIcon className="w-5 h-5" />} />
-                        <NavButton onClick={() => router.push("/system/config")} label="Payroll Config" icon={<SettingsIcon className="w-5 h-5" />} />
+                        <NavButton onClick={() => router.push("/hr/timesheet")} label="Timesheets" icon={<ScrollTextIcon className="w-5 h-5" />} />
                     </div>
                 )}
 
@@ -145,19 +151,20 @@ export function Sidebar() {
                     <div className="mb-4">
                         <SectionLabel label="Director" />
                         <NavButton onClick={() => router.push("/director/approvals")} label="Payroll Approvals" icon={<CheckSquareIcon className="w-5 h-5" />} />
+                        <NavButton onClick={() => router.push("/finance/payroll")} label="Payroll" icon={<BanknoteIcon className="w-5 h-5" />} />
                         <NavButton onClick={() => router.push("/finance/reports")} label="Reports" icon={<BarChart3Icon className="w-5 h-5" />} />
                     </div>
                 )}
 
-                {/* SYSTEM ADMIN */}
-                {role === "SYSTEM_ADMIN" && (
+                {/* SYSTEM ADMIN — special account: config, devices, accounts, checkin-log (view only) */}
+                {isSystemAdmin && (
                     <div className="mb-4">
                         <SectionLabel label="System" />
-                        <NavButton onClick={() => router.push("/hr/employee")} label="Employees" icon={<UsersIcon className="w-5 h-5" />} />
                         <NavButton onClick={() => router.push("/system/config")} label="Payroll Config" icon={<SettingsIcon className="w-5 h-5" />} />
+                        <NavButton onClick={() => router.push("/system/accounts")} label="Account Manager" icon={<KeyRoundIcon className="w-5 h-5" />} />
+                        <NavButton onClick={() => router.push("/employees/dashboard")} label="Dashboard" icon={<BarChart3Icon className="w-5 h-5" />} />
                         <NavButton onClick={() => router.push("/hr/devices")} label="Devices" icon={<MonitorIcon className="w-5 h-5" />} />
                         <NavButton onClick={() => router.push("/hr/checkin-log")} label="Checkin Log" icon={<ScrollTextIcon className="w-5 h-5" />} />
-                        <NavButton onClick={() => router.push("/director/approvals")} label="Payroll Approvals" icon={<CheckSquareIcon className="w-5 h-5" />} />
                     </div>
                 )}
             </nav>

@@ -3,6 +3,7 @@ package org.dummy.facez.domain.leave.controller;
 import jakarta.validation.Valid;
 import org.dummy.facez.common.response.ApiResponse;
 import org.dummy.facez.common.response.PageResponse;
+import org.dummy.facez.domain.employee.model.UserAccount;
 import org.dummy.facez.domain.employee.service.EmployeeService;
 import org.dummy.facez.domain.leave.dto.LeaveBalanceResponse;
 import org.dummy.facez.domain.leave.dto.LeaveCreateRequest;
@@ -35,7 +36,10 @@ public class LeaveController {
     /** Any authenticated employee can submit a leave request */
     @PostMapping
     @PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('LEADER') or hasAuthority('MANAGER') or hasAuthority('HR_ADMIN')")
-    public ResponseEntity<ApiResponse<LeaveResponse>> create(@Valid @RequestBody LeaveCreateRequest req) {
+    public ResponseEntity<ApiResponse<LeaveResponse>> create(
+            @Valid @RequestBody LeaveCreateRequest req, Authentication auth) {
+        // Identity is taken from the JWT principal, never trusted from the client.
+        req.setEmployeeId(((UserAccount) auth.getPrincipal()).getEmployeeId());
         LeaveResponse response = leaveService.createLeaveRequest(req);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok(response, "Leave request created"));
@@ -69,12 +73,20 @@ public class LeaveController {
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
+    /** Submit a DRAFT request into the approval workflow (DRAFT → TO_APPROVE). */
+    @PutMapping("/{id}/submit")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<LeaveResponse>> submit(@PathVariable String id) {
+        LeaveResponse response = leaveService.submitLeaveRequest(id);
+        return ResponseEntity.ok(ApiResponse.ok(response, "Leave request submitted"));
+    }
+
     /**
      * Approval is role-gated inside the service:
      * LEADER→level1, MANAGER→level2, HR_ADMIN→final
      */
     @PutMapping("/{id}/approve")
-    @PreAuthorize("hasAuthority('HR_ADMIN') or hasAuthority('MANAGER') or hasAuthority('LEADER')")
+    @PreAuthorize("hasAuthority('MANAGER') or hasAuthority('LEADER')")
     public ResponseEntity<ApiResponse<LeaveResponse>> approve(@PathVariable String id, Authentication auth) {
         String role = extractRole(auth);
         LeaveResponse response = leaveService.approveLeaveRequest(id, role);
@@ -82,7 +94,7 @@ public class LeaveController {
     }
 
     @PutMapping("/{id}/reject")
-    @PreAuthorize("hasAuthority('HR_ADMIN') or hasAuthority('MANAGER') or hasAuthority('LEADER')")
+    @PreAuthorize("hasAuthority('MANAGER') or hasAuthority('LEADER')")
     public ResponseEntity<ApiResponse<LeaveResponse>> reject(@PathVariable String id, Authentication auth) {
         String role = extractRole(auth);
         LeaveResponse response = leaveService.rejectLeaveRequest(id, role);

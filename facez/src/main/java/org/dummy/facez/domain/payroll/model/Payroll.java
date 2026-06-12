@@ -152,7 +152,5 @@ public class Payroll extends AuditableEntity {
     @Column(length = 500)
     private String notes;
 
-    private LocalDateTime createdAt;
-
-    private LocalDateTime updatedAt;
+    // createdAt / updatedAt / createdBy / updatedBy are inherited from AuditableEntity.
 }

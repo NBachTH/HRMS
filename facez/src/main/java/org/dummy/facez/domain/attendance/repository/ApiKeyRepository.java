@@ -8,4 +8,6 @@ import java.util.Optional;
 public interface ApiKeyRepository extends JpaRepository<ApiKey, String> {
 
     Optional<ApiKey> findByKeyHashAndActiveTrue(String keyHash);
+
+    boolean existsByDevice_DeviceIdAndActiveTrue(String deviceId);
 }

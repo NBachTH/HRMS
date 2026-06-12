@@ -84,7 +84,5 @@ public class SystemConfig  extends AuditableEntity {
     @Column(nullable = false)
     private boolean active;
 
-    /** Who created or last updated this config entry. */
-    @Column(length = 100)
-    private String updatedBy;
+    // createdBy / updatedBy / createdAt / updatedAt are inherited from AuditableEntity.
 }

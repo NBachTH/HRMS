@@ -2,8 +2,8 @@ package org.dummy.facez.domain.payroll.service;
 
 import org.dummy.facez.common.enums.EmployeeStatus;
 import org.dummy.facez.common.enums.RequestStatus;
-import org.dummy.facez.domain.attendance.model.Attendance;
-import org.dummy.facez.domain.attendance.repository.AttendanceRepository;
+import org.dummy.facez.common.enums.Role;
+import org.dummy.facez.domain.department.repository.DepartmentRepository;
 import org.dummy.facez.domain.contract.model.Contract;
 import org.dummy.facez.domain.contract.repository.ContractRepository;
 import org.dummy.facez.domain.employee.model.EmployeeInfo;
@@ -12,6 +12,8 @@ import org.dummy.facez.domain.otrequest.model.OTRequest;
 import org.dummy.facez.domain.otrequest.repository.OTRequestRepository;
 import org.dummy.facez.domain.payroll.model.Payroll;
 import org.dummy.facez.domain.payroll.repository.PayrollRepository;
+import org.dummy.facez.domain.workday.model.WorkDay;
+import org.dummy.facez.domain.workday.repository.WorkDayRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
@@ -21,6 +23,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -52,25 +55,28 @@ public class PayrollBatchService {
     private final PayrollCalculationEngine  calculationEngine;
     private final EmployeeInfoRepository    employeeInfoRepository;
     private final ContractRepository        contractRepository;
-    private final AttendanceRepository      attendanceRepository;
+    private final WorkDayRepository         workDayRepository;
     private final OTRequestRepository       otRequestRepository;
     private final PayrollRepository         payrollRepository;
+    private final DepartmentRepository      departmentRepository;
 
     public PayrollBatchService(
             PayrollJobStore jobStore,
             PayrollCalculationEngine calculationEngine,
             EmployeeInfoRepository employeeInfoRepository,
             ContractRepository contractRepository,
-            AttendanceRepository attendanceRepository,
+            WorkDayRepository workDayRepository,
             OTRequestRepository otRequestRepository,
-            PayrollRepository payrollRepository) {
+            PayrollRepository payrollRepository,
+            DepartmentRepository departmentRepository) {
         this.jobStore              = jobStore;
         this.calculationEngine     = calculationEngine;
         this.employeeInfoRepository = employeeInfoRepository;
         this.contractRepository    = contractRepository;
-        this.attendanceRepository  = attendanceRepository;
+        this.workDayRepository     = workDayRepository;
         this.otRequestRepository   = otRequestRepository;
         this.payrollRepository     = payrollRepository;
+        this.departmentRepository  = departmentRepository;
     }
 
     /**
@@ -110,8 +116,9 @@ public class PayrollBatchService {
 
         try {
             // ── 1. Active employees ───────────────────────────────────────────
+            // The admin account is not a real employee → never compute payroll for it.
             List<EmployeeInfo> employees = employeeInfoRepository
-                    .findByStatusAndDeleteFlagFalse(EmployeeStatus.ACTIVE);
+                    .findByStatusAndDeleteFlagFalseAndRoleNot(EmployeeStatus.ACTIVE, Role.SYSTEM_ADMIN);
 
             job.getTotal().set(employees.size());
 
@@ -142,11 +149,11 @@ public class PayrollBatchService {
                             c -> c.getEmployeeInfo().getEmployeeId(),
                             c -> c));
 
-            Map<String, List<Attendance>> attendanceMap = attendanceRepository
-                    .findByEmployeeIdsAndDateRange(employeeIds, from, to)
+            Map<String, List<WorkDay>> workDayMap = workDayRepository
+                    .findByEmployeeInfo_EmployeeIdInAndWorkDateBetween(employeeIds, from, to)
                     .stream()
                     .collect(Collectors.groupingBy(
-                            a -> a.getEmployeeInfo().getEmployeeId()));
+                            w -> w.getEmployeeInfo().getEmployeeId()));
 
             Map<String, List<OTRequest>> otMap = otRequestRepository
                     .findByEmployeeIdsAndStatusAndStartTimeBetween(
@@ -155,6 +162,25 @@ public class PayrollBatchService {
                     .stream()
                     .collect(Collectors.groupingBy(
                             ot -> ot.getEmployeeInfo().getEmployeeId()));
+
+            // ── 3b. KPI maps for unit/company averaging (MANAGER/DIRECTOR) ─────
+            double defaultKpi1 = calculationEngine.ratingToKpi1("B");
+            Map<String, Double> kpi2ByEmp = new HashMap<>();
+            for (EmployeeInfo emp : employees) {
+                kpi2ByEmp.put(emp.getEmployeeId(),
+                        calculationEngine.computeKpi2(workDayMap.getOrDefault(emp.getEmployeeId(), List.of())));
+            }
+            // employeeId → departmentId
+            Map<String, String> empToDept = new HashMap<>();
+            for (Object[] row : employeeInfoRepository.findEmployeeDepartmentPairs(
+                    EmployeeStatus.ACTIVE, Role.SYSTEM_ADMIN)) {
+                empToDept.put((String) row[0], (String) row[1]);
+            }
+            // managerEmployeeId → set of departmentIds they manage
+            Map<String, Set<String>> managerToDepts = new HashMap<>();
+            for (Object[] row : departmentRepository.findDepartmentManagerPairs()) {
+                managerToDepts.computeIfAbsent((String) row[1], k -> new java.util.HashSet<>()).add((String) row[0]);
+            }
 
             // ── 4. Per-employee calculation — zero DB calls inside loop ────────
             List<Payroll> payrolls = new ArrayList<>();
@@ -179,18 +205,42 @@ public class PayrollBatchService {
                 }
 
                 try {
-                    List<Attendance> attendance = attendanceMap.getOrDefault(empId, List.of());
-                    List<OTRequest>  otRequests = otMap.getOrDefault(empId, List.of());
+                    List<WorkDay>   workDays   = workDayMap.getOrDefault(empId, List.of());
+                    List<OTRequest> otRequests = otMap.getOrDefault(empId, List.of());
+
+                    // KPI override: MANAGER = average of their unit; DIRECTOR = company average.
+                    Double kpi1Override = null, kpi2Override = null;
+                    if (emp.getRole() == Role.MANAGER) {
+                        Set<String> myDepts = managerToDepts.getOrDefault(empId, Set.of());
+                        List<String> members = employees.stream()
+                                .map(EmployeeInfo::getEmployeeId)
+                                .filter(id -> !id.equals(empId) && myDepts.contains(empToDept.get(id)))
+                                .toList();
+                        if (!members.isEmpty()) {
+                            kpi2Override = members.stream().mapToDouble(id -> kpi2ByEmp.getOrDefault(id, 1.0)).average().orElse(1.0);
+                            kpi1Override = defaultKpi1;
+                        }
+                    } else if (emp.getRole() == Role.DIRECTOR) {
+                        List<String> members = employees.stream()
+                                .map(EmployeeInfo::getEmployeeId)
+                                .filter(id -> !id.equals(empId))
+                                .toList();
+                        if (!members.isEmpty()) {
+                            kpi2Override = members.stream().mapToDouble(id -> kpi2ByEmp.getOrDefault(id, 1.0)).average().orElse(1.0);
+                            kpi1Override = defaultKpi1;
+                        }
+                    }
 
                     Payroll payroll = calculationEngine.buildPayroll(
                             empId, year, month, nt, contract,
-                            attendance, otRequests,
+                            workDays, otRequests,
                             "B",   // kpi1Rating — batch default; adjust individually via /calculate
                             null,  // kpi2Rating — auto-computed from attendance
                             null,  // japaneseLevel — not provided in batch; update via /calculate
                             0L,    // odcAllowance
                             0L,    // bonus
-                            "Auto-generated by batch job " + jobId);
+                            "Auto-generated by batch job " + jobId,
+                            kpi1Override, kpi2Override);
 
                     payrolls.add(payroll);
                     job.getSucceeded().incrementAndGet();

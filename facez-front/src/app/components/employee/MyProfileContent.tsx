@@ -322,11 +322,11 @@ export function MyProfileContent() {
                 </div>
                 <div className="flex flex-col gap-2">
                     <button onClick={() => setShowEdit(true)}
-                        className="flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50">
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-800 border border-gray-300 rounded-md hover:bg-gray-50">
                         <Edit2Icon className="w-4 h-4" /> Edit Profile
                     </button>
                     <button onClick={() => setShowPassword(true)}
-                        className="flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50">
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-800 border border-gray-300 rounded-md hover:bg-gray-50">
                         <LockIcon className="w-4 h-4" /> Change Password
                     </button>
                 </div>

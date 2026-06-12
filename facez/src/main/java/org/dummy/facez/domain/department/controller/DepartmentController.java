@@ -5,9 +5,11 @@ import org.dummy.facez.common.response.ApiResponse;
 import org.dummy.facez.domain.department.dto.DepartmentRequest;
 import org.dummy.facez.domain.department.dto.DepartmentResponse;
 import org.dummy.facez.domain.department.service.DepartmentService;
+import org.dummy.facez.domain.employee.model.UserAccount;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -34,6 +36,14 @@ public class DepartmentController {
     public ResponseEntity<ApiResponse<List<DepartmentResponse>>> getAll() {
         List<DepartmentResponse> departments = departmentService.getAllDepartments();
         return ResponseEntity.ok(ApiResponse.ok(departments));
+    }
+
+    /** Leader/Manager: only the department(s) they manage (or their own). */
+    @GetMapping("/my")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<List<DepartmentResponse>>> getMy(Authentication auth) {
+        String employeeId = ((UserAccount) auth.getPrincipal()).getEmployeeId();
+        return ResponseEntity.ok(ApiResponse.ok(departmentService.getMyDepartments(employeeId)));
     }
 
     @GetMapping("/{id}")

@@ -10,6 +10,7 @@ export interface LoginResponse {
     accessToken: string;
     username: string;
     role: string;
+    employeeId: string;
 }
 
 export interface ChangePasswordRequest {
@@ -263,7 +264,7 @@ export interface LeaveRequest {
 }
 
 export interface LeaveCreateRequest {
-    employeeId: string;
+    employeeId?: string;         // server derives identity from JWT; client value is ignored
     projectId?: string;          // optional project context (VMS-style routing)
     reason: string;
     startTime: string;
@@ -287,55 +288,54 @@ export interface LeaveBalance {
     carryOverCap?: number;
 }
 
-// --- OT Request (master–detail, VMS-style) ---
-export type OTCategory = 'WEEKDAY' | 'WEEKEND' | 'HOLIDAY';
-
-/** Compensatory rate multiplier by OT category (Bộ Luật Lao Động 2019, Điều 98). */
-export const OT_RATE_BY_CATEGORY: Record<OTCategory, number> = {
-    WEEKDAY: 1.5,
-    WEEKEND: 2.0,
-    HOLIDAY: 3.0,
-};
-
-/** One OT line within a monthly OT registration. */
-export interface OTRequestLine {
-    id?: string;
-    workDate: string;            // yyyy-MM-dd
-    fromTime: string;            // HH:mm
-    toTime: string;              // HH:mm
-    otCategory: OTCategory;
-    wfh: boolean;                // work-from-home / business-zone flag
-    reason: string;
-    registrationHours?: number;  // computed from from/to
-    actualHours?: number;        // filled during approval
-    paidHours?: number;          // filled during approval
-    evidenceName?: string;       // front-end captured file name
+// --- OT Plan (LEADER creates → MANAGER approves) ---
+export interface OTPlanEmployee {
+    employeeId: string;
+    employeeName: string;
 }
 
+export interface OTPlan {
+    id: string;
+    otDate: string;              // yyyy-MM-dd
+    plannedStartTime?: string;   // HH:mm[:ss]
+    plannedEndTime?: string;
+    departmentId?: string;
+    reason?: string;
+    status: string;              // TO_APPROVE | APPROVED | REJECTED
+    rejectionReason?: string;
+    employees: OTPlanEmployee[];
+    createdBy?: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface OTPlanCreateRequest {
+    otDate: string;
+    plannedStartTime?: string;
+    plannedEndTime?: string;
+    departmentId?: string;
+    reason?: string;
+    employeeIds: string[];
+}
+
+// --- OT Request (one actual session logged against an approved plan; auto-approved) ---
 export interface OTRequest {
     otRequestId: string;
     employeeId: string;
     employeeName: string;
-    projectId?: string;
-    projectName?: string;
-    otMonth?: string;            // yyyy-MM
-    startTime: string;           // kept for backward compatibility (first line)
-    endTime: string;
-    totalRegistrationHours?: number;
-    totalActualHours?: number;
-    totalPaidHours?: number;
-    lines?: OTRequestLine[];
+    otPlanId?: string;
+    startTime: string;           // actual start
+    endTime: string;             // actual end
     status: string;
     createdAt: string;
     updatedAt: string;
 }
 
-/** Master–detail create payload: one registration → many OT lines. */
 export interface OTRequestCreate {
-    employeeId: string;
-    projectId?: string;
-    otMonth: string;             // yyyy-MM
-    lines: OTRequestLine[];
+    employeeId?: string;         // server derives identity from JWT; client value is ignored
+    otPlanId: string;
+    actualStartTime: string;     // yyyy-MM-ddTHH:mm:ss
+    actualEndTime: string;
 }
 
 // --- Project (lightweight context for OT/Leave routing) ---
@@ -575,13 +575,92 @@ export interface SystemConfigCreateRequest {
 
 // --- Checkin Log ---
 export interface CheckinLog {
-    id: string;
+    logId: string;
     employeeId: string;
     employeeName: string;
     deviceId: string;
     deviceName?: string;
     logTime: string;
     logType: 'IN' | 'OUT';
+}
+
+// --- WorkDay & Timesheet ---
+export interface WorkDay {
+    id: string;
+    employeeId: string;
+    employeeName: string;
+    workDate: string;            // yyyy-MM-dd
+    type: string;                // PRESENT | LEAVE | HOLIDAY | ABSENT | HOLIDAY_WORK
+    source: string;              // CHECKIN | LEAVE_REQUEST | PUBLIC_HOLIDAY | MANUAL | SYSTEM | CONFLICT
+    leaveType?: string;
+    checkIn?: string;
+    checkOut?: string;
+    lateHour?: number;
+    workingHour?: number;
+    otMinutes?: number;
+    paidDay?: number;
+    workingDay?: number;
+    violation: boolean;
+    locked: boolean;
+}
+
+export interface Timesheet {
+    id: string;
+    employeeId: string;
+    employeeName: string;
+    departmentId?: string;
+    year: number;
+    month: number;
+    standardWorkingDays: number;
+    actualWorkingDays: number;
+    otHours: number;
+    holidayLeaveDays: number;
+    annualLeaveDays: number;
+    compLeaveDays: number;
+    bereavementMarriageDays: number;
+    insuranceLeaveDays: number;
+    unpaidLeaveDays: number;
+    oldRatePaidDays: number;
+    newRatePaidDays: number;
+    totalPaidDays: number;
+    carryOverPrevMonth: number;
+    businessGoOutDays: number;
+    wfhDays: number;
+    unexplainedAbsenceDays: number;
+    lateEarlyTotalHours: number;
+    violationToComp: number;
+    violationToLeave: number;
+    violationToUnpaid: number;
+    unnotifiedAbsenceCount: number;
+    under8hCount: number;
+    attendanceRequestErrors: number;
+    kpi2Deduction: number;
+    kpi2Index: number;
+    prevMonthViolationAdjust: number;
+    notes?: string;
+}
+
+// --- Attendance Adjustment (Bổ sung chấm công) ---
+export interface AttendanceAdjustment {
+    id: string;
+    employeeId: string;
+    employeeName: string;
+    workDate: string;            // yyyy-MM-dd
+    requestedCheckIn?: string;
+    requestedCheckOut?: string;
+    reason: string;
+    status: string;
+    rejectionReason?: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface AttendanceAdjustmentCreate {
+    employeeId?: string;         // server derives identity from JWT; client value is ignored
+    workDate: string;
+    requestedCheckIn?: string;
+    requestedCheckOut?: string;
+    reason: string;
 }
 
 // --- Device ---

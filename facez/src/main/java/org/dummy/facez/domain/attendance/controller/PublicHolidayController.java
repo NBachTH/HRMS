@@ -20,7 +20,7 @@ public class PublicHolidayController {
     private final PublicHolidayService publicHolidayService;
 
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('HR_ADMIN','FINANCE_ADMIN','SYSTEM_ADMIN')")
+    @PreAuthorize("isAuthenticated()")   // holidays are general info — needed by the attendance calendar
     public ResponseEntity<ApiResponse<List<PublicHolidayResponse>>> getByYear(
             @RequestParam(defaultValue = "#{T(java.time.LocalDate).now().getYear()}") int year) {
         return ResponseEntity.ok(ApiResponse.ok(publicHolidayService.getByYear(year)));

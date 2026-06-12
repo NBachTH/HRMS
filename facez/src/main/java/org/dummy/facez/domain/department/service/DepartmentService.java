@@ -5,6 +5,7 @@ import org.dummy.facez.common.exception.ResourceNotFoundException;
 import org.dummy.facez.domain.department.repository.DepartmentRepository;
 import org.dummy.facez.domain.department.model.Department;
 import org.dummy.facez.domain.employee.model.EmployeeInfo;
+import org.dummy.facez.domain.employee.repository.EmployeeInfoRepository;
 import org.dummy.facez.domain.department.dto.DepartmentRequest;
 import org.dummy.facez.domain.department.dto.DepartmentResponse;
 import org.springframework.stereotype.Service;
@@ -17,9 +18,12 @@ import java.util.stream.Collectors;
 public class DepartmentService {
 
     private final DepartmentRepository departmentRepository;
+    private final EmployeeInfoRepository employeeInfoRepository;
 
-    public DepartmentService(DepartmentRepository departmentRepository) {
+    public DepartmentService(DepartmentRepository departmentRepository,
+                             EmployeeInfoRepository employeeInfoRepository) {
         this.departmentRepository = departmentRepository;
+        this.employeeInfoRepository = employeeInfoRepository;
     }
 
     @Transactional
@@ -42,6 +46,23 @@ public class DepartmentService {
                 .filter(d -> !d.isDeleteFlag())
                 .map(this::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Departments visible to a leader/manager: the ones they manage; if they manage none,
+     * fall back to their own department so they can still view their team.
+     */
+    @Transactional(readOnly = true)
+    public List<DepartmentResponse> getMyDepartments(String employeeId) {
+        List<Department> managed = departmentRepository.findByEmployeeInfo_EmployeeIdAndDeleteFlagFalse(employeeId);
+        if (!managed.isEmpty()) {
+            return managed.stream().map(this::toResponse).collect(Collectors.toList());
+        }
+        return employeeInfoRepository.findById(employeeId)
+                .map(EmployeeInfo::getDepartment)
+                .filter(d -> d != null && !d.isDeleteFlag())
+                .map(d -> List.of(toResponse(d)))
+                .orElseGet(List::of);
     }
 
     public DepartmentResponse getDepartmentById(String id) {

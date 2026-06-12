@@ -16,4 +16,13 @@ public interface CheckinLogRepository extends JpaRepository<CheckinLog, String> 
         ORDER BY c.logTime
     """)
     List<CheckinLog> findByCheckinDateWithEmployee(@Param("date")LocalDate checkinDate);
+
+    @Query("""
+        SELECT c FROM CheckinLog c
+        JOIN FETCH c.employeeInfo
+        WHERE c.employeeInfo.employeeId = :employeeId AND DATE(c.logTime) = :date
+        ORDER BY c.logTime
+    """)
+    List<CheckinLog> findByEmployeeAndCheckinDate(@Param("employeeId") String employeeId,
+                                                  @Param("date") LocalDate checkinDate);
 }

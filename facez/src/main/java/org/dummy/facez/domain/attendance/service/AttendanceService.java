@@ -14,6 +14,7 @@ import org.dummy.facez.common.response.PageResponse;
 import org.dummy.facez.domain.employee.model.EmployeeInfo;
 import org.dummy.facez.domain.payroll.model.SystemConfig;
 import org.dummy.facez.domain.payroll.repository.SystemConfigRepository;
+import org.dummy.facez.domain.workday.service.WorkDayService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -46,13 +47,16 @@ public class AttendanceService {
     private final AttendanceRepository attendanceRepository;
     private final SystemConfigRepository systemConfigRepository;
     private final PublicHolidayRepository publicHolidayRepository;
+    private final WorkDayService workDayService;
 
     public AttendanceService(AttendanceRepository attendanceRepository,
                              SystemConfigRepository systemConfigRepository,
-                             PublicHolidayRepository publicHolidayRepository) {
+                             PublicHolidayRepository publicHolidayRepository,
+                             WorkDayService workDayService) {
         this.attendanceRepository = attendanceRepository;
         this.systemConfigRepository = systemConfigRepository;
         this.publicHolidayRepository = publicHolidayRepository;
+        this.workDayService = workDayService;
     }
 
     // ── Spring Event listener — wired from CheckinLogService via ApplicationEventPublisher ──
@@ -89,6 +93,7 @@ public class AttendanceService {
                         .build();
                 computeAndApply(att, logTime, null);
                 attendanceRepository.save(att);
+                workDayService.syncFromAttendance(att);
             }
         } else if (logType == LogTypes.OUT) {
             attendanceRepository
@@ -97,6 +102,7 @@ public class AttendanceService {
                     .ifPresent(att -> {
                         computeAndApply(att, att.getCheckIn(), logTime);
                         attendanceRepository.save(att);
+                        workDayService.syncFromAttendance(att);
                     });
         }
     }
@@ -148,7 +154,40 @@ public class AttendanceService {
         computeAndApply(attendance, checkIn, checkOut);
         attendance.setUpdatedAt(LocalDateTime.now());
         attendanceRepository.save(attendance);
+        workDayService.syncFromAttendance(attendance);
         return toResponse(attendance);
+    }
+
+    /**
+     * Create or update the attendance for an employee on a date with explicit
+     * check-in/out times (used when an attendance-adjustment request is approved).
+     * Recomputes derived hours and syncs the WorkDay.
+     */
+    @Transactional
+    public Attendance upsertManualAttendance(String employeeId, LocalDate date,
+                                             LocalDateTime checkIn, LocalDateTime checkOut) {
+        LocalDateTime dayStart = date.atStartOfDay();
+        LocalDateTime dayEnd   = date.atTime(23, 59, 59);
+
+        Attendance att = attendanceRepository
+                .findFirstByEmployeeInfo_EmployeeIdAndCheckInBetweenAndDeleteFlagFalse(
+                        employeeId, dayStart, dayEnd)
+                .orElse(null);
+        if (att == null) {
+            EmployeeInfo ref = new EmployeeInfo();
+            ref.setEmployeeId(employeeId);
+            att = Attendance.builder()
+                    .attendanceId(UUID.randomUUID().toString())
+                    .employeeInfo(ref)
+                    .attendanceDate(date)
+                    .deleteFlag(false)
+                    .build();
+        }
+        computeAndApply(att, checkIn, checkOut);
+        att.setUpdatedAt(LocalDateTime.now());
+        attendanceRepository.save(att);
+        workDayService.syncFromAttendance(att);
+        return att;
     }
 
     @Transactional

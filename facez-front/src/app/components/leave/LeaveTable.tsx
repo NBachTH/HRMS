@@ -5,7 +5,7 @@ import { getLeaves, deleteLeave } from '@/app/services/LeaveService';
 import { LeaveDetailModal } from '@/app/components/leave/LeaveDetailModal';
 import type { LeaveRequest } from '@/app/commons/types';
 
-export function LeaveTable({ refreshKey }: { refreshKey?: number }) {
+export function LeaveTable({ refreshKey, from, to }: { refreshKey?: number; from?: string; to?: string }) {
     const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -60,6 +60,15 @@ export function LeaveTable({ refreshKey }: { refreshKey?: number }) {
     if (loading) return <div className="p-6 text-center text-gray-500">Loading...</div>;
     if (error) return <div className="p-6 text-center text-red-500">{error}</div>;
 
+    // Date-range filter (by start date) on the current page.
+    const visible = leaves.filter(lr => {
+        if (!lr.startTime) return true;
+        const d = lr.startTime.slice(0, 10);
+        if (from && d < from) return false;
+        if (to && d > to) return false;
+        return true;
+    });
+
     return (
         <>
             <div className="overflow-x-auto">
@@ -76,9 +85,9 @@ export function LeaveTable({ refreshKey }: { refreshKey?: number }) {
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {leaves.length === 0 ? (
+                        {visible.length === 0 ? (
                             <tr><td colSpan={7} className="px-6 py-8 text-center text-gray-400">No leave requests</td></tr>
-                        ) : leaves.map((lr, i) => (
+                        ) : visible.map((lr, i) => (
                             <tr key={lr.leaveRequestId} onClick={() => setSelected(lr)}
                                 className="hover:bg-blue-50/50 cursor-pointer">
                                 <td className="px-6 py-4 text-sm text-gray-900">{i + 1 + page * 20}</td>
@@ -88,7 +97,7 @@ export function LeaveTable({ refreshKey }: { refreshKey?: number }) {
                                 <td className="px-6 py-4 text-sm text-gray-500">{lr.endTime ? new Date(lr.endTime).toLocaleDateString() : '—'}</td>
                                 <td className="px-6 py-4 text-sm">{getStatusBadge(lr.status)}</td>
                                 <td className="px-6 py-4 text-sm">
-                                    {(lr.status === 'TO_APPROVE' || lr.status === 'DRAFT') && (
+                                    {lr.status === 'DRAFT' && (
                                         <button
                                             onClick={(e) => { e.stopPropagation(); handleDelete(lr.leaveRequestId); }}
                                             className="text-red-500 hover:text-red-700 text-xs">

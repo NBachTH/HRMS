@@ -63,7 +63,16 @@ public class ApiKeyService {
                 .deviceId(deviceId)
                 .rawKey(rawKey)
                 .message("Store this key securely — it will not be shown again.")
+                .createdAt(apiKey.getCreatedAt())
                 .build();
+    }
+
+    @Transactional
+    public void deactivate(String keyId) {
+        ApiKey key = apiKeyRepository.findById(keyId)
+                .orElseThrow(() -> new ResourceNotFoundException("ApiKey", "id", keyId));
+        key.setActive(false);
+        apiKeyRepository.save(key);
     }
 
     public static String sha256Hex(String input) {

@@ -18,6 +18,7 @@ export async function getOTRequestById(id: string) {
     return apiClient<OTRequest>(`/api/ot-requests/${id}`);
 }
 
+// Logs an actual OT session against an approved plan; backend validates + auto-approves.
 export async function createOTRequest(data: OTRequestCreate) {
     return apiClient<OTRequest>('/api/ot-requests', {
         method: 'POST',

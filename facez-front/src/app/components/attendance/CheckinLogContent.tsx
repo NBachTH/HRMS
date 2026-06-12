@@ -124,7 +124,7 @@ export function CheckinLogContent() {
                                     {logs.length === 0 ? (
                                         <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-400">No records found</td></tr>
                                     ) : logs.map((log, i) => (
-                                        <tr key={log.id} className="hover:bg-gray-50">
+                                        <tr key={log.logId} className="hover:bg-gray-50">
                                             <td className="px-6 py-3 text-sm text-gray-500">{page * 50 + i + 1}</td>
                                             <td className="px-6 py-3 text-sm font-medium text-gray-900">{log.employeeName || log.employeeId}</td>
                                             <td className="px-6 py-3 text-sm text-gray-500">{log.deviceName || log.deviceId}</td>

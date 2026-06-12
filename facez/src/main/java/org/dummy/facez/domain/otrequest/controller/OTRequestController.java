@@ -3,6 +3,7 @@ package org.dummy.facez.domain.otrequest.controller;
 import jakarta.validation.Valid;
 import org.dummy.facez.common.response.ApiResponse;
 import org.dummy.facez.common.response.PageResponse;
+import org.dummy.facez.domain.employee.model.UserAccount;
 import org.dummy.facez.domain.employee.service.EmployeeService;
 import org.dummy.facez.domain.otrequest.dto.OTRequestCreateDto;
 import org.dummy.facez.domain.otrequest.dto.OTRequestResponse;
@@ -32,7 +33,10 @@ public class OTRequestController {
     /** Any authenticated employee can submit an OT request */
     @PostMapping
     @PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('LEADER') or hasAuthority('MANAGER') or hasAuthority('HR_ADMIN')")
-    public ResponseEntity<ApiResponse<OTRequestResponse>> create(@Valid @RequestBody OTRequestCreateDto req) {
+    public ResponseEntity<ApiResponse<OTRequestResponse>> create(
+            @Valid @RequestBody OTRequestCreateDto req, Authentication auth) {
+        // Identity is taken from the JWT principal, never trusted from the client.
+        req.setEmployeeId(((UserAccount) auth.getPrincipal()).getEmployeeId());
         OTRequestResponse response = otRequestService.createOTRequest(req);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok(response, "OT request created"));
@@ -71,7 +75,7 @@ public class OTRequestController {
      * LEADER→level1, MANAGER→level2, HR_ADMIN→final
      */
     @PutMapping("/{id}/approve")
-    @PreAuthorize("hasAuthority('HR_ADMIN') or hasAuthority('MANAGER') or hasAuthority('LEADER')")
+    @PreAuthorize("hasAuthority('MANAGER') or hasAuthority('LEADER')")
     public ResponseEntity<ApiResponse<OTRequestResponse>> approve(@PathVariable String id, Authentication auth) {
         String role = extractRole(auth);
         OTRequestResponse response = otRequestService.approveOTRequest(id, role);
@@ -79,7 +83,7 @@ public class OTRequestController {
     }
 
     @PutMapping("/{id}/reject")
-    @PreAuthorize("hasAuthority('HR_ADMIN') or hasAuthority('MANAGER') or hasAuthority('LEADER')")
+    @PreAuthorize("hasAuthority('MANAGER') or hasAuthority('LEADER')")
     public ResponseEntity<ApiResponse<OTRequestResponse>> reject(@PathVariable String id, Authentication auth) {
         String role = extractRole(auth);
         OTRequestResponse response = otRequestService.rejectOTRequest(id, role);

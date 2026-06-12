@@ -21,8 +21,15 @@ public class Device {
 
     private String deviceName;
 
+    private String location;
+
     @Enumerated(EnumType.STRING)
     private LogTypes logType;
+
+    @Builder.Default
+    private boolean active = true;
+
+    private LocalDateTime createdAt;
 
     private boolean deleteFlag;
 

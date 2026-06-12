@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Modal } from '@/app/components/common/Modal';
 import { ApprovalStepper } from '@/app/components/common/ApprovalStepper';
 import { ConfirmDialog } from '@/app/components/common/ConfirmDialog';
-import { deleteLeave } from '@/app/services/LeaveService';
+import { deleteLeave, submitLeave } from '@/app/services/LeaveService';
 import { useToast } from '@/app/commons/contexts/ToastContext';
 import { formatDateTime } from '@/app/commons/utils/formatters';
 import type { LeaveRequest } from '@/app/commons/types';
@@ -34,7 +34,7 @@ export function LeaveDetailModal({ leave, onClose, onChanged }: Props) {
     const days = leave.durationHours != null
         ? Math.round((leave.durationHours / 8) * 100) / 100
         : null;
-    const cancellable = leave.status === 'DRAFT' || leave.status === 'TO_APPROVE';
+    const isDraft = leave.status === 'DRAFT';
 
     const handleCancel = async () => {
         setBusy(true);
@@ -46,6 +46,20 @@ export function LeaveDetailModal({ leave, onClose, onChanged }: Props) {
             onClose();
         } catch (err: any) {
             showToast(err?.body?.message || 'Failed to cancel', 'error');
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    const handleSubmit = async () => {
+        setBusy(true);
+        try {
+            await submitLeave(leave.leaveRequestId);
+            showToast('Leave request submitted');
+            onChanged();
+            onClose();
+        } catch (err: any) {
+            showToast(err?.body?.message || 'Failed to submit', 'error');
         } finally {
             setBusy(false);
         }
@@ -81,11 +95,17 @@ export function LeaveDetailModal({ leave, onClose, onChanged }: Props) {
                         className="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50">
                         Close
                     </button>
-                    {cancellable && (
-                        <button onClick={() => setConfirmDelete(true)}
-                            className="px-4 py-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-700">
-                            Cancel Request
-                        </button>
+                    {isDraft && (
+                        <>
+                            <button onClick={() => setConfirmDelete(true)} disabled={busy}
+                                className="px-4 py-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50">
+                                Cancel Request
+                            </button>
+                            <button onClick={handleSubmit} disabled={busy}
+                                className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50">
+                                {busy ? 'Submitting…' : 'Submit'}
+                            </button>
+                        </>
                     )}
                 </div>
             </div>

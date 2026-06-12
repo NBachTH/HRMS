@@ -9,10 +9,12 @@ interface AuthContextType {
     user: User;
     accessToken: string | null;
     role: string | null;
+    employeeId: string | null;
     isLoading: boolean;
     setAccessToken: (token: string | null) => void;
     setUser: (user: User) => void;
     setRole: (role: string | null) => void;
+    setEmployeeId: (employeeId: string | null) => void;
     logout: () => Promise<void>;
 }
 
@@ -20,10 +22,12 @@ export const AuthContext = createContext<AuthContextType>({
     user: null,
     accessToken: null,
     role: null,
+    employeeId: null,
     isLoading: true,
     setAccessToken: () => { },
     setUser: () => { },
     setRole: () => { },
+    setEmployeeId: () => { },
     logout: async () => { },
 });
 
@@ -31,6 +35,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [user, setUser] = useState<User>(null);
     const [accessToken, setAccessTokenState] = useState<string | null>(null);
     const [role, setRole] = useState<string | null>(null);
+    const [employeeId, setEmployeeId] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     const setAccessToken = useCallback((token: string | null) => {
@@ -47,6 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setAccessToken(null);
         setUser(null);
         setRole(null);
+        setEmployeeId(null);
     }, [setAccessToken]);
 
     // Try to restore session via refresh token on mount
@@ -55,8 +61,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             try {
                 const data = await refreshAuth();
                 setAccessToken(data.accessToken);
-                setUser({ username: data.username, role: data.role });
+                setUser({ username: data.username, role: data.role, employeeId: data.employeeId });
                 setRole(data.role);
+                setEmployeeId(data.employeeId);
             } catch {
                 // not logged in — that's ok
             } finally {
@@ -74,7 +81,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, []);
 
     return (
-        <AuthContext.Provider value={{ user, accessToken, role, isLoading, setAccessToken, setUser, setRole, logout }}>
+        <AuthContext.Provider value={{ user, accessToken, role, employeeId, isLoading, setAccessToken, setUser, setRole, setEmployeeId, logout }}>
             {children}
         </AuthContext.Provider>
     );

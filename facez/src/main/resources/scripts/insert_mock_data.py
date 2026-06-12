@@ -255,7 +255,8 @@ try:
     print("Truncating tables …")
     run("""
         TRUNCATE TABLE
-            payroll, ot_request, leave_request,
+            timesheet, work_day,
+            payroll, ot_request, ot_plan_employee, ot_plan, leave_request,
             check_in_log, attendance,
             contract, device,
             user_account, employee_info, department
@@ -655,6 +656,101 @@ try:
         ],
     )
 
+    # 11. work_day — derive the per-day single source of truth so payroll
+    #     (which reads WorkDay for NCtt + KPI2) produces correct results.
+    print("Generating work_day records …")
+
+    # 11a. PRESENT from attendance (check-in exists). No-checkout days stay PRESENT
+    #      but keep violation=true so KPI2 reflects them.
+    run("""
+        INSERT INTO work_day
+            (id, employee_id, work_date, type, source, check_in, check_out,
+             late_hour, working_hour, ot_minutes, paid_day, working_day,
+             violation, locked, attendance_id, created_at, updated_at)
+        SELECT gen_random_uuid()::text, a.employee_id, a.attendance_date,
+               'PRESENT', 'CHECKIN', a.check_in, a.check_out,
+               COALESCE(a.late_hour,0), COALESCE(a.working_hour,0), 0,
+               COALESCE(a.paid_day,0), COALESCE(a.working_day,0),
+               COALESCE(a.violate,false), false, a.attendance_id,
+               a.created_at, a.updated_at
+        FROM attendance a
+        WHERE a.delete_flag = false
+        ON CONFLICT (employee_id, work_date) DO NOTHING
+    """)
+
+    # 11b. LEAVE from APPROVED leave requests, expanded to weekdays. Present wins on clash.
+    run("""
+        INSERT INTO work_day
+            (id, employee_id, work_date, type, source, leave_type,
+             late_hour, working_hour, ot_minutes, paid_day, working_day,
+             violation, locked, leave_request_id, created_at, updated_at)
+        SELECT gen_random_uuid()::text, lr.employee_id, g::date, 'LEAVE', 'LEAVE_REQUEST', lr.leave_type,
+               0, 0, 0, CASE WHEN lr.leave_type = 'UNPAID' THEN 0 ELSE 1 END, 0,
+               false, false, lr.leave_request_id, NOW(), NOW()
+        FROM leave_request lr
+        CROSS JOIN generate_series(lr.start_time::date, lr.end_time::date, interval '1 day') g
+        WHERE lr.status = 'APPROVED' AND lr.delete_flag = false
+          AND EXTRACT(ISODOW FROM g) < 6
+        ON CONFLICT (employee_id, work_date) DO NOTHING
+    """)
+
+    # 11c. ABSENT fill for active employees on weekdays with nothing recorded.
+    run("""
+        INSERT INTO work_day
+            (id, employee_id, work_date, type, source,
+             late_hour, working_hour, ot_minutes, paid_day, working_day,
+             violation, locked, created_at, updated_at)
+        SELECT gen_random_uuid()::text, e.employee_id, g::date, 'ABSENT', 'SYSTEM',
+               0, 0, 0, 0, 0, true, false, NOW(), NOW()
+        FROM employee_info e
+        CROSS JOIN generate_series(DATE '2025-06-01', DATE '2026-04-30', interval '1 day') g
+        WHERE e.status = 'ACTIVE' AND e.delete_flag = false AND e.role <> 'SYSTEM_ADMIN'
+          AND EXTRACT(ISODOW FROM g) < 6
+          AND (e.date_of_joining IS NULL OR e.date_of_joining <= g::date)
+          AND NOT EXISTS (
+              SELECT 1 FROM work_day w WHERE w.employee_id = e.employee_id AND w.work_date = g::date)
+    """)
+    print("  work_day generated.")
+
+    # 12. timesheet — monthly aggregate of work_day (same logic the app builds on close).
+    #     KPI2 follows 01/2020/QC-VTI: violation→1.00(C), else leave→1.02(B), else 1.04(A).
+    print("Generating timesheet records …")
+    run("""
+        INSERT INTO timesheet
+            (id, employee_id, ts_year, ts_month, standard_working_days, actual_working_days, ot_hours,
+             holiday_leave_days, annual_leave_days, comp_leave_days, bereavement_marriage_days,
+             insurance_leave_days, unpaid_leave_days, old_rate_paid_days, new_rate_paid_days,
+             total_paid_days, carry_over_prev_month, business_go_out_days, wfh_days,
+             unexplained_absence_days, late_early_total_hours, violation_to_comp, violation_to_leave,
+             violation_to_unpaid, unnotified_absence_count, under8h_count, attendance_request_errors,
+             kpi2_deduction, kpi2_index, prev_month_violation_adjust, created_at, updated_at)
+        SELECT gen_random_uuid()::text, w.employee_id,
+               EXTRACT(YEAR FROM w.work_date)::int, EXTRACT(MONTH FROM w.work_date)::int,
+               COUNT(*)::int,
+               SUM(CASE WHEN w.type IN ('PRESENT','HOLIDAY_WORK') THEN w.paid_day ELSE 0 END),
+               ROUND(COALESCE(SUM(w.ot_minutes),0)/60.0, 2),
+               SUM(CASE WHEN w.type='HOLIDAY' THEN 1 ELSE 0 END),
+               SUM(CASE WHEN w.type='LEAVE' AND w.leave_type='ANNUAL' THEN 1 ELSE 0 END),
+               SUM(CASE WHEN w.type='LEAVE' AND w.leave_type='COMPENSATORY' THEN 1 ELSE 0 END),
+               SUM(CASE WHEN w.type='LEAVE' AND w.leave_type IN ('BEREAVEMENT','MARRIAGE') THEN 1 ELSE 0 END),
+               SUM(CASE WHEN w.type='LEAVE' AND w.leave_type IN ('SICK','MATERNITY','PATERNITY') THEN 1 ELSE 0 END),
+               SUM(CASE WHEN w.type='LEAVE' AND w.leave_type='UNPAID' THEN 1 ELSE 0 END),
+               0, SUM(w.paid_day), SUM(w.paid_day), 0, 0, 0,
+               SUM(CASE WHEN w.type='ABSENT' THEN 1 ELSE 0 END),
+               SUM(COALESCE(w.late_hour,0)),
+               0, 0, 0,
+               SUM(CASE WHEN w.type='ABSENT' THEN 1 ELSE 0 END)::int,
+               SUM(CASE WHEN w.type IN ('PRESENT','HOLIDAY_WORK') AND COALESCE(w.working_hour,0) < 8 THEN 1 ELSE 0 END)::int,
+               0, 0,
+               CASE WHEN BOOL_OR(w.violation) THEN 1.00
+                    WHEN BOOL_OR(w.type='LEAVE') THEN 1.02
+                    ELSE 1.04 END,
+               0, NOW(), NOW()
+        FROM work_day w
+        GROUP BY w.employee_id, EXTRACT(YEAR FROM w.work_date), EXTRACT(MONTH FROM w.work_date)
+    """)
+    print("  timesheet generated.")
+
     conn.commit()
     print("\nAll data committed.")
 
@@ -673,6 +769,7 @@ cur2  = conn2.cursor()
 TABLES = [
     "department","employee_info","user_account","contract",
     "device","attendance","check_in_log","leave_request","ot_request",
+    "work_day","timesheet",
 ]
 print("\nRow counts:")
 for t in TABLES:

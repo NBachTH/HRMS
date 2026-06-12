@@ -24,8 +24,15 @@ public class OTRequest extends AuditableEntity {
     @JoinColumn(name = "employee_id")
     private EmployeeInfo employeeInfo;
 
+    /** The approved OT plan this session was logged against. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ot_plan_id")
+    private OTPlan otPlan;
+
+    /** Actual worked start time (validated against attendance). */
     private LocalDateTime startTime;
 
+    /** Actual worked end time (validated against attendance). */
     private LocalDateTime endTime;
 
     @Enumerated(EnumType.STRING)

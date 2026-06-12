@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { getAttendances } from '@/app/services/AttendanceService';
+import { CheckinLogDayModal } from '@/app/components/attendance/CheckinLogDayModal';
 import type { Attendance } from '@/app/commons/types';
 
 interface Props {
@@ -26,6 +27,7 @@ export default function AttendanceTable({ employeeId, from, to, refreshKey }: Pr
     const [error, setError] = useState<string | null>(null);
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
+    const [selected, setSelected] = useState<Attendance | null>(null);
 
     const fetchData = useCallback(async () => {
         setLoading(true);
@@ -74,7 +76,8 @@ export default function AttendanceTable({ employeeId, from, to, refreshKey }: Pr
                                 </td>
                             </tr>
                         ) : records.map((r, i) => (
-                            <tr key={r.attendanceId} className="hover:bg-gray-50">
+                            <tr key={r.attendanceId} onClick={() => setSelected(r)}
+                                className="hover:bg-blue-50/50 cursor-pointer" title="View check-in logs for this day">
                                 <td className="px-4 py-4 text-sm text-gray-500">{i + 1 + page * 20}</td>
                                 <td className="px-4 py-4 text-sm text-gray-900 font-medium">{r.date}</td>
                                 <td className="px-4 py-4 text-sm text-gray-900">{r.employeeName || r.employeeId}</td>
@@ -118,6 +121,8 @@ export default function AttendanceTable({ employeeId, from, to, refreshKey }: Pr
                     </button>
                 </div>
             )}
+
+            <CheckinLogDayModal attendance={selected} onClose={() => setSelected(null)} />
         </>
     );
 }

@@ -9,9 +9,24 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 
 public interface OTRequestRepository extends JpaRepository<OTRequest, String> {
+
+    /** Counts the employee's OT requests (in the given statuses) overlapping [start, end). */
+    @Query("""
+        SELECT COUNT(o) FROM OTRequest o
+        WHERE o.employeeInfo.employeeId = :employeeId
+          AND o.deleteFlag = false
+          AND o.status IN :statuses
+          AND o.startTime < :end
+          AND o.endTime   > :start
+    """)
+    long countOverlapping(@Param("employeeId") String employeeId,
+                          @Param("statuses") Collection<RequestStatus> statuses,
+                          @Param("start") LocalDateTime start,
+                          @Param("end") LocalDateTime end);
 
     Page<OTRequest> findByEmployeeInfo_EmployeeId(String employeeId, Pageable pageable);
 

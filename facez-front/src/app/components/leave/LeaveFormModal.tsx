@@ -6,6 +6,7 @@ import { Modal } from '@/app/components/common/Modal';
 import { ApprovalStepper } from '@/app/components/common/ApprovalStepper';
 import { createLeave, getMyBalances } from '@/app/services/LeaveService';
 import { getMyProjects } from '@/app/services/ProjectService';
+import { getByYear as getHolidaysByYear } from '@/app/services/PublicHolidayService';
 import { useToast } from '@/app/commons/contexts/ToastContext';
 import { useAuth } from '@/app/commons/contexts/AuthContext';
 import type { LeaveType, LeaveBalance, Project } from '@/app/commons/types';
@@ -32,12 +33,11 @@ interface Props {
 
 interface DetailRow { date: string; days: number; hours: number; }
 
-function inclusiveDays(from: string, to: string): number {
-    if (!from || !to) return 0;
-    const a = new Date(from + 'T00:00:00').getTime();
-    const b = new Date(to + 'T00:00:00').getTime();
-    if (b < a) return 0;
-    return Math.round((b - a) / 86_400_000) + 1;
+/** Local-time YYYY-MM-DD (avoids UTC shift from toISOString). */
+function ymd(d: Date): string {
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${d.getFullYear()}-${m}-${day}`;
 }
 
 export function LeaveFormModal({ isOpen, onClose, onSuccess }: Props) {
@@ -48,6 +48,7 @@ export function LeaveFormModal({ isOpen, onClose, onSuccess }: Props) {
 
     const [projects, setProjects] = useState<Project[]>([]);
     const [balances, setBalances] = useState<LeaveBalance[]>([]);
+    const [holidays, setHolidays] = useState<Set<string>>(new Set());
     const [form, setForm] = useState({
         projectId: '',
         leaveType: 'ANNUAL' as LeaveType,
@@ -71,6 +72,22 @@ export function LeaveFormModal({ isOpen, onClose, onSuccess }: Props) {
             .catch(() => setProjects([]));
     }, [isOpen]);
 
+    // Load public holidays for the selected start year so the duration preview
+    // matches the server (which excludes weekends + holidays).
+    useEffect(() => {
+        if (!isOpen || !form.from) return;
+        const year = Number(form.from.slice(0, 4));
+        let cancelled = false;
+        getHolidaysByYear(year)
+            .then(res => {
+                if (cancelled) return;
+                const list = Array.isArray(res.data) ? res.data : [];
+                setHolidays(new Set(list.map(h => h.holidayDate)));
+            })
+            .catch(() => { if (!cancelled) setHolidays(new Set()); });
+        return () => { cancelled = true; };
+    }, [isOpen, form.from]);
+
     const set = (field: string, value: any) => {
         setForm(f => ({ ...f, [field]: value }));
         setErrors(e => ({ ...e, [field]: '' }));
@@ -88,15 +105,21 @@ export function LeaveFormModal({ isOpen, onClose, onSuccess }: Props) {
         if (form.halfDay) {
             return { totalDays: 0.5, totalHours: 4, details: [{ date: form.from, days: 0.5, hours: 4 }] as DetailRow[] };
         }
-        const n = inclusiveDays(form.from, form.to);
         const rows: DetailRow[] = [];
-        for (let i = 0; i < n; i++) {
-            const d = new Date(form.from + 'T00:00:00');
-            d.setDate(d.getDate() + i);
-            rows.push({ date: d.toISOString().slice(0, 10), days: 1, hours: 8 });
+        if (form.from && form.to && form.to >= form.from) {
+            const cur = new Date(form.from + 'T00:00:00');
+            const end = new Date(form.to + 'T00:00:00');
+            while (cur <= end) {
+                const dow = cur.getDay();              // 0 Sun … 6 Sat
+                const iso = ymd(cur);
+                if (dow !== 0 && dow !== 6 && !holidays.has(iso)) {
+                    rows.push({ date: iso, days: 1, hours: 8 });   // working day only
+                }
+                cur.setDate(cur.getDate() + 1);
+            }
         }
-        return { totalDays: n, totalHours: n * 8, details: rows };
-    }, [form.from, form.to, form.halfDay]);
+        return { totalDays: rows.length, totalHours: rows.length * 8, details: rows };
+    }, [form.from, form.to, form.halfDay, holidays]);
 
     const exceedBalance = isTracked && selectedBalance != null && totalDays > selectedBalance.remainingDays;
 
@@ -114,12 +137,11 @@ export function LeaveFormModal({ isOpen, onClose, onSuccess }: Props) {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!validate()) return;
-        if (!user?.employeeId) { showToast('Cannot identify current employee', 'error'); return; }
         setSaving(true);
         try {
             const endDate = form.halfDay ? form.from : form.to;
             await createLeave({
-                employeeId: user.employeeId,
+                employeeId: user?.employeeId,   // server derives identity from the JWT; this is ignored
                 projectId: form.projectId || undefined,
                 leaveType: form.leaveType,
                 reason: form.reason,
@@ -128,7 +150,7 @@ export function LeaveFormModal({ isOpen, onClose, onSuccess }: Props) {
                 halfDay: form.halfDay,
                 attachmentName: form.attachmentName || undefined,
             });
-            showToast('Leave request submitted');
+            showToast('Leave request saved as draft');
             onSuccess();
             onClose();
         } catch (err: any) {
@@ -282,7 +304,7 @@ export function LeaveFormModal({ isOpen, onClose, onSuccess }: Props) {
                     </button>
                     <button type="submit" disabled={saving}
                         className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50">
-                        {saving ? 'Submitting…' : 'Submit Request'}
+                        {saving ? 'Saving…' : 'Save Draft'}
                     </button>
                 </div>
             </form>

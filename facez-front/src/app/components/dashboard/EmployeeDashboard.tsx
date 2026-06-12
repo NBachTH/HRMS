@@ -11,6 +11,7 @@ import { AttendanceSummaryDonut } from './AttendanceSummaryDonut';
 import { MySalaryTrendChart } from './MySalaryTrendChart';
 import { AttendanceMonthTable } from './AttendanceMonthTable';
 import { MiniRequestTable } from './MiniRequestTable';
+import { AttendanceCalendar } from '@/app/components/attendance/AttendanceCalendar';
 import type { Attendance, LeaveRequest, OTRequest, Payroll } from '@/app/commons/types';
 
 function fmtVND(v: number | null | undefined) {
@@ -112,6 +113,11 @@ export function EmployeeDashboard() {
                 <p className="text-sm text-gray-400 mt-1">
                     {now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </p>
+            </div>
+
+            {/* Attendance calendar (monthly) */}
+            <div className="bg-white rounded-lg shadow-sm">
+                <AttendanceCalendar />
             </div>
 
             {/* Stat cards */}

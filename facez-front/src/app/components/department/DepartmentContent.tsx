@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { getDepartments, deleteDepartment } from '@/app/services/DepartmentService';
+import { getDepartments, getMyDepartments, deleteDepartment } from '@/app/services/DepartmentService';
 import { DepartmentFormModal } from './DepartmentFormModal';
 import { Trash2Icon, Edit2Icon, EyeIcon } from 'lucide-react';
 import { useToast } from '@/app/commons/contexts/ToastContext';
@@ -25,14 +25,15 @@ export function DepartmentContent() {
         setLoading(true);
         setError(null);
         try {
-            const res = await getDepartments();
+            // Managers/Leaders only see the department(s) they manage; HR sees all.
+            const res = isHR ? await getDepartments() : await getMyDepartments();
             if (res.success && res.data) setDepartments(res.data);
         } catch (err: any) {
             setError(err?.body?.message || 'Failed to load departments');
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [isHR]);
 
     useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -108,7 +109,11 @@ export function DepartmentContent() {
                                                         </button>
                                                     </>
                                                 ) : (
-                                                    <span className="text-xs text-gray-400">—</span>
+                                                    <button
+                                                        onClick={() => router.push(`/managers/department/${dept.departmentId}`)}
+                                                        className="inline-flex items-center gap-1 px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded" title="View members">
+                                                        <EyeIcon className="w-4 h-4" /> Members
+                                                    </button>
                                                 )}
                                             </div>
                                         </td>

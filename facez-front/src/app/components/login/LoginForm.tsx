@@ -7,7 +7,7 @@ import { signin } from "@/app/services/AuthService";
 import { AlertCircleIcon, LockIcon } from 'lucide-react';
 
 export function LoginForm() {
-    const { setAccessToken, setUser, setRole } = useAuth();
+    const { setAccessToken, setUser, setRole, setEmployeeId } = useAuth();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -31,8 +31,9 @@ export function LoginForm() {
         try {
             const res = await signin({ username, password });
             setAccessToken(res.accessToken);
-            setUser({ username: res.username, role: res.role });
+            setUser({ username: res.username, role: res.role, employeeId: res.employeeId });
             setRole(res.role);
+            setEmployeeId(res.employeeId);
             router.push('/employees/dashboard');
         } catch (err: any) {
             if (err?.status === 429) {

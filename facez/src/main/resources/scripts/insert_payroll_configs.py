@@ -12,7 +12,9 @@ import json
 import uuid
 from datetime import datetime
 
-BASE = r"C:\HUST\project3\facez\src\main\resources\config\payroll"
+# Resolve config/payroll relative to this script (…/resources/scripts/ → …/resources/config/payroll)
+import os
+BASE = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "config", "payroll"))
 
 conn = psycopg2.connect(
     host="localhost", port=5432,

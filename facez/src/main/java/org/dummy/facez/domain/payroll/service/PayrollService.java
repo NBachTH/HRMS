@@ -1,15 +1,19 @@
 package org.dummy.facez.domain.payroll.service;
 
+import org.dummy.facez.common.enums.EmployeeStatus;
 import org.dummy.facez.common.enums.PayrollStatus;
 import org.dummy.facez.common.enums.RequestStatus;
+import org.dummy.facez.common.enums.Role;
 import org.dummy.facez.common.exception.BadRequestException;
 import org.dummy.facez.common.exception.ResourceNotFoundException;
 import org.dummy.facez.common.response.PageResponse;
-import org.dummy.facez.domain.attendance.model.Attendance;
 import org.dummy.facez.domain.attendance.repository.AttendancePeriodCloseRepository;
-import org.dummy.facez.domain.attendance.repository.AttendanceRepository;
 import org.dummy.facez.domain.contract.model.Contract;
 import org.dummy.facez.domain.contract.repository.ContractRepository;
+import org.dummy.facez.domain.department.model.Department;
+import org.dummy.facez.domain.department.repository.DepartmentRepository;
+import org.dummy.facez.domain.employee.model.EmployeeInfo;
+import org.dummy.facez.domain.employee.repository.EmployeeInfoRepository;
 import org.dummy.facez.domain.employee.service.EmployeeService;
 import org.dummy.facez.domain.otrequest.model.OTRequest;
 import org.dummy.facez.domain.otrequest.repository.OTRequestRepository;
@@ -19,6 +23,8 @@ import org.dummy.facez.domain.payroll.dto.PayrollResponse;
 import org.dummy.facez.domain.payroll.dto.PayslipResponse;
 import org.dummy.facez.domain.payroll.model.Payroll;
 import org.dummy.facez.domain.payroll.repository.PayrollRepository;
+import org.dummy.facez.domain.workday.model.WorkDay;
+import org.dummy.facez.domain.workday.repository.WorkDayRepository;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +34,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Orchestrates single-employee payroll calculation.
@@ -39,28 +48,34 @@ public class PayrollService {
 
     private final PayrollRepository payrollRepository;
     private final ContractRepository contractRepository;
-    private final AttendanceRepository attendanceRepository;
+    private final WorkDayRepository workDayRepository;
     private final OTRequestRepository otRequestRepository;
     private final PayrollCalculationEngine calculationEngine;
     private final AttendancePeriodCloseRepository periodCloseRepository;
     private final EmployeeService employeeService;
+    private final EmployeeInfoRepository employeeInfoRepository;
+    private final DepartmentRepository departmentRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     public PayrollService(PayrollRepository payrollRepository,
                           ContractRepository contractRepository,
-                          AttendanceRepository attendanceRepository,
+                          WorkDayRepository workDayRepository,
                           OTRequestRepository otRequestRepository,
                           PayrollCalculationEngine calculationEngine,
                           AttendancePeriodCloseRepository periodCloseRepository,
                           EmployeeService employeeService,
+                          EmployeeInfoRepository employeeInfoRepository,
+                          DepartmentRepository departmentRepository,
                           ApplicationEventPublisher eventPublisher) {
         this.payrollRepository    = payrollRepository;
         this.contractRepository   = contractRepository;
-        this.attendanceRepository = attendanceRepository;
+        this.workDayRepository    = workDayRepository;
         this.otRequestRepository  = otRequestRepository;
         this.calculationEngine    = calculationEngine;
         this.periodCloseRepository = periodCloseRepository;
         this.employeeService      = employeeService;
+        this.employeeInfoRepository = employeeInfoRepository;
+        this.departmentRepository = departmentRepository;
         this.eventPublisher       = eventPublisher;
     }
 
@@ -105,20 +120,25 @@ public class PayrollService {
         LocalDate from = LocalDate.of(year, month, 1);
         LocalDate to   = YearMonth.of(year, month).atEndOfMonth();
 
-        // Load attendance once — passed to both NCtt and KPI2 auto-compute in the engine
-        List<Attendance> attendanceRecords = attendanceRepository
-                .findByEmployeeAndDateRange(req.getEmployeeId(), from, to);
+        // Load the month's WorkDays — single source for NCtt and KPI2 in the engine
+        List<WorkDay> workDays = workDayRepository
+                .findByEmployeeInfo_EmployeeIdAndWorkDateBetween(req.getEmployeeId(), from, to);
         List<OTRequest> otRequests = otRequestRepository
                 .findByEmployeeInfo_EmployeeIdAndStatusAndStartTimeBetween(
                         req.getEmployeeId(), RequestStatus.APPROVED,
                         from.atStartOfDay(), to.atTime(23, 59, 59));
 
+        // MANAGER = unit average KPI; DIRECTOR = company average KPI; others = own.
+        double[] kpiOverride = computeKpiOverride(req.getEmployeeId(), from, to);
+
         Payroll payroll = calculationEngine.buildPayroll(
                 req.getEmployeeId(), year, month, nt, contract,
-                attendanceRecords, otRequests,
+                workDays, otRequests,
                 req.getKpi1Rating(), req.getKpi2Rating(),
                 req.getJapaneseLevel(), req.getOdcAllowance(),
-                req.getBonus(), req.getNotes());
+                req.getBonus(), req.getNotes(),
+                kpiOverride != null ? kpiOverride[0] : null,
+                kpiOverride != null ? kpiOverride[1] : null);
 
         payrollRepository.save(payroll);
         return toResponse(payroll);
@@ -275,6 +295,39 @@ public class PayrollService {
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /** KPI override: MANAGER → average of their unit; DIRECTOR → company average; others → null. */
+    private double[] computeKpiOverride(String employeeId, LocalDate from, LocalDate to) {
+        EmployeeInfo emp = employeeInfoRepository.findById(employeeId).orElse(null);
+        if (emp == null) return null;
+
+        List<String> members;
+        if (emp.getRole() == Role.MANAGER) {
+            List<Department> managed = departmentRepository.findByEmployeeInfo_EmployeeIdAndDeleteFlagFalse(employeeId);
+            if (managed.isEmpty()) return null;
+            Set<String> deptIds = managed.stream().map(Department::getDepartmentId).collect(Collectors.toSet());
+            members = employeeInfoRepository.findByStatusAndDeleteFlagFalseAndRoleNot(EmployeeStatus.ACTIVE, Role.SYSTEM_ADMIN).stream()
+                    .filter(e -> e.getDepartment() != null && deptIds.contains(e.getDepartment().getDepartmentId())
+                            && !e.getEmployeeId().equals(employeeId))
+                    .map(EmployeeInfo::getEmployeeId).toList();
+        } else if (emp.getRole() == Role.DIRECTOR) {
+            members = employeeInfoRepository.findByStatusAndDeleteFlagFalseAndRoleNot(EmployeeStatus.ACTIVE, Role.SYSTEM_ADMIN).stream()
+                    .filter(e -> !e.getEmployeeId().equals(employeeId))
+                    .map(EmployeeInfo::getEmployeeId).toList();
+        } else {
+            return null;
+        }
+        if (members.isEmpty()) return null;
+
+        Map<String, List<WorkDay>> wdMap = workDayRepository
+                .findByEmployeeInfo_EmployeeIdInAndWorkDateBetween(members, from, to)
+                .stream().collect(Collectors.groupingBy(w -> w.getEmployeeInfo().getEmployeeId()));
+        double kpi2 = members.stream()
+                .mapToDouble(id -> calculationEngine.computeKpi2(wdMap.getOrDefault(id, List.of())))
+                .average().orElse(1.0);
+        double kpi1 = calculationEngine.ratingToKpi1("B");
+        return new double[]{kpi1, kpi2};
+    }
 
     private Payroll findById(String id) {
         return payrollRepository.findById(id)

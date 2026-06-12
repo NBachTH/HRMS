@@ -17,6 +17,8 @@ export function OTContent() {
     const [showCreate, setShowCreate] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
     const [selected, setSelected] = useState<OTRequest | null>(null);
+    const [from, setFrom] = useState('');
+    const [to, setTo] = useState('');
 
     const fetchData = useCallback(async () => {
         setLoading(true);
@@ -63,12 +65,20 @@ export function OTContent() {
         );
     };
 
+    const visible = otRequests.filter(ot => {
+        if (!ot.startTime) return true;
+        const d = ot.startTime.slice(0, 10);
+        if (from && d < from) return false;
+        if (to && d > to) return false;
+        return true;
+    });
+
     return (
         <div className="p-8">
             <div className="mb-6 flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-blue-900 mb-2">OT Requests</h1>
-                    <p className="text-sm text-gray-500">Personal / OT Requests</p>
+                    <h1 className="text-3xl font-bold text-blue-900 mb-2">My OTs</h1>
+                    <p className="text-sm text-gray-500">Đơn OT của bạn</p>
                 </div>
                 <button
                     onClick={() => setShowCreate(true)}
@@ -77,8 +87,20 @@ export function OTContent() {
                 </button>
             </div>
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-200">
+                <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between flex-wrap gap-3">
                     <h2 className="text-xl font-semibold text-gray-800">My OT Requests</h2>
+                    <div className="flex items-center gap-2 text-sm">
+                        <label className="text-gray-600">Từ</label>
+                        <input type="date" value={from} onChange={e => setFrom(e.target.value)}
+                            className="px-2 py-1 border border-gray-300 rounded-md text-gray-800" />
+                        <label className="text-gray-600">đến</label>
+                        <input type="date" value={to} onChange={e => setTo(e.target.value)}
+                            className="px-2 py-1 border border-gray-300 rounded-md text-gray-800" />
+                        {(from || to) && (
+                            <button onClick={() => { setFrom(''); setTo(''); }}
+                                className="px-2 py-1 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50">Xóa lọc</button>
+                        )}
+                    </div>
                 </div>
                 {loading ? (
                     <div className="p-6 text-center text-gray-500">Loading...</div>
@@ -99,9 +121,9 @@ export function OTContent() {
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {otRequests.length === 0 ? (
+                                    {visible.length === 0 ? (
                                         <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-400">No OT requests</td></tr>
-                                    ) : otRequests.map((ot, i) => (
+                                    ) : visible.map((ot, i) => (
                                         <tr key={ot.otRequestId} onClick={() => setSelected(ot)}
                                             className="hover:bg-blue-50/50 cursor-pointer">
                                             <td className="px-6 py-4 text-sm text-gray-900">{i + 1 + page * 20}</td>
@@ -110,7 +132,7 @@ export function OTContent() {
                                             <td className="px-6 py-4">{getStatusBadge(ot.status)}</td>
                                             <td className="px-6 py-4 text-sm text-gray-500">{ot.createdAt ? new Date(ot.createdAt).toLocaleDateString() : '—'}</td>
                                             <td className="px-6 py-4 text-sm">
-                                                {(ot.status === 'TO_APPROVE' || ot.status === 'DRAFT') && (
+                                                {ot.status === 'DRAFT' && (
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); setDeleteConfirm(ot.otRequestId); }}
                                                         className="text-red-500 hover:text-red-700 text-xs">

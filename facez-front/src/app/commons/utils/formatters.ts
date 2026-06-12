@@ -1,5 +1,5 @@
-export const formatVnd = (n: number): string =>
-    new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n);
+export const formatVnd = (n?: number | null): string =>
+    n == null ? '—' : new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n);
 
 export const formatDate = (iso?: string | null): string =>
     iso ? new Date(iso).toLocaleDateString('vi-VN') : '—';

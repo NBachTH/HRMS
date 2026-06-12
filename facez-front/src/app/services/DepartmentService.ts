@@ -6,6 +6,11 @@ export async function getDepartments() {
     return apiClient<Department[]>('/api/departments');
 }
 
+/** Leader/Manager: only the department(s) they manage (or their own). */
+export async function getMyDepartments() {
+    return apiClient<Department[]>('/api/departments/my');
+}
+
 export async function getDepartmentById(id: string) {
     return apiClient<Department>(`/api/departments/${id}`);
 }

@@ -20,6 +20,11 @@ export async function createLeave(data: LeaveCreateRequest) {
     return apiClient<LeaveRequest>('/api/leaves', { method: 'POST', body: JSON.stringify(data) });
 }
 
+// DRAFT → TO_APPROVE
+export async function submitLeave(id: string) {
+    return apiClient<LeaveRequest>(`/api/leaves/${id}/submit`, { method: 'PUT' });
+}
+
 export async function approveLeave(id: string) {
     return apiClient<LeaveRequest>(`/api/leaves/${id}/approve`, { method: 'PUT' });
 }

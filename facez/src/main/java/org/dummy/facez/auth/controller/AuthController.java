@@ -118,7 +118,8 @@ public class AuthController {
         Map<String, Object> body = Map.of(
                 "accessToken", accessToken,
                 "username", user.getUsername(),
-                "role", user.getRole().name());
+                "role", user.getRole().name(),
+                "employeeId", user.getEmployeeId());
         return ResponseEntity.ok(ApiResponse.ok(body, "Login successful"));
     }
 
@@ -182,7 +183,8 @@ public class AuthController {
             Map<String, Object> body = Map.of(
                     "accessToken", access,
                     "username", username,
-                    "role", user.getRole().name());
+                    "role", user.getRole().name(),
+                    "employeeId", user.getEmployeeId());
             return ResponseEntity.ok(ApiResponse.ok(body, "Token refreshed"));
 
         } catch (JwtException e) {

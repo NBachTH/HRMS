@@ -1,15 +1,17 @@
 package org.dummy.facez.domain.payroll.service;
 
 import org.dummy.facez.common.enums.PayrollStatus;
-import org.dummy.facez.domain.attendance.model.Attendance;
+import org.dummy.facez.common.enums.WorkDayType;
 import org.dummy.facez.domain.attendance.repository.PublicHolidayRepository;
 import org.dummy.facez.domain.contract.model.Contract;
 import org.dummy.facez.domain.employee.model.EmployeeInfo;
 import org.dummy.facez.domain.otrequest.model.OTRequest;
 import org.dummy.facez.domain.payroll.model.Payroll;
+import org.dummy.facez.domain.workday.model.WorkDay;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -36,24 +38,26 @@ public class PayrollCalculationEngine {
             String employeeId,
             int year, int month, int nt,
             Contract contract,
-            List<Attendance> attendanceRecords,
+            List<WorkDay> workDays,
             List<OTRequest> otRequests,
             String kpi1Rating,
             String kpi2Rating,
             String japaneseLevel,
             long odcAllowance,
             long bonus,
-            String notes) {
+            String notes,
+            Double kpi1Override,
+            Double kpi2Override) {
 
-        // Step 1 — NCtt: actual paid working days
-        int nctt = computeActualWorkingDays(attendanceRecords);
+        // Step 1 — NCtt: actual paid working days (presence + paid leave + holidays), from WorkDay
+        int nctt = computeActualWorkingDays(workDays);
 
         // Step 2 — Li: position coefficient
         long li = configService.getPositionCoefficient(contract.getPositionCode(), contract.getSalaryStep());
 
-        // Step 3 — KPItb
-        double kpi1   = resolveKpi1(kpi1Rating);
-        double kpi2   = resolveKpi2(kpi2Rating, attendanceRecords);
+        // Step 3 — KPItb. For MANAGER/DIRECTOR the orchestrator passes a unit/company average override.
+        double kpi1   = kpi1Override != null ? kpi1Override : resolveKpi1(kpi1Rating);
+        double kpi2   = kpi2Override != null ? kpi2Override : resolveKpi2(kpi2Rating, workDays);
         double kpiAvg = (kpi1 + kpi2) / 2.0;
 
         // Step 4 — HTi allowances
@@ -147,18 +151,18 @@ public class PayrollCalculationEngine {
                 .netSalary(netSalary)
                 .status(PayrollStatus.DRAFT)
                 .notes(notes)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
+                // createdAt / updatedAt are set by JPA auditing (AuditableEntity) on persist.
                 .build();
     }
 
     // ── Private helpers ────────────────────────────────────────────────────
 
-    private int computeActualWorkingDays(List<Attendance> records) {
-        return (int) records.stream()
-                .filter(a -> a.getPaidDay() != null
-                        && a.getPaidDay().compareTo(BigDecimal.ZERO) > 0)
-                .count();
+    /** Sum of paid days across the month's WorkDays (present + paid leave + holidays). */
+    private int computeActualWorkingDays(List<WorkDay> workDays) {
+        BigDecimal sum = workDays.stream()
+                .map(w -> w.getPaidDay() != null ? w.getPaidDay() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        return sum.setScale(0, RoundingMode.HALF_UP).intValue();
     }
 
     /**
@@ -209,6 +213,10 @@ public class PayrollCalculationEngine {
         return nightMinutes;
     }
 
+    /** Public helpers so the orchestrator can compute unit/company KPI averages. */
+    public double computeKpi2(List<WorkDay> workDays) { return resolveKpi2(null, workDays); }
+    public double ratingToKpi1(String rating) { return resolveKpi1(rating); }
+
     private double resolveKpi1(String rating) {
         if (rating == null) return 1.00;
         return switch (rating.toUpperCase()) {
@@ -218,7 +226,14 @@ public class PayrollCalculationEngine {
         };
     }
 
-    private double resolveKpi2(String rating, List<Attendance> records) {
+    /**
+     * KPI2 (attendance, 01/2020/QC-VTI):
+     *   A = 1.04 — no attendance violation and no leave in the month
+     *   B = 1.02 — no violation but took leave at least once
+     *   C = 1.00 — has at least one attendance violation (late/early, &lt;8h, unnotified absence)
+     * An explicit rating overrides the auto-derivation.
+     */
+    private double resolveKpi2(String rating, List<WorkDay> workDays) {
         if (rating != null && !rating.isBlank()) {
             return switch (rating.toUpperCase()) {
                 case "A" -> 1.04;
@@ -226,12 +241,9 @@ public class PayrollCalculationEngine {
                 default  -> 1.00;
             };
         }
-        boolean hasViolation = records.stream().anyMatch(Attendance::isViolate);
+        boolean hasViolation = workDays.stream().anyMatch(WorkDay::isViolation);
         if (hasViolation) return 1.00;
-        boolean hasLeave = records.stream()
-                .anyMatch(a -> a.getPaidDay() != null
-                        && a.getPaidDay().compareTo(BigDecimal.ONE) < 0
-                        && a.getCheckIn() == null);
+        boolean hasLeave = workDays.stream().anyMatch(w -> w.getType() == WorkDayType.LEAVE);
         return hasLeave ? 1.02 : 1.04;
     }
 
