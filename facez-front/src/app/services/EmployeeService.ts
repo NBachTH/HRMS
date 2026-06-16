@@ -7,7 +7,7 @@ import type {
     PageResponse,
 } from '../commons/types';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE!;
 
 export async function getEmployees(page = 0, size = 20, departmentId?: string) {
     const q = new URLSearchParams({ page: String(page), size: String(size) });

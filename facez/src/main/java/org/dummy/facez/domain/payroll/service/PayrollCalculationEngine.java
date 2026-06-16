@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.DayOfWeek;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -49,11 +50,14 @@ public class PayrollCalculationEngine {
             Double kpi1Override,
             Double kpi2Override) {
 
+        // Config in force for this payroll period (effective-dated lookup).
+        LocalDate period = LocalDate.of(year, month, 1);
+
         // Step 1 — NCtt: actual paid working days (presence + paid leave + holidays), from WorkDay
         int nctt = computeActualWorkingDays(workDays);
 
         // Step 2 — Li: position coefficient
-        long li = configService.getPositionCoefficient(contract.getPositionCode(), contract.getSalaryStep());
+        long li = configService.getPositionCoefficient(contract.getPositionCode(), contract.getSalaryStep(), period);
 
         // Step 3 — KPItb. For MANAGER/DIRECTOR the orchestrator passes a unit/company average override.
         double kpi1   = kpi1Override != null ? kpi1Override : resolveKpi1(kpi1Rating);
@@ -63,9 +67,9 @@ public class PayrollCalculationEngine {
         // Step 4 — HTi allowances
         long lhq     = contract.getBaseSalary();
         String levelKey = positionCodeToLevelKey(contract.getPositionCode());
-        long ht2Full    = configService.getLivingAllowance(levelKey);
+        long ht2Full    = configService.getLivingAllowance(levelKey, period);
         long ht2Prorated = nt > 0 ? Math.round(ht2Full * (double) nctt / nt) : 0L;
-        long ht1        = configService.getJapaneseAllowance(japaneseLevel);
+        long ht1        = configService.getJapaneseAllowance(japaneseLevel, period);
         long hti        = ht2Prorated + ht1 + odcAllowance;
 
         // Step 5 — Base gross: [(Lhq × KPItb) + Li + HTi] × (NCtt / Nt)
@@ -82,21 +86,21 @@ public class PayrollCalculationEngine {
         long bhxh = 0L, bhyt = 0L, bhtn = 0L;
         long bhxhEmp = 0L, bhytEmp = 0L, bhtnEmp = 0L, accidentIns = 0L;
 
-        if (configService.isInsuranceEligible(contract.getContractType())) {
+        if (configService.isInsuranceEligible(contract.getContractType(), period)) {
             long lcb = contract.getInsuranceBase() != null ? contract.getInsuranceBase() : lhq;
             // Phase 7.1: BHXH cap at 20 × statutory minimum wage
-            long statutoryMinWage = configService.getStatutoryMinimumWage();
+            long statutoryMinWage = configService.getStatutoryMinimumWage(period);
             insuranceBase = Math.min(lcb, 20L * statutoryMinWage);
 
-            bhxh = Math.round(insuranceBase * configService.getBhxhRate());
-            bhyt = Math.round(insuranceBase * configService.getBhytRate());
-            bhtn = Math.round(insuranceBase * configService.getBhtnRate());
+            bhxh = Math.round(insuranceBase * configService.getBhxhRate(period));
+            bhyt = Math.round(insuranceBase * configService.getBhytRate(period));
+            bhtn = Math.round(insuranceBase * configService.getBhtnRate(period));
 
-            // Employer contributions
-            bhxhEmp    = Math.round(insuranceBase * 0.17);
-            bhytEmp    = Math.round(insuranceBase * 0.03);
-            bhtnEmp    = Math.round(insuranceBase * 0.01);
-            accidentIns = insuranceBase / 200; // 0.5%
+            // Employer contributions (rates from the effective insurance config)
+            bhxhEmp     = Math.round(insuranceBase * configService.getEmployerBhxhRate(period));
+            bhytEmp     = Math.round(insuranceBase * configService.getEmployerBhytRate(period));
+            bhtnEmp     = Math.round(insuranceBase * configService.getEmployerBhtnRate(period));
+            accidentIns = Math.round(insuranceBase * configService.getEmployerAccidentRate(period));
         }
 
         long totalEmployerContributions = bhxhEmp + bhytEmp + bhtnEmp + accidentIns;
@@ -104,10 +108,10 @@ public class PayrollCalculationEngine {
 
         // Step 8 — Taxable income & PIT
         int  dependentCount  = contract.getDependentCount() != null ? contract.getDependentCount() : 0;
-        long personalRelief  = configService.getPersonalRelief(year);
-        long dependentRelief = configService.getDependentRelief(year) * dependentCount;
+        long personalRelief  = configService.getPersonalRelief(period);
+        long dependentRelief = configService.getDependentRelief(period) * dependentCount;
         long taxableIncome   = Math.max(0L, totalGross - bhxh - bhyt - bhtn - personalRelief - dependentRelief);
-        long pit             = configService.calculatePit(taxableIncome, year);
+        long pit             = configService.calculatePit(taxableIncome, period);
 
         // Step 9 — Net salary
         long netSalary = totalGross - bhxh - bhyt - bhtn - pit;

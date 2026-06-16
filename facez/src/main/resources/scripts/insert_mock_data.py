@@ -28,8 +28,8 @@ rng  = random.Random(SEED)
 
 # ── connection ────────────────────────────────────────────────────────────────
 conn = psycopg2.connect(
-    host="localhost", port=5432,
-    dbname="postgres", user="postgres", password="postgres",
+    host="localhost", port=5434,
+    dbname="HRMS", user="hrmsuser", password="hrmspassword",
 )
 conn.autocommit = False
 cur = conn.cursor()
@@ -763,8 +763,10 @@ finally:
     conn.close()
 
 # ── verification ──────────────────────────────────────────────────────────────
-conn2 = psycopg2.connect(host="localhost", port=5432,
-                          dbname="postgres", user="postgres", password="postgres")
+conn2 = psycopg2.connect(
+    host="localhost", port=5434,
+    dbname="HRMS", user="hrmsuser", password="hrmspassword",
+)
 cur2  = conn2.cursor()
 TABLES = [
     "department","employee_info","user_account","contract",

@@ -575,6 +575,118 @@ export interface SystemConfigCreateRequest {
     configData: Record<string, unknown>;
 }
 
+// --- Payroll Config (typed, effective-dated) ---
+export type ConfigStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+
+interface ConfigMeta {
+    id: string;
+    effectiveFrom: string;
+    status: ConfigStatus;
+    legalBasis?: string | null;
+    createdBy?: string | null;
+    updatedBy?: string | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+}
+
+// SALARY_GRADE
+export interface SalaryGradeItem {
+    gradeCode: string;
+    title?: string | null;
+    track?: string | null;
+    steps: number[]; // thousand VND, ordered step 1..N
+}
+export interface SalaryGradeConfig extends ConfigMeta {
+    unit?: string | null;
+    minimumWageRegionI?: number | null;
+    grades: SalaryGradeItem[];
+}
+export interface SalaryGradeConfigRequest {
+    effectiveFrom: string;
+    legalBasis?: string;
+    unit?: string;
+    minimumWageRegionI?: number | null;
+    grades: SalaryGradeItem[];
+}
+
+// PIT
+export interface PitBracketItem {
+    seq?: number;
+    incomeFrom: number;
+    incomeTo: number | null; // null = open-ended top bracket
+    rate: number;            // fraction, e.g. 0.05
+    quickDeduction: number;
+}
+export interface PitConfig extends ConfigMeta {
+    resolution?: string | null;
+    personalRelief: number;
+    dependentRelief: number;
+    brackets: PitBracketItem[];
+}
+export interface PitConfigRequest {
+    effectiveFrom: string;
+    legalBasis?: string;
+    resolution?: string;
+    personalRelief: number;
+    dependentRelief: number;
+    brackets: PitBracketItem[];
+}
+
+// INSURANCE
+export interface InsuranceConfig extends ConfigMeta {
+    governmentBaseSalary?: number | null;
+    insuranceCeiling?: number | null;
+    statutoryMinWage?: number | null;
+    eeBhxh: number; eeBhyt: number; eeBhtn: number;
+    erBhxhPension: number; erBhxhSicknessMaternity: number; erBhxhAccident: number;
+    erBhyt: number; erBhtn: number;
+    probationExempt: boolean;
+    eligibleContractTypes: string[];
+}
+export interface InsuranceConfigRequest {
+    effectiveFrom: string;
+    legalBasis?: string;
+    governmentBaseSalary?: number | null;
+    insuranceCeiling?: number | null;
+    statutoryMinWage?: number | null;
+    eeBhxh: number; eeBhyt: number; eeBhtn: number;
+    erBhxhPension: number; erBhxhSicknessMaternity: number; erBhxhAccident: number;
+    erBhyt: number; erBhtn: number;
+    probationExempt: boolean;
+    eligibleContractTypes: string[];
+}
+
+// ALLOWANCE
+export interface AllowanceLivingLevel {
+    levelKey: string;
+    meal: number; phone: number; transport: number; housing: number;
+}
+export interface AllowanceJpLevel { jlptLevel: string; amount: number; }
+export interface AllowanceConfig extends ConfigMeta {
+    livingProrated: boolean;
+    japaneseProrated: boolean;
+    japaneseMinContractMonths?: number | null;
+    levels: AllowanceLivingLevel[];
+    japaneseLevels: AllowanceJpLevel[];
+    livingEligibleContracts: string[];
+    japaneseEligibleContracts: string[];
+    japaneseExcludedPositions: string[];
+    japaneseExcludedLevels: string[];
+}
+export interface AllowanceConfigRequest {
+    effectiveFrom: string;
+    legalBasis?: string;
+    livingProrated: boolean;
+    japaneseProrated: boolean;
+    japaneseMinContractMonths?: number | null;
+    levels: AllowanceLivingLevel[];
+    japaneseLevels: AllowanceJpLevel[];
+    livingEligibleContracts: string[];
+    japaneseEligibleContracts: string[];
+    japaneseExcludedPositions: string[];
+    japaneseExcludedLevels: string[];
+}
+
 // --- Checkin Log ---
 export interface CheckinLog {
     logId: string;

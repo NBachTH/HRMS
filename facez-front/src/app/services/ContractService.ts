@@ -2,7 +2,7 @@
 import { apiClient, getAccessToken } from '../commons/utils/ApiCallUtil';
 import type { Contract, ContractRequest } from '../commons/types';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE!;
 
 export async function getContracts(page = 0, size = 20) {
     return apiClient<Contract[] | { content: Contract[]; totalPages: number }>(

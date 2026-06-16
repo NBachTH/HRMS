@@ -15,9 +15,9 @@ spring:
       max-file-size: 15MB
       max-request-size: 15MB
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/postgres}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
+    url: ${DB_URL:jdbc:postgresql://localhost:5434/HRMS}
+    username: ${DB_USERNAME:hrmsuser}
+    password: ${DB_PASSWORD:hrmspassword}
     driver-class-name: org.postgresql.Driver
   data:
     redis:
@@ -25,12 +25,6 @@ spring:
       port: ${REDIS_PORT:6379}
       repositories:
         enabled: false
-  flyway:
-    enabled: true
-    locations: classpath:db/migration
-    baseline-on-migrate: false    # one-time: marks existing schema as baseline without running V1
-    out-of-order: false          # Reject migrations applied out of version order
-    validate-on-migrate: true
 # batch:
 #   jdbc:
 #     initialize-schema: always

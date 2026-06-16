@@ -1,200 +1,196 @@
 package org.dummy.facez.domain.payroll.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.annotation.PostConstruct;
-import org.dummy.facez.domain.payroll.model.SystemConfig;
-import org.dummy.facez.domain.payroll.repository.SystemConfigRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.core.io.ClassPathResource;
+import org.dummy.facez.common.enums.ConfigStatus;
+import org.dummy.facez.domain.payroll.model.*;
+import org.dummy.facez.domain.payroll.repository.AllowanceConfigRepository;
+import org.dummy.facez.domain.payroll.repository.InsuranceConfigRepository;
+import org.dummy.facez.domain.payroll.repository.PitConfigRepository;
+import org.dummy.facez.domain.payroll.repository.SalaryGradeConfigRepository;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.time.LocalDate;
+import java.util.Comparator;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Loads and caches active payroll configuration from the {@code system_config} table.
+ * Reads payroll configuration from the typed, effective-dated config tables.
  * <p>
- * Call {@link #reload()} to refresh the in-memory cache after an admin updates a config.
+ * For a payroll period, each lookup resolves the latest {@code PUBLISHED} version whose
+ * {@code effectiveFrom <= period} — so re-computing an old month uses the rules that were in
+ * force then, not today's. Resolved versions are cached per (type, period); {@link #invalidate()}
+ * clears the cache after a publish.
  */
 @Service
 public class PayrollConfigService {
 
-    private static final Logger log = LoggerFactory.getLogger(PayrollConfigService.class);
-
     /** Standard working days per month (company default). */
     public static final int DEFAULT_STANDARD_DAYS = 26;
 
-    /** Insurance ceiling fallback if DB config is missing (Decree 293/2025/NĐ-CP). */
+    /** Insurance ceiling fallback if config is missing (Decree 293/2025/NĐ-CP). */
     public static final long INSURANCE_CEILING = 46_800_000L;
 
-    private static final String CONFIG_BASE = "config/payroll/";
+    private final SalaryGradeConfigRepository salaryGradeRepo;
+    private final AllowanceConfigRepository   allowanceRepo;
+    private final PitConfigRepository         pitRepo;
+    private final InsuranceConfigRepository   insuranceRepo;
 
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final Map<LocalDate, SalaryGradeConfig> salaryCache   = new ConcurrentHashMap<>();
+    private final Map<LocalDate, AllowanceConfig>   allowanceCache = new ConcurrentHashMap<>();
+    private final Map<LocalDate, PitConfig>         pitCache      = new ConcurrentHashMap<>();
+    private final Map<LocalDate, InsuranceConfig>   insuranceCache = new ConcurrentHashMap<>();
 
-    private final SystemConfigRepository configRepo;
-
-    private JsonNode salaryGrades;
-    private JsonNode allowanceConfig;
-    private JsonNode pitConfig;
-    private JsonNode insuranceConfig;
-
-    public PayrollConfigService(SystemConfigRepository configRepo) {
-        this.configRepo = configRepo;
+    public PayrollConfigService(SalaryGradeConfigRepository salaryGradeRepo,
+                                AllowanceConfigRepository allowanceRepo,
+                                PitConfigRepository pitRepo,
+                                InsuranceConfigRepository insuranceRepo) {
+        this.salaryGradeRepo = salaryGradeRepo;
+        this.allowanceRepo   = allowanceRepo;
+        this.pitRepo         = pitRepo;
+        this.insuranceRepo   = insuranceRepo;
     }
 
-    @PostConstruct
-    public void reload() {
-        try {
-            salaryGrades    = loadActive("SALARY_GRADE");
-            allowanceConfig = loadActive("ALLOWANCE");
-            pitConfig       = loadActive("PIT");
-            insuranceConfig = loadActive("INSURANCE");
-        }
-        catch (IllegalStateException e) {
-            salaryGrades    = load("salary-grades.json");
-            allowanceConfig = load("allowance-config.json");
-            pitConfig       = load("pit-config.json");
-            insuranceConfig = load("insurance-config.json");
-        }
-        catch (Exception e) {
-            log.error(e.getMessage());
-        }
-        log.info("Payroll configs loaded from DB.");
+    /** Drop all resolved-config caches. Call after a config version is published. */
+    public void invalidate() {
+        salaryCache.clear();
+        allowanceCache.clear();
+        pitCache.clear();
+        insuranceCache.clear();
     }
 
     // ── Salary grade ──────────────────────────────────────────────────────────
 
     /**
-     * Returns Li — the position coefficient amount in VND.
+     * Returns Li — the position coefficient amount in VND for the given period.
      *
      * @param positionCode grade code (e.g. NV1, TL1, BOD)
      * @param salaryStep   1-based step number (1–10)
      */
-    public long getPositionCoefficient(String positionCode, int salaryStep) {
-        JsonNode grade = salaryGrades.path("grades").path(positionCode);
-        if (grade.isMissingNode()) {
-            throw new IllegalArgumentException("Unknown position code: " + positionCode);
-        }
-        JsonNode steps = grade.path("steps");
-        int index = salaryStep - 1;
-        if (index < 0 || index >= steps.size()) {
-            throw new IllegalArgumentException(
-                    "Salary step " + salaryStep + " out of range for " + positionCode);
-        }
-        // JSON values are in thousand VND
-        return steps.get(index).asLong() * 1_000L;
+    public long getPositionCoefficient(String positionCode, int salaryStep, LocalDate period) {
+        SalaryGradeConfig cfg = salaryGrade(period);
+        SalaryGrade grade = cfg.getGrades().stream()
+                .filter(g -> g.getGradeCode().equalsIgnoreCase(positionCode))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Unknown position code: " + positionCode));
+        SalaryGradeStep step = grade.getSteps().stream()
+                .filter(s -> s.getStepNo() == salaryStep)
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Salary step " + salaryStep + " out of range for " + positionCode));
+        // amounts are stored in thousand VND
+        return step.getAmountThousandVnd() * 1_000L;
     }
 
     // ── Living allowance (HT2) ────────────────────────────────────────────────
 
-    /**
-     * Returns the full-month living allowance (HT2) for the given level key.
-     *
-     * @param levelKey one of: DIRECTOR, DEPUTY_DIRECTOR, DEPT_HEAD, SENIOR_STAFF_NV1, NV2
-     */
-    public long getLivingAllowance(String levelKey) {
-        JsonNode level = allowanceConfig.path("living_allowance").path("levels").path(levelKey);
-        if (level.isMissingNode()) return 0L;
-        return level.path("meal").asLong()
-             + level.path("phone").asLong()
-             + level.path("transport").asLong()
-             + level.path("housing").asLong();
+    /** Full-month living allowance (HT2) for the given level key, or 0 if undefined. */
+    public long getLivingAllowance(String levelKey, LocalDate period) {
+        return allowance(period).getLevels().stream()
+                .filter(l -> l.getLevelKey().equalsIgnoreCase(levelKey))
+                .findFirst()
+                .map(l -> l.getMeal() + l.getPhone() + l.getTransport() + l.getHousing())
+                .orElse(0L);
     }
 
     // ── Japanese allowance (HT1) ──────────────────────────────────────────────
 
-    /**
-     * Returns HT1 Japanese language allowance (not prorated).
-     *
-     * @param jlptLevel N1 or N2; returns 0 for null/empty/unknown
-     */
-    public long getJapaneseAllowance(String jlptLevel) {
+    /** HT1 Japanese language allowance (not prorated); 0 for null/empty/unknown. */
+    public long getJapaneseAllowance(String jlptLevel, LocalDate period) {
         if (jlptLevel == null || jlptLevel.isBlank()) return 0L;
-        return allowanceConfig.path("japanese_allowance")
-                              .path("levels")
-                              .path(jlptLevel.toUpperCase())
-                              .asLong(0L);
+        return allowance(period).getJapaneseLevels().stream()
+                .filter(j -> j.getJlptLevel().equalsIgnoreCase(jlptLevel))
+                .findFirst()
+                .map(JapaneseAllowanceLevel::getAmount)
+                .orElse(0L);
     }
 
     // ── PIT ───────────────────────────────────────────────────────────────────
 
-    /** Personal relief amount for the given tax year (VND/month). */
-    public long getPersonalRelief(int taxYear) {
-        return pitConfig.path("configs")
-                        .path(String.valueOf(taxYear))
-                        .path("personal_relief")
-                        .asLong(15_500_000L);
+    /** Personal relief amount for the given period (VND/month). */
+    public long getPersonalRelief(LocalDate period) {
+        return pit(period).getPersonalRelief();
     }
 
-    /** Per-dependent relief amount for the given tax year (VND/month). */
-    public long getDependentRelief(int taxYear) {
-        return pitConfig.path("configs")
-                        .path(String.valueOf(taxYear))
-                        .path("dependent_relief")
-                        .asLong(6_200_000L);
+    /** Per-dependent relief amount for the given period (VND/month). */
+    public long getDependentRelief(LocalDate period) {
+        return pit(period).getDependentRelief();
     }
 
     /**
-     * Calculates PIT using progressive brackets for the given tax year.
-     * Uses the quick-deduction formula: income × rate − quick_deduction.
+     * Calculates PIT using progressive brackets in force for the period.
+     * Quick-deduction formula: income × rate − quick_deduction.
      */
-    public long calculatePit(long taxableIncome, int taxYear) {
+    public long calculatePit(long taxableIncome, LocalDate period) {
         if (taxableIncome <= 0) return 0L;
-
-        JsonNode brackets = pitConfig.path("configs")
-                                     .path(String.valueOf(taxYear))
-                                     .path("brackets");
-
-        for (int i = brackets.size() - 1; i >= 0; i--) {
-            JsonNode b = brackets.get(i);
-            long from = b.path("from").asLong(0L);
-            if (taxableIncome >= from) {
-                double rate = b.path("rate").asDouble();
-                long quickDeduction = b.path("quick_deduction").asLong(0L);
-                return Math.max(0L, (long)(taxableIncome * rate) - quickDeduction);
-            }
-        }
-        return 0L;
+        PitConfig cfg = pit(period);
+        PitBracket bracket = cfg.getBrackets().stream()
+                .filter(b -> taxableIncome >= b.getIncomeFrom())
+                .max(Comparator.comparingLong(PitBracket::getIncomeFrom))
+                .orElse(null);
+        if (bracket == null) return 0L;
+        return Math.max(0L, (long) (taxableIncome * bracket.getRate()) - bracket.getQuickDeduction());
     }
 
     // ── Insurance ─────────────────────────────────────────────────────────────
 
-    /** Whether the given contract type is subject to insurance deductions. */
-    public boolean isInsuranceEligible(String contractType) {
-        JsonNode eligible = insuranceConfig.path("eligible_contract_types");
-        for (JsonNode node : eligible) {
-            if (node.asText().equalsIgnoreCase(contractType)) return true;
-        }
-        return false;
+    /** Whether the given contract type is subject to insurance deductions in the period. */
+    public boolean isInsuranceEligible(String contractType, LocalDate period) {
+        return insurance(period).getEligibleContractTypes().stream()
+                .anyMatch(t -> t.getContractType().equalsIgnoreCase(contractType));
     }
 
-    public double getBhxhRate()         { return insuranceConfig.path("employee_rates").path("bhxh").asDouble(0.08); }
-    public double getBhytRate()         { return insuranceConfig.path("employee_rates").path("bhyt").asDouble(0.015); }
-    public double getBhtnRate()         { return insuranceConfig.path("employee_rates").path("bhtn").asDouble(0.01); }
-    public long   getInsuranceCeiling() { return insuranceConfig.path("insurance_ceiling").asLong(INSURANCE_CEILING); }
+    public double getBhxhRate(LocalDate period) { return insurance(period).getEeBhxh(); }
+    public double getBhytRate(LocalDate period) { return insurance(period).getEeBhyt(); }
+    public double getBhtnRate(LocalDate period) { return insurance(period).getEeBhtn(); }
 
-    /** Statutory minimum wage (VND/month). BHXH cap = 20 × this value. Default: 2,340,000 VND (2026). */
-    public long getStatutoryMinimumWage() {
-        return insuranceConfig.path("statutory_min_wage").asLong(2_340_000L);
+    /** Employer BHXH rate = pension + sickness/maternity (accident is separate). */
+    public double getEmployerBhxhRate(LocalDate period) {
+        InsuranceConfig c = insurance(period);
+        return c.getErBhxhPension() + c.getErBhxhSicknessMaternity();
+    }
+    public double getEmployerBhytRate(LocalDate period)     { return insurance(period).getErBhyt(); }
+    public double getEmployerBhtnRate(LocalDate period)     { return insurance(period).getErBhtn(); }
+    public double getEmployerAccidentRate(LocalDate period) { return insurance(period).getErBhxhAccident(); }
+
+    public long getInsuranceCeiling(LocalDate period) {
+        Long ceiling = insurance(period).getInsuranceCeiling();
+        return ceiling != null ? ceiling : INSURANCE_CEILING;
     }
 
-    // ── Internal ──────────────────────────────────────────────────────────────
-
-    private JsonNode loadActive(String configType) {
-        SystemConfig config = configRepo.findByConfigTypeAndActiveTrue(configType)
-                .orElseThrow(() -> new IllegalStateException(
-                        "No active payroll config found in DB for type: " + configType));
-        return config.getConfigData();
+    /** Statutory minimum wage (VND/month). BHXH cap = 20 × this value. */
+    public long getStatutoryMinimumWage(LocalDate period) {
+        Long min = insurance(period).getStatutoryMinWage();
+        return min != null ? min : 2_340_000L;
     }
 
+    // ── Internal resolution + cache ─────────────────────────────────────────────
 
-    private JsonNode load(String filename) {
-        try (InputStream is = new ClassPathResource(CONFIG_BASE + filename).getInputStream()) {
-            return mapper.readTree(is);
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed to load payroll config: " + filename, e);
-        }
+    private SalaryGradeConfig salaryGrade(LocalDate period) {
+        return salaryCache.computeIfAbsent(period, p -> salaryGradeRepo
+                .findFirstByStatusAndEffectiveFromLessThanEqualOrderByEffectiveFromDesc(ConfigStatus.PUBLISHED, p)
+                .orElseThrow(() -> missing("SALARY_GRADE", p)));
+    }
+
+    private AllowanceConfig allowance(LocalDate period) {
+        return allowanceCache.computeIfAbsent(period, p -> allowanceRepo
+                .findFirstByStatusAndEffectiveFromLessThanEqualOrderByEffectiveFromDesc(ConfigStatus.PUBLISHED, p)
+                .orElseThrow(() -> missing("ALLOWANCE", p)));
+    }
+
+    private PitConfig pit(LocalDate period) {
+        return pitCache.computeIfAbsent(period, p -> pitRepo
+                .findFirstByStatusAndEffectiveFromLessThanEqualOrderByEffectiveFromDesc(ConfigStatus.PUBLISHED, p)
+                .orElseThrow(() -> missing("PIT", p)));
+    }
+
+    private InsuranceConfig insurance(LocalDate period) {
+        return insuranceCache.computeIfAbsent(period, p -> insuranceRepo
+                .findFirstByStatusAndEffectiveFromLessThanEqualOrderByEffectiveFromDesc(ConfigStatus.PUBLISHED, p)
+                .orElseThrow(() -> missing("INSURANCE", p)));
+    }
+
+    private IllegalStateException missing(String type, LocalDate period) {
+        return new IllegalStateException(
+                "No PUBLISHED " + type + " payroll config effective on or before " + period);
     }
 }

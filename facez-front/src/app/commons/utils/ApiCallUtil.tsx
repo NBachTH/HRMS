@@ -1,7 +1,7 @@
 // Centralized API client with token refresh support
 import type { ApiResponse } from '../types';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE!;
 
 let accessToken: string | null = null;
 let onTokenRefreshed: ((token: string) => void) | null = null;

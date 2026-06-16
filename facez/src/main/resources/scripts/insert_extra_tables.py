@@ -13,8 +13,8 @@ from datetime import datetime, date
 from psycopg2.extras import execute_values
 
 conn = psycopg2.connect(
-    host="localhost", port=5432,
-    dbname="postgres", user="postgres", password="postgres",
+    host="localhost", port=5434,
+    dbname="HRMS", user="hrmsuser", password="hrmspassword",
 )
 conn.autocommit = False
 cur = conn.cursor()
@@ -324,8 +324,8 @@ finally:
 
 # ── Verify ────────────────────────────────────────────────────────────────────
 conn2 = psycopg2.connect(
-    host="localhost", port=5432,
-    dbname="postgres", user="postgres", password="postgres",
+    host="localhost", port=5434,
+    dbname="HRMS", user="hrmsuser", password="hrmspassword",
 )
 cur2 = conn2.cursor()
 tables = ["attendance_period_close", "leave_balance", "notification", "api_key"]

@@ -2,7 +2,7 @@
 import { apiClient, setAccessToken } from '../commons/utils/ApiCallUtil';
 import type { LoginRequest, LoginResponse } from '../commons/types';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE!;
 
 export async function signin(credentials: LoginRequest): Promise<LoginResponse> {
     const res = await fetch(`${API_BASE}/api/auth/login`, {

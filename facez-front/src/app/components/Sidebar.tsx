@@ -141,6 +141,7 @@ export function Sidebar() {
                     <div className="mb-4">
                         <SectionLabel label="Finance" />
                         <NavButton onClick={() => router.push("/finance/payroll")} label="Payroll" icon={<BanknoteIcon className="w-5 h-5" />} />
+                        <NavButton onClick={() => router.push("/finance/config")} label="Payroll Config" icon={<SettingsIcon className="w-5 h-5" />} />
                         <NavButton onClick={() => router.push("/finance/reports")} label="Reports" icon={<BarChart3Icon className="w-5 h-5" />} />
                         <NavButton onClick={() => router.push("/hr/timesheet")} label="Timesheets" icon={<ScrollTextIcon className="w-5 h-5" />} />
                     </div>
@@ -152,6 +153,7 @@ export function Sidebar() {
                         <SectionLabel label="Director" />
                         <NavButton onClick={() => router.push("/director/approvals")} label="Payroll Approvals" icon={<CheckSquareIcon className="w-5 h-5" />} />
                         <NavButton onClick={() => router.push("/finance/payroll")} label="Payroll" icon={<BanknoteIcon className="w-5 h-5" />} />
+                        <NavButton onClick={() => router.push("/finance/config")} label="Payroll Config" icon={<SettingsIcon className="w-5 h-5" />} />
                         <NavButton onClick={() => router.push("/finance/reports")} label="Reports" icon={<BarChart3Icon className="w-5 h-5" />} />
                     </div>
                 )}
@@ -160,7 +162,7 @@ export function Sidebar() {
                 {isSystemAdmin && (
                     <div className="mb-4">
                         <SectionLabel label="System" />
-                        <NavButton onClick={() => router.push("/system/config")} label="Payroll Config" icon={<SettingsIcon className="w-5 h-5" />} />
+                        <NavButton onClick={() => router.push("/finance/config")} label="Payroll Config" icon={<SettingsIcon className="w-5 h-5" />} />
                         <NavButton onClick={() => router.push("/system/accounts")} label="Account Manager" icon={<KeyRoundIcon className="w-5 h-5" />} />
                         <NavButton onClick={() => router.push("/employees/dashboard")} label="Dashboard" icon={<BarChart3Icon className="w-5 h-5" />} />
                         <NavButton onClick={() => router.push("/hr/devices")} label="Devices" icon={<MonitorIcon className="w-5 h-5" />} />
