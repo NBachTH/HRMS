@@ -115,6 +115,7 @@ export function OTContent() {
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">#</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Start Time</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">End Time</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hệ số</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
@@ -122,13 +123,14 @@ export function OTContent() {
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {visible.length === 0 ? (
-                                        <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-400">No OT requests</td></tr>
+                                        <tr><td colSpan={7} className="px-6 py-8 text-center text-gray-400">No OT requests</td></tr>
                                     ) : visible.map((ot, i) => (
                                         <tr key={ot.otRequestId} onClick={() => setSelected(ot)}
                                             className="hover:bg-blue-50/50 cursor-pointer">
                                             <td className="px-6 py-4 text-sm text-gray-900">{i + 1 + page * 20}</td>
                                             <td className="px-6 py-4 text-sm text-gray-500">{ot.startTime ? new Date(ot.startTime).toLocaleString() : '—'}</td>
                                             <td className="px-6 py-4 text-sm text-gray-500">{ot.endTime ? new Date(ot.endTime).toLocaleString() : '—'}</td>
+                                            <td className="px-6 py-4 text-sm font-medium text-gray-700">{ot.coefficient ? `×${ot.coefficient}` : '—'}</td>
                                             <td className="px-6 py-4">{getStatusBadge(ot.status)}</td>
                                             <td className="px-6 py-4 text-sm text-gray-500">{ot.createdAt ? new Date(ot.createdAt).toLocaleDateString() : '—'}</td>
                                             <td className="px-6 py-4 text-sm">

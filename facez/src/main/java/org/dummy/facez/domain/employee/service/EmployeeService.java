@@ -28,6 +28,9 @@ public class EmployeeService {
     private final UserAccountRepository userAccountRepository;
     private final DepartmentRepository departmentRepository;
     private final PasswordEncoder passwordEncoder;
+    /** Default password assigned to a new employee's account when HR doesn't set one. */
+    public static final String DEFAULT_PASSWORD = "Pass@1234";
+
 
     public EmployeeService(UserAccountRepository userAccountRepository,
             DepartmentRepository departmentRepository,
@@ -90,10 +93,13 @@ public class EmployeeService {
                 .build();
 
         // create UserAccount
+        // Auto-create the login account with a default password when none is provided.
+        String rawPassword = (req.getPassword() != null && !req.getPassword().isBlank())
+                ? req.getPassword() : DEFAULT_PASSWORD;
         UserAccount userAccount = UserAccount.builder()
                 .employeeId(req.getEmployeeId())
                 .username(req.getUsername())
-                .passwordHash(passwordEncoder.encode(req.getPassword()))
+                .passwordHash(passwordEncoder.encode(rawPassword))
                 .role(role)
                 .employeeInfo(employeeInfo)
                 .build();

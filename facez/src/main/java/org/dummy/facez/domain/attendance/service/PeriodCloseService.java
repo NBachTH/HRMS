@@ -13,6 +13,7 @@ import org.dummy.facez.domain.attendance.repository.PublicHolidayRepository;
 import org.dummy.facez.domain.employee.model.EmployeeInfo;
 import org.dummy.facez.domain.employee.repository.EmployeeInfoRepository;
 import org.dummy.facez.domain.leave.repository.LeaveRequestRepository;
+import org.dummy.facez.domain.notification.service.NotificationService;
 import org.dummy.facez.domain.workday.service.TimesheetService;
 import org.dummy.facez.domain.workday.service.WorkDayService;
 import org.springframework.stereotype.Service;
@@ -36,6 +37,29 @@ public class PeriodCloseService {
     private final PublicHolidayRepository publicHolidayRepository;
     private final WorkDayService workDayService;
     private final TimesheetService timesheetService;
+    private final NotificationService notificationService;
+
+    /**
+     * Sends each employee with unexplained absences a reminder to file an
+     * attendance-adjustment request. Returns the number of employees notified.
+     */
+    @Transactional
+    public int remindAbsentees(int year, int month) {
+        List<UnexplainedAbsenceDto> absences = checkForUnexplainedAbsences(year, month);
+        for (UnexplainedAbsenceDto a : absences) {
+            String dates = a.getMissingDates().stream().map(LocalDate::toString).collect(Collectors.joining(", "));
+            try {
+                notificationService.send(a.getEmployeeId(),
+                        "Nhắc nhở bổ sung chấm công " + month + "/" + year,
+                        "Bạn có ngày chưa chấm công: " + dates +
+                        ". Vui lòng tạo đơn Bổ sung chấm công trước khi kỳ công được chốt.",
+                        "ATTENDANCE");
+            } catch (Exception ignored) {
+                // skip employees without a valid account
+            }
+        }
+        return absences.size();
+    }
 
     @Transactional
     public PeriodCloseResponse closePeriod(PeriodCloseRequest req, String closedByUsername) {

@@ -56,6 +56,7 @@ public class OTRequestService {
     private final OTPlanEmployeeRepository otPlanEmployeeRepository;
     private final AttendanceRepository attendanceRepository;
     private final SystemConfigRepository systemConfigRepository;
+    private final org.dummy.facez.domain.attendance.repository.PublicHolidayRepository publicHolidayRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     public OTRequestService(OTRequestRepository otRequestRepository,
@@ -63,13 +64,22 @@ public class OTRequestService {
                             OTPlanEmployeeRepository otPlanEmployeeRepository,
                             AttendanceRepository attendanceRepository,
                             SystemConfigRepository systemConfigRepository,
+                            org.dummy.facez.domain.attendance.repository.PublicHolidayRepository publicHolidayRepository,
                             ApplicationEventPublisher eventPublisher) {
         this.otRequestRepository = otRequestRepository;
         this.otPlanRepository = otPlanRepository;
         this.otPlanEmployeeRepository = otPlanEmployeeRepository;
         this.attendanceRepository = attendanceRepository;
         this.systemConfigRepository = systemConfigRepository;
+        this.publicHolidayRepository = publicHolidayRepository;
         this.eventPublisher = eventPublisher;
+    }
+
+    /** weekday 1.5 · weekend 2.0 · public holiday 3.0 */
+    private double otCoefficient(LocalDate otDate) {
+        if (publicHolidayRepository.existsByHolidayDate(otDate)) return 3.0;
+        java.time.DayOfWeek dow = otDate.getDayOfWeek();
+        return (dow == java.time.DayOfWeek.SATURDAY || dow == java.time.DayOfWeek.SUNDAY) ? 2.0 : 1.5;
     }
 
     /**
@@ -164,6 +174,7 @@ public class OTRequestService {
                 .startTime(start)
                 .endTime(end)
                 .status(RequestStatus.APPROVED)
+                .coefficient(otCoefficient(otDate))
                 .build();
 
         otRequestRepository.save(ot);
@@ -285,6 +296,7 @@ public class OTRequestService {
                 .startTime(ot.getStartTime())
                 .endTime(ot.getEndTime())
                 .status(ot.getStatus() != null ? ot.getStatus().name() : null)
+                .coefficient(ot.getCoefficient())
                 .createdAt(ot.getCreatedAt())
                 .updatedAt(ot.getUpdatedAt());
 

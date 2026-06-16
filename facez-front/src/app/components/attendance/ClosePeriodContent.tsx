@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from 'react';
-import { XCircleIcon, AlertTriangleIcon, CheckCircleIcon } from 'lucide-react';
-import { closePeriod } from '@/app/services/AttendanceService';
+import { XCircleIcon, AlertTriangleIcon, CheckCircleIcon, BellIcon } from 'lucide-react';
+import { closePeriod, remindAbsentees } from '@/app/services/AttendanceService';
 import { useToast } from '@/app/commons/contexts/ToastContext';
 import type { PeriodCloseResponse, UnexplainedAbsenceDto } from '@/app/commons/types';
 
@@ -47,6 +47,19 @@ export function ClosePeriodContent() {
             showToast(err?.body?.message || 'Failed to close period', 'error');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const [reminding, setReminding] = useState(false);
+    const handleRemind = async () => {
+        setReminding(true);
+        try {
+            const res = await remindAbsentees(year, month);
+            showToast(`Đã gửi nhắc nhở tới ${res.data?.notified ?? 0} nhân viên`);
+        } catch (err: any) {
+            showToast(err?.body?.message || 'Gửi nhắc nhở thất bại', 'error');
+        } finally {
+            setReminding(false);
         }
     };
 
@@ -155,6 +168,12 @@ export function ClosePeriodContent() {
                         <button onClick={() => setStep('form')} className="flex-1 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 text-sm">
                             ← Back
                         </button>
+                        {previewResult.unexplainedAbsences.length > 0 && (
+                            <button onClick={handleRemind} disabled={reminding}
+                                className="flex-1 inline-flex items-center justify-center gap-1 py-2 border border-amber-400 text-amber-700 rounded-md hover:bg-amber-50 disabled:opacity-50 text-sm font-medium">
+                                <BellIcon className="w-4 h-4" /> {reminding ? 'Đang gửi…' : 'Gửi nhắc nhở'}
+                            </button>
+                        )}
                         <button onClick={handleForceClose} disabled={loading}
                             className="flex-1 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 text-sm font-medium">
                             {loading ? 'Closing…' : previewResult.unexplainedAbsences.length > 0 ? 'Force Close Anyway' : 'Close Period'}

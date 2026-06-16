@@ -68,7 +68,12 @@ public class Timesheet extends AuditableEntity {
     private int unnotifiedAbsenceCount;        // Nghỉ làm không thông báo
     private int under8hCount;                  // Vi phạm thời gian làm việc không đủ 8h
     private int attendanceRequestErrors;       // Lỗi log Attendance Request quá 4 lần
+
+    // Explicit column names: Hibernate's camel→snake strategy would map these to
+    // "kpi2deduction"/"kpi2index" (no underscore after a digit), which mismatches the DDL.
+    @Column(name = "kpi2_deduction")
     private long kpi2Deduction;                // Trừ lương KPI2
+    @Column(name = "kpi2_index")
     private BigDecimal kpi2Index;              // Chỉ số KPI2
     private BigDecimal prevMonthViolationAdjust;// Bù/trừ vi phạm chấm công tháng trước
 

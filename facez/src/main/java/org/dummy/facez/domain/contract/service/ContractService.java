@@ -21,9 +21,39 @@ import java.util.stream.Collectors;
 public class ContractService {
 
     private final ContractRepository contractRepository;
+    private final org.dummy.facez.common.storage.StorageService storageService;
 
-    public ContractService(ContractRepository contractRepository) {
+    public ContractService(ContractRepository contractRepository,
+                           org.dummy.facez.common.storage.StorageService storageService) {
         this.contractRepository = contractRepository;
+        this.storageService = storageService;
+    }
+
+    /** Upload (replace) the contract document into MinIO and store its key. */
+    @Transactional
+    public ContractResponse uploadDocument(String id, org.springframework.web.multipart.MultipartFile file) {
+        Contract contract = contractRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Contract", "id", id));
+        String ct = file.getContentType();
+        if (ct != null && !ct.equalsIgnoreCase("application/pdf")) {
+            throw new org.dummy.facez.common.exception.BadRequestException("Only PDF files are allowed.");
+        }
+        if (contract.getDocumentKey() != null) {
+            storageService.delete(contract.getDocumentKey());
+        }
+        String key = storageService.upload(file, "contracts/" + id);
+        contract.setDocumentKey(key);
+        contractRepository.save(contract);
+        return toResponse(contract);
+    }
+
+    public String getDocumentUrl(String id) {
+        Contract contract = contractRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Contract", "id", id));
+        if (contract.getDocumentKey() == null) {
+            throw new ResourceNotFoundException("Contract document", "contractId", id);
+        }
+        return storageService.presignedUrl(contract.getDocumentKey());
     }
 
     @Transactional
@@ -151,6 +181,7 @@ public class ContractService {
                 .positionCode(c.getPositionCode())
                 .salaryStep(c.getSalaryStep())
                 .dependentCount(c.getDependentCount())
+                .hasDocument(c.getDocumentKey() != null)
                 .createdAt(c.getCreatedAt())
                 .updatedAt(c.getUpdatedAt());
 

@@ -114,47 +114,6 @@ function PayslipDetail({ payroll, onClose }: { payroll: Payroll; onClose: () => 
     );
 }
 
-function PayslipCard({ payroll, onView }: { payroll: Payroll; onView: () => void }) {
-    return (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-                <div>
-                    <h3 className="text-base font-semibold text-gray-800">
-                        {MONTHS[payroll.payrollMonth - 1]} {payroll.payrollYear}
-                    </h3>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                        {payroll.actualWorkingDays ?? '—'}/{payroll.standardWorkingDays ?? '—'} days
-                        &nbsp;·&nbsp;KPI {payroll.kpiAverage?.toFixed(2) ?? '—'}
-                    </p>
-                </div>
-                <span className={`px-2 py-1 text-xs rounded-full ${STATUS_STYLES[payroll.status] || 'bg-gray-100 text-gray-600'}`}>
-                    {payroll.status}
-                </span>
-            </div>
-            <div className="px-5 py-4 space-y-2">
-                <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Gross</span>
-                    <span className="text-gray-800">{fmt(payroll.totalGross)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Insurance + PIT</span>
-                    <span className="text-red-600">
-                        −{fmt((payroll.bhxhEmployee ?? 0) + (payroll.bhytEmployee ?? 0) + (payroll.bhtnEmployee ?? 0) + (payroll.pit ?? 0))}
-                    </span>
-                </div>
-                <div className="border-t border-gray-100 pt-2 flex justify-between items-center">
-                    <span className="text-sm font-semibold text-gray-700">Net</span>
-                    <span className="text-lg font-bold text-blue-700">{fmt(payroll.netSalary)}</span>
-                </div>
-                <button onClick={onView}
-                    className="w-full mt-1 text-xs text-blue-600 hover:text-blue-800 text-center py-1">
-                    View details →
-                </button>
-            </div>
-        </div>
-    );
-}
-
 export function PayslipContent() {
     const [payrolls, setPayrolls] = useState<Payroll[]>([]);
     const [loading, setLoading] = useState(true);
@@ -218,10 +177,36 @@ export function PayslipContent() {
                 </div>
             ) : (
                 <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {payrolls.map(p => (
-                            <PayslipCard key={p.payrollId} payroll={p} onView={() => setSelected(p)} />
-                        ))}
+                    {/* List view — salary figures are hidden here; open an item to see details. */}
+                    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+                        <table className="w-full">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    {['Kỳ lương', 'Ngày công', 'KPI', 'Trạng thái', ''].map(h =>
+                                        <th key={h} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>)}
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200">
+                                {payrolls.map(p => (
+                                    <tr key={p.payrollId} onClick={() => setSelected(p)}
+                                        className="hover:bg-blue-50/50 cursor-pointer">
+                                        <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                                            {MONTHS[p.payrollMonth - 1]} {p.payrollYear}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-gray-700">
+                                            {p.actualWorkingDays ?? '—'}/{p.standardWorkingDays ?? '—'}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-gray-700">{p.kpiAverage?.toFixed(2) ?? '—'}</td>
+                                        <td className="px-6 py-4">
+                                            <span className={`px-2 py-1 text-xs rounded-full ${STATUS_STYLES[p.status] || 'bg-gray-100 text-gray-600'}`}>
+                                                {p.status}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-blue-600">Chi tiết →</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                     {totalPages > 1 && (
                         <div className="mt-6 flex justify-center gap-2 text-sm">

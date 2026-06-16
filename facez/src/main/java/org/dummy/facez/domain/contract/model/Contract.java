@@ -59,6 +59,11 @@ public class Contract extends AuditableEntity {
     private boolean current = true;
 
     private byte[] attachment;
+
+    /** MinIO object key of the uploaded contract document (PDF). */
+    @Column(length = 300)
+    private String documentKey;
+
     private boolean deleteFlag;
     private LocalDateTime deletedAt;
 }

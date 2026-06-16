@@ -38,6 +38,9 @@ public class OTRequest extends AuditableEntity {
     @Enumerated(EnumType.STRING)
     private RequestStatus status;
 
+    /** Pay multiplier for this OT session: weekday 1.5, weekend 2.0, public holiday 3.0. */
+    private double coefficient;
+
     private boolean deleteFlag = false;
 
     private LocalDateTime deletedAt;

@@ -26,6 +26,7 @@ public class ContractResponse {
     private String positionCode;
     private Integer salaryStep;
     private Integer dependentCount;
+    private boolean hasDocument;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

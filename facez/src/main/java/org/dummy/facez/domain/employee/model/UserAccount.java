@@ -59,6 +59,12 @@ public class UserAccount extends AuditableEntity implements UserDetails {
         return List.of(new SimpleGrantedAuthority(role.name()));
     }
 
+    /** Disabled (deleteFlag) accounts cannot authenticate. */
+    @Override
+    public boolean isEnabled() {
+        return !deleteFlag;
+    }
+
     @Override
     public @Nullable String getPassword() {
         return passwordHash;

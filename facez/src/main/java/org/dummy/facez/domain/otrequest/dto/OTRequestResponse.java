@@ -15,6 +15,7 @@ public class OTRequestResponse {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private String status;
+    private double coefficient;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

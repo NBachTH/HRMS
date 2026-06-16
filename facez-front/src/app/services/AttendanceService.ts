@@ -37,6 +37,14 @@ export async function closePeriod(year: number, month: number, notes?: string, f
     });
 }
 
+/** HR: notify employees with unexplained absences to file an adjustment request. */
+export async function remindAbsentees(year: number, month: number) {
+    return apiClient<{ notified: number }>('/api/attendances/close-period/remind', {
+        method: 'POST',
+        body: JSON.stringify({ year, month }),
+    });
+}
+
 export async function getAttendanceById(id: string) {
     return apiClient<Attendance>(`/api/attendances/${id}`);
 }

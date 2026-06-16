@@ -165,6 +165,7 @@ export interface Contract {
     current?: boolean;
     status: string;
     notes?: string;
+    hasDocument?: boolean;
     createdAt: string;
     updatedAt: string;
 }
@@ -327,6 +328,7 @@ export interface OTRequest {
     startTime: string;           // actual start
     endTime: string;             // actual end
     status: string;
+    coefficient?: number;        // pay multiplier: weekday 1.5 / weekend 2.0 / holiday 3.0
     createdAt: string;
     updatedAt: string;
 }

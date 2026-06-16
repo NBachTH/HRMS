@@ -65,8 +65,9 @@ public class AttendanceController {
         return ResponseEntity.ok(ApiResponse.ok(page));
     }
 
+    // HR no longer edits/deletes attendance directly — corrections go through attendance-adjustment requests.
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('HR_ADMIN') or hasAuthority('SYSTEM_ADMIN')")
+    @PreAuthorize("hasAuthority('SYSTEM_ADMIN')")
     public ResponseEntity<ApiResponse<AttendanceResponse>> update(
             @PathVariable(name = "id") String id,
             @Valid @RequestBody AttendanceRequest req) {
@@ -75,7 +76,7 @@ public class AttendanceController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('HR_ADMIN') or hasAuthority('SYSTEM_ADMIN')")
+    @PreAuthorize("hasAuthority('SYSTEM_ADMIN')")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable(name = "id") String id) {
         attendanceService.deleteAttendance(id);
         return ResponseEntity.ok(ApiResponse.ok(null, "Attendance deleted"));
@@ -88,5 +89,15 @@ public class AttendanceController {
         String username = ((UserDetails) authentication.getPrincipal()).getUsername();
         PeriodCloseResponse response = periodCloseService.closePeriod(req, username);
         return ResponseEntity.ok(ApiResponse.ok(response, response.getMessage()));
+    }
+
+    /** HR sends absence-reminder notifications to employees before closing the period. */
+    @PostMapping("/close-period/remind")
+    @PreAuthorize("hasAuthority('HR_ADMIN')")
+    public ResponseEntity<ApiResponse<java.util.Map<String, Integer>>> remindAbsentees(
+            @RequestBody PeriodCloseRequest req) {
+        int notified = periodCloseService.remindAbsentees(req.getYear(), req.getMonth());
+        return ResponseEntity.ok(ApiResponse.ok(java.util.Map.of("notified", notified),
+                "Đã gửi nhắc nhở tới " + notified + " nhân viên."));
     }
 }

@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { Edit2Icon, Trash2Icon, AlertTriangleIcon } from 'lucide-react';
+import { Edit2Icon, Trash2Icon, AlertTriangleIcon, PaperclipIcon } from 'lucide-react';
 import { getContracts, getExpiringSoon, createContract, updateContract, deleteContract } from '@/app/services/ContractService';
 import { getEmployees } from '@/app/services/EmployeeService';
 import { Modal } from '@/app/components/common/Modal';
+import { Pagination } from '@/app/components/common/Pagination';
+import { ContractDocumentModal } from './ContractDocumentModal';
 import { useToast } from '@/app/commons/contexts/ToastContext';
 import { useAuth } from '@/app/commons/contexts/AuthContext';
 import type { Contract, Employee } from '@/app/commons/types';
@@ -217,25 +219,32 @@ export function ContractContent() {
     const [showCreate, setShowCreate] = useState(false);
     const [editTarget, setEditTarget] = useState<Contract | null>(null);
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+    const [docTarget, setDocTarget] = useState<Contract | null>(null);
     const [search, setSearch] = useState('');
     const [activeTab, setActiveTab] = useState<ViewTab>('all');
+    const [page, setPage] = useState(0);
+    const [totalPages, setTotalPages] = useState(1);
 
     const fetchData = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
             const [contractsRes, empRes] = await Promise.all([
-                activeTab === 'expiring' ? getExpiringSoon(30) : getContracts(),
+                activeTab === 'expiring' ? getExpiringSoon(30) : getContracts(page, 20),
                 getEmployees(0, 100),
             ]);
-            if (contractsRes.success && contractsRes.data) setContracts(Array.isArray(contractsRes.data) ? contractsRes.data : ((contractsRes.data as any)?.content ?? []));
+            if (contractsRes.success && contractsRes.data) {
+                const d: any = contractsRes.data;
+                setContracts(Array.isArray(d) ? d : (d?.content ?? []));
+                setTotalPages(Array.isArray(d) ? 1 : (d?.totalPages ?? 1));
+            }
             if (empRes.success && empRes.data) setEmployees(empRes.data.content);
         } catch (err: any) {
             setError(err?.body?.message || 'Failed to load contracts');
         } finally {
             setLoading(false);
         }
-    }, [activeTab]);
+    }, [activeTab, page]);
 
     useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -288,13 +297,13 @@ export function ContractContent() {
             {/* Tabs */}
             <div className="flex gap-1 mb-4">
                 <button
-                    onClick={() => setActiveTab('all')}
+                    onClick={() => { setActiveTab('all'); setPage(0); }}
                     className={`px-4 py-2 text-sm rounded-md font-medium transition-colors
                         ${activeTab === 'all' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50'}`}>
                     All Contracts
                 </button>
                 <button
-                    onClick={() => setActiveTab('expiring')}
+                    onClick={() => { setActiveTab('expiring'); setPage(0); }}
                     className={`flex items-center gap-1.5 px-4 py-2 text-sm rounded-md font-medium transition-colors
                         ${activeTab === 'expiring' ? 'bg-amber-500 text-white' : 'bg-white text-amber-600 border border-amber-300 hover:bg-amber-50'}`}>
                     <AlertTriangleIcon className="w-3.5 h-3.5" /> Expiring in 30 Days
@@ -332,12 +341,13 @@ export function ContractContent() {
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">End Date</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Salary Rank</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Document</th>
                                     {canWrite && <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>}
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
                                 {filtered.length === 0 ? (
-                                    <tr><td colSpan={canWrite ? 7 : 6} className="px-6 py-8 text-center text-gray-400">No contracts found</td></tr>
+                                    <tr><td colSpan={canWrite ? 8 : 7} className="px-6 py-8 text-center text-gray-400">No contracts found</td></tr>
                                 ) : filtered.map(c => (
                                     <tr key={c.id} className="hover:bg-gray-50">
                                         <td className="px-6 py-4 text-sm text-gray-900 font-medium">
@@ -350,6 +360,15 @@ export function ContractContent() {
                                         <td className="px-6 py-4 text-sm text-gray-500">{c.endDate || '—'}</td>
                                         <td className="px-6 py-4 text-sm text-gray-500">{c.salaryRank ?? '—'}</td>
                                         <td className="px-6 py-4">{getStatusBadge(c.status)}</td>
+                                        <td className="px-6 py-4">
+                                            <button onClick={() => setDocTarget(c)}
+                                                className={`inline-flex items-center gap-1 px-2 py-1 text-xs rounded ${
+                                                    c.hasDocument ? 'text-green-700 hover:bg-green-50' : 'text-gray-500 hover:bg-gray-50'
+                                                }`} title={c.hasDocument ? 'Xem tài liệu' : 'Đính kèm tài liệu'}>
+                                                <PaperclipIcon className="w-4 h-4" />
+                                                {c.hasDocument ? 'Xem' : 'Đính kèm'}
+                                            </button>
+                                        </td>
                                         {canWrite && (
                                             <td className="px-6 py-4 text-sm">
                                                 <div className="flex items-center space-x-2">
@@ -370,6 +389,11 @@ export function ContractContent() {
                         </table>
                     </div>
                 )}
+                {activeTab === 'all' && totalPages > 1 && (
+                    <div className="px-6 py-3 border-t border-gray-100">
+                        <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+                    </div>
+                )}
             </div>
 
             <ContractFormModal
@@ -385,6 +409,13 @@ export function ContractContent() {
                 onSuccess={fetchData}
                 contract={editTarget}
                 employees={employees}
+            />
+
+            <ContractDocumentModal
+                contract={docTarget}
+                canUpload={canWrite}
+                onClose={() => setDocTarget(null)}
+                onUploaded={fetchData}
             />
 
             {deleteConfirm && (

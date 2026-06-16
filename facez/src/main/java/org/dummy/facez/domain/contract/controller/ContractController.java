@@ -16,8 +16,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/contracts")
@@ -84,5 +86,21 @@ public class ContractController {
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable String id) {
         contractService.deleteContract(id);
         return ResponseEntity.ok(ApiResponse.ok(null, "Contract deleted"));
+    }
+
+    /** Upload (or replace) the contract document (PDF) into MinIO. */
+    @PostMapping(value = "/{id}/document", consumes = "multipart/form-data")
+    @PreAuthorize("hasAnyAuthority('HR_ADMIN','SYSTEM_ADMIN')")
+    public ResponseEntity<ApiResponse<ContractResponse>> uploadDocument(
+            @PathVariable String id, @RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                contractService.uploadDocument(id, file), "Document uploaded"));
+    }
+
+    /** Returns a short-lived presigned URL to view the contract document. */
+    @GetMapping("/{id}/document-url")
+    @PreAuthorize("hasAnyAuthority('HR_ADMIN','FINANCE_ADMIN','SYSTEM_ADMIN')")
+    public ResponseEntity<ApiResponse<Map<String, String>>> getDocumentUrl(@PathVariable String id) {
+        return ResponseEntity.ok(ApiResponse.ok(Map.of("url", contractService.getDocumentUrl(id))));
     }
 }

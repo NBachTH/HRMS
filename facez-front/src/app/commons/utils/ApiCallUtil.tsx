@@ -18,7 +18,12 @@ export function onTokenRefresh(callback: (token: string) => void) {
     onTokenRefreshed = callback;
 }
 
-async function refreshAccessToken(): Promise<string | null> {
+// Single-flight refresh: concurrent 401/403s share ONE /api/auth/refresh call.
+// (Refresh-token rotation revokes the old token, so parallel refreshes would
+//  cascade into 401s — e.g. the config page firing 4 requests at once.)
+let refreshPromise: Promise<string | null> | null = null;
+
+async function doRefresh(): Promise<string | null> {
     try {
         const res = await fetch(`${API_BASE}/api/auth/refresh`, {
             method: 'POST',
@@ -35,6 +40,13 @@ async function refreshAccessToken(): Promise<string | null> {
     } catch {
         return null;
     }
+}
+
+function refreshAccessToken(): Promise<string | null> {
+    if (!refreshPromise) {
+        refreshPromise = doRefresh().finally(() => { refreshPromise = null; });
+    }
+    return refreshPromise;
 }
 
 export async function apiClient<T = unknown>(
