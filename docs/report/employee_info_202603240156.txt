@@ -1,6 +1,0 @@
-|employee_id|address|date_of_joining|delete_flag|email             |emergency_contact|name                |phone_number|profile_picture|role        |status|department_id|deleted_at|
-|-----------|-------|---------------|-----------|------------------|-----------------|--------------------|------------|---------------|------------|------|-------------|----------|
-|employee001|       |2026-03-11     |false      |employee@dummy.org|                 |Employee            |            |               |EMPLOYEE    |ACTIVE|             |          |
-|hr001      |       |2026-03-11     |false      |hr@dummy.org      |                 |HR                  |            |               |HR_ADMIN    |ACTIVE|             |          |
-|leader001  |       |2026-03-11     |false      |leader@dummy.org  |                 |Leader              |            |               |LEADER      |ACTIVE|             |          |
-|manager001 |       |2026-03-11     |false      |manager@dummy.org |                 |Manager             |            |               |MANAGER     |ACTIVE|             |          |

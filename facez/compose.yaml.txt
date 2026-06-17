@@ -1,17 +1,4 @@
 services:
-  postgres:
-    image: 'postgres:latest'
-    container_name: postgres-db
-    environment:
-      - 'POSTGRES_DB=checkin_db'
-      - 'POSTGRES_PASSWORD=springpass'
-      - 'POSTGRES_USER=springuser'
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - springnet
   minio:
     image: minio/minio
     ports:
@@ -36,7 +23,6 @@ services:
       - springnet
 
 volumes:
-  postgres_data:
   redis-data:
   minio_data:
 
