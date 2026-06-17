@@ -162,7 +162,6 @@ export function Sidebar() {
                 {isSystemAdmin && (
                     <div className="mb-4">
                         <SectionLabel label="System" />
-                        <NavButton onClick={() => router.push("/finance/config")} label="Payroll Config" icon={<SettingsIcon className="w-5 h-5" />} />
                         <NavButton onClick={() => router.push("/system/accounts")} label="Account Manager" icon={<KeyRoundIcon className="w-5 h-5" />} />
                         <NavButton onClick={() => router.push("/employees/dashboard")} label="Dashboard" icon={<BarChart3Icon className="w-5 h-5" />} />
                         <NavButton onClick={() => router.push("/hr/devices")} label="Devices" icon={<MonitorIcon className="w-5 h-5" />} />

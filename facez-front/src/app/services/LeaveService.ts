@@ -20,6 +20,11 @@ export async function createLeave(data: LeaveCreateRequest) {
     return apiClient<LeaveRequest>('/api/leaves', { method: 'POST', body: JSON.stringify(data) });
 }
 
+// Edit a DRAFT request before submitting (owner-only, DRAFT-only — enforced server-side).
+export async function updateLeave(id: string, data: LeaveCreateRequest) {
+    return apiClient<LeaveRequest>(`/api/leaves/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+}
+
 // DRAFT → TO_APPROVE
 export async function submitLeave(id: string) {
     return apiClient<LeaveRequest>(`/api/leaves/${id}/submit`, { method: 'PUT' });

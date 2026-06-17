@@ -12,20 +12,20 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * Typed, effective-dated payroll configuration management. Maker-checker:
+ * Typed, effective-dated payroll configuration management. Finance-owned, maker-checker:
  * <ul>
- *   <li>Read: FINANCE_ADMIN, DIRECTOR, SYSTEM_ADMIN</li>
- *   <li>Create draft / delete draft: FINANCE_ADMIN, SYSTEM_ADMIN</li>
- *   <li>Publish (goes live in payroll): DIRECTOR, SYSTEM_ADMIN</li>
+ *   <li>Read: FINANCE_ADMIN, DIRECTOR</li>
+ *   <li>Create draft / delete draft: FINANCE_ADMIN</li>
+ *   <li>Publish (goes live in payroll): DIRECTOR</li>
  * </ul>
  */
 @RestController
 @RequestMapping("/api/payroll-configs")
 public class PayrollConfigController {
 
-    private static final String READ    = "hasAnyAuthority('FINANCE_ADMIN','DIRECTOR','SYSTEM_ADMIN')";
-    private static final String WRITE   = "hasAnyAuthority('FINANCE_ADMIN','SYSTEM_ADMIN')";
-    private static final String PUBLISH = "hasAnyAuthority('DIRECTOR','SYSTEM_ADMIN')";
+    private static final String READ    = "hasAnyAuthority('FINANCE_ADMIN','DIRECTOR')";
+    private static final String WRITE   = "hasAuthority('FINANCE_ADMIN')";
+    private static final String PUBLISH = "hasAuthority('DIRECTOR')";
 
     private final PayrollConfigAdminService service;
 

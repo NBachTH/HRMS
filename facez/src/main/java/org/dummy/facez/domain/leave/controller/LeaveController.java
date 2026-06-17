@@ -73,6 +73,16 @@ public class LeaveController {
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
+    /** Edit a DRAFT request before submitting it. Owner-only, DRAFT-only (enforced in the service). */
+    @PutMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<LeaveResponse>> update(
+            @PathVariable String id, @Valid @RequestBody LeaveCreateRequest req, Authentication auth) {
+        String callerId = ((UserAccount) auth.getPrincipal()).getEmployeeId();
+        LeaveResponse response = leaveService.updateLeaveRequest(id, req, callerId);
+        return ResponseEntity.ok(ApiResponse.ok(response, "Leave request updated"));
+    }
+
     /** Submit a DRAFT request into the approval workflow (DRAFT → TO_APPROVE). */
     @PutMapping("/{id}/submit")
     @PreAuthorize("isAuthenticated()")

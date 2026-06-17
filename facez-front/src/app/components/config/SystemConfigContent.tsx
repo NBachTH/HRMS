@@ -19,6 +19,7 @@ import { SalaryGradeEditor } from './editors/SalaryGradeEditor';
 import { PitEditor } from './editors/PitEditor';
 import { InsuranceEditor } from './editors/InsuranceEditor';
 import { AllowanceEditor } from './editors/AllowanceEditor';
+import { ConfigDetail } from './editors/ConfigDetail';
 
 const CONFIG_TYPES: ConfigType[] = ['SALARY_GRADE', 'ALLOWANCE', 'PIT', 'INSURANCE'];
 const CONFIG_LABELS: Record<ConfigType, string> = {
@@ -69,9 +70,9 @@ function StatusBadge({ status }: { status: string }) {
 export function SystemConfigContent() {
     const { role } = useAuth();
     const { showToast } = useToast();
-    // Maker-checker: FINANCE creates/deletes drafts; DIRECTOR/SYSTEM_ADMIN publish.
-    const canCreate = role !== 'DIRECTOR';
-    const canPublish = role !== 'FINANCE_ADMIN';
+    // Maker-checker: FINANCE creates/deletes drafts; DIRECTOR publishes.
+    const canCreate = role === 'FINANCE_ADMIN';
+    const canPublish = role === 'DIRECTOR';
 
     const [activeTab, setActiveTab] = useState<ConfigType>('SALARY_GRADE');
     const [items, setItems] = useState<AnyConfig[]>([]);
@@ -84,6 +85,7 @@ export function SystemConfigContent() {
     const [saving, setSaving] = useState(false);
     const [publishingId, setPublishingId] = useState<string | null>(null);
     const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [detailItem, setDetailItem] = useState<AnyConfig | null>(null);
 
     const fetchItems = useCallback(async () => {
         setLoading(true); setError(null);
@@ -220,13 +222,13 @@ export function SystemConfigContent() {
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                             {items.map(cfg => (
-                                <tr key={cfg.id} className="hover:bg-gray-50">
+                                <tr key={cfg.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => setDetailItem(cfg)}>
                                     <td className="px-4 py-3 text-sm font-semibold text-gray-900">{cfg.effectiveFrom}</td>
                                     <td className="px-4 py-3"><StatusBadge status={cfg.status} /></td>
                                     <td className="px-4 py-3 text-sm text-gray-600">{ADAPTERS[activeTab].summary(cfg)}</td>
                                     <td className="px-4 py-3 text-sm text-gray-600 max-w-xs truncate" title={cfg.legalBasis ?? ''}>{cfg.legalBasis ?? '—'}</td>
                                     <td className="px-4 py-3 text-sm text-gray-600">{cfg.updatedBy ?? cfg.createdBy ?? '—'}</td>
-                                    <td className="px-4 py-3">
+                                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                                         <div className="flex items-center gap-1">
                                             {canCreate && (
                                                 <button onClick={() => openNew(cfg)}
@@ -261,6 +263,11 @@ export function SystemConfigContent() {
             <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)}
                 title={`${prefill ? 'New draft (from existing)' : 'New'} — ${CONFIG_LABELS[activeTab]}`} width="max-w-4xl">
                 {renderEditor()}
+            </Modal>
+
+            <Modal isOpen={detailItem !== null} onClose={() => setDetailItem(null)}
+                title={`${CONFIG_LABELS[activeTab]} — ${detailItem?.effectiveFrom ?? ''}`} width="max-w-4xl">
+                {detailItem && <ConfigDetail type={activeTab} config={detailItem} />}
             </Modal>
 
             {/* Delete confirm */}

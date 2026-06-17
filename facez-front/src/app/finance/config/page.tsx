@@ -7,7 +7,7 @@ import { SystemConfigContent } from '@/app/components/config/SystemConfigContent
 
 export default function FinanceConfigPage() {
     return (
-        <ProtectedRoute allowedRoles={['FINANCE_ADMIN', 'DIRECTOR', 'SYSTEM_ADMIN']}>
+        <ProtectedRoute allowedRoles={['FINANCE_ADMIN', 'DIRECTOR']}>
             <div className="flex h-screen w-full bg-gray-50">
                 <Sidebar />
                 <div className="flex-1 flex flex-col overflow-hidden">

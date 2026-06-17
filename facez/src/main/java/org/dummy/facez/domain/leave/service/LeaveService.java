@@ -87,24 +87,7 @@ public class LeaveService {
     /** Save a new request as a DRAFT. No balance is reserved and no approver is notified yet. */
     @Transactional
     public LeaveResponse createLeaveRequest(LeaveCreateRequest req) {
-        if (req.getEndTime().isBefore(req.getStartTime())) {
-            throw new BadRequestException("End time must be after start time");
-        }
-
-        // Phase 4.4: Guard against system-only leave types
-        if (!EMPLOYEE_SUBMITTABLE.contains(req.getLeaveType())) {
-            throw new BadRequestException(
-                    "Leave type " + req.getLeaveType() + " cannot be submitted manually.");
-        }
-
-        // #3: count actual working days (exclude weekends + public holidays), not calendar days
-        BigDecimal workingDays = computeWorkingDays(
-                req.getStartTime().toLocalDate(), req.getEndTime().toLocalDate(), req.isHalfDay());
-        if (workingDays.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new BadRequestException(
-                    "The selected range contains no working days (weekends and public holidays are excluded).");
-        }
-        BigDecimal durationHours = workingDays.multiply(BigDecimal.valueOf(8));
+        BigDecimal durationHours = validateAndComputeDuration(req);
 
         EmployeeInfo empRef = new EmployeeInfo();
         empRef.setEmployeeId(req.getEmployeeId());
@@ -196,6 +179,33 @@ public class LeaveService {
                 this, employeeId, empName, leave.getLeaveRequestId(),
                 leave.getLeaveType().name()));
 
+        return toResponse(leave);
+    }
+
+    /**
+     * Edit a DRAFT request before it is submitted. Only the owner may edit, and only while DRAFT
+     * (once submitted, the request must be rejected by an approver to change it).
+     */
+    @Transactional
+    public LeaveResponse updateLeaveRequest(String id, LeaveCreateRequest req, String callerEmployeeId) {
+        LeaveRequest leave = findById(id);
+        if (leave.getStatus() != RequestStatus.DRAFT) {
+            throw new BadRequestException(
+                    "Only DRAFT requests can be edited. Current: " + leave.getStatus());
+        }
+        if (callerEmployeeId != null && leave.getEmployeeInfo() != null
+                && !callerEmployeeId.equals(leave.getEmployeeInfo().getEmployeeId())) {
+            throw new BadRequestException("You can only edit your own leave request.");
+        }
+
+        BigDecimal durationHours = validateAndComputeDuration(req);
+        leave.setLeaveType(req.getLeaveType());
+        leave.setReason(req.getReason());
+        leave.setStartTime(req.getStartTime());
+        leave.setEndTime(req.getEndTime());
+        leave.setDurationHours(durationHours);
+        leave.setUpdatedAt(LocalDateTime.now());
+        leaveRequestRepository.save(leave);
         return toResponse(leave);
     }
 
@@ -314,6 +324,26 @@ public class LeaveService {
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /** Shared validation for create/edit: range, submittable type, working-day count → durationHours. */
+    private BigDecimal validateAndComputeDuration(LeaveCreateRequest req) {
+        if (req.getEndTime().isBefore(req.getStartTime())) {
+            throw new BadRequestException("End time must be after start time");
+        }
+        // Phase 4.4: Guard against system-only leave types
+        if (!EMPLOYEE_SUBMITTABLE.contains(req.getLeaveType())) {
+            throw new BadRequestException(
+                    "Leave type " + req.getLeaveType() + " cannot be submitted manually.");
+        }
+        // #3: count actual working days (exclude weekends + public holidays), not calendar days
+        BigDecimal workingDays = computeWorkingDays(
+                req.getStartTime().toLocalDate(), req.getEndTime().toLocalDate(), req.isHalfDay());
+        if (workingDays.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BadRequestException(
+                    "The selected range contains no working days (weekends and public holidays are excluded).");
+        }
+        return workingDays.multiply(BigDecimal.valueOf(8));
+    }
 
     private void releaseBalance(LeaveRequest leave) {
         if (leave.isBalanceDeducted() && leave.getLeaveType() == LeaveType.ANNUAL

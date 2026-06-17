@@ -29,14 +29,14 @@ public class SystemConfigController {
      * ?type=SALARY_GRADE | ALLOWANCE | PIT | INSURANCE
      */
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('FINANCE_ADMIN','DIRECTOR','SYSTEM_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('FINANCE_ADMIN','DIRECTOR')")
     public ResponseEntity<ApiResponse<List<SystemConfigResponse>>> list(
             @RequestParam("type") String configType) {
         return ResponseEntity.ok(ApiResponse.ok(service.listByType(configType)));
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('FINANCE_ADMIN','DIRECTOR','SYSTEM_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('FINANCE_ADMIN','DIRECTOR')")
     public ResponseEntity<ApiResponse<SystemConfigResponse>> getById(@PathVariable String id) {
         return ResponseEntity.ok(ApiResponse.ok(service.getById(id)));
     }

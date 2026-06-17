@@ -15,6 +15,16 @@ interface Props {
 const toPct = (f: number | null | undefined) => (f === null || f === undefined ? null : Math.round(f * 1e7) / 1e5);
 const toFrac = (p: number | null) => (p === null ? 0 : Math.round((p / 100) * 1e7) / 1e7);
 
+/** One labelled percent-input row inside a rate table. */
+function RateRow({ label, value, onChange }: { label: string; value: number | null; onChange: (v: number | null) => void }) {
+    return (
+        <tr className="border-t border-gray-100">
+            <td className="px-3 py-1.5 text-gray-600">{label}</td>
+            <td className="px-3 py-1.5 w-32"><NumberInput value={value} onChange={onChange} step="0.001" /></td>
+        </tr>
+    );
+}
+
 export function InsuranceEditor({ initial, saving, onSave, onCancel }: Props) {
     const [effectiveFrom, setEffectiveFrom] = useState(initial?.effectiveFrom ?? '');
     const [legalBasis, setLegalBasis] = useState(initial?.legalBasis ?? '');
@@ -57,6 +67,8 @@ export function InsuranceEditor({ initial, saving, onSave, onCancel }: Props) {
         });
     };
 
+    const tableCls = "w-full text-sm border border-gray-200 rounded-md overflow-hidden";
+
     return (
         <form onSubmit={submit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -64,26 +76,27 @@ export function InsuranceEditor({ initial, saving, onSave, onCancel }: Props) {
                 <Field label="Legal basis"><TextInput value={legalBasis} onChange={setLegalBasis} placeholder="e.g. Law 41/2024/QH15" /></Field>
                 <Field label="Government base salary (VND)"><NumberInput value={govBase} onChange={setGovBase} /></Field>
                 <Field label="Insurance ceiling (VND)"><NumberInput value={ceiling} onChange={setCeiling} /></Field>
-                <Field label="Statutory min wage (VND)" hint="BHXH cap = 20× this. Blank → default 2,340,000"><NumberInput value={minWage} onChange={setMinWage} /></Field>
+                <Field label="Statutory min wage (VND)" hint="BHXH cap = 20×; blank → default 2,340,000"><NumberInput value={minWage} onChange={setMinWage} /></Field>
             </div>
 
-            <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Employee rates (%) — total {eeTotal.toFixed(3)}%</p>
-                <div className="grid grid-cols-3 gap-4">
-                    <Field label="BHXH"><NumberInput value={eeBhxh} onChange={setEeBhxh} step="0.001" /></Field>
-                    <Field label="BHYT"><NumberInput value={eeBhyt} onChange={setEeBhyt} step="0.001" /></Field>
-                    <Field label="BHTN"><NumberInput value={eeBhtn} onChange={setEeBhtn} step="0.001" /></Field>
+            <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Employee rates (%) — Σ {eeTotal.toFixed(3)}%</p>
+                    <table className={tableCls}><tbody>
+                        <RateRow label="BHXH" value={eeBhxh} onChange={setEeBhxh} />
+                        <RateRow label="BHYT" value={eeBhyt} onChange={setEeBhyt} />
+                        <RateRow label="BHTN" value={eeBhtn} onChange={setEeBhtn} />
+                    </tbody></table>
                 </div>
-            </div>
-
-            <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Employer rates (%) — total {erTotal.toFixed(3)}%</p>
-                <div className="grid grid-cols-3 gap-4">
-                    <Field label="BHXH pension"><NumberInput value={erPension} onChange={setErPension} step="0.001" /></Field>
-                    <Field label="BHXH sickness/maternity"><NumberInput value={erSick} onChange={setErSick} step="0.001" /></Field>
-                    <Field label="BHXH accident"><NumberInput value={erAcc} onChange={setErAcc} step="0.001" /></Field>
-                    <Field label="BHYT"><NumberInput value={erBhyt} onChange={setErBhyt} step="0.001" /></Field>
-                    <Field label="BHTN"><NumberInput value={erBhtn} onChange={setErBhtn} step="0.001" /></Field>
+                <div>
+                    <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Employer rates (%) — Σ {erTotal.toFixed(3)}%</p>
+                    <table className={tableCls}><tbody>
+                        <RateRow label="BHXH pension" value={erPension} onChange={setErPension} />
+                        <RateRow label="BHXH sickness/maternity" value={erSick} onChange={setErSick} />
+                        <RateRow label="BHXH accident" value={erAcc} onChange={setErAcc} />
+                        <RateRow label="BHYT" value={erBhyt} onChange={setErBhyt} />
+                        <RateRow label="BHTN" value={erBhtn} onChange={setErBhtn} />
+                    </tbody></table>
                 </div>
             </div>
 
@@ -96,9 +109,7 @@ export function InsuranceEditor({ initial, saving, onSave, onCancel }: Props) {
                     </div>
                 </Field>
                 <Field label="Probation">
-                    <div className="pt-1">
-                        <Toggle label="Probation exempt from insurance" checked={probationExempt} onChange={setProbationExempt} />
-                    </div>
+                    <div className="pt-1"><Toggle label="Probation exempt from insurance" checked={probationExempt} onChange={setProbationExempt} /></div>
                 </Field>
             </div>
 

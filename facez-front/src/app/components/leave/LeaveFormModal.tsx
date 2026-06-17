@@ -4,12 +4,12 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { AlertTriangle, Paperclip } from 'lucide-react';
 import { Modal } from '@/app/components/common/Modal';
 import { ApprovalStepper } from '@/app/components/common/ApprovalStepper';
-import { createLeave, getMyBalances } from '@/app/services/LeaveService';
+import { createLeave, updateLeave, getMyBalances } from '@/app/services/LeaveService';
 import { getMyProjects } from '@/app/services/ProjectService';
 import { getByYear as getHolidaysByYear } from '@/app/services/PublicHolidayService';
 import { useToast } from '@/app/commons/contexts/ToastContext';
 import { useAuth } from '@/app/commons/contexts/AuthContext';
-import type { LeaveType, LeaveBalance, Project } from '@/app/commons/types';
+import type { LeaveType, LeaveBalance, Project, LeaveRequest } from '@/app/commons/types';
 
 const LEAVE_TYPES: { value: LeaveType; label: string }[] = [
     { value: 'ANNUAL', label: 'Annual Leave' },
@@ -29,6 +29,8 @@ interface Props {
     isOpen: boolean;
     onClose: () => void;
     onSuccess: () => void;
+    /** When set, the modal edits this DRAFT request instead of creating a new one. */
+    editing?: LeaveRequest | null;
 }
 
 interface DetailRow { date: string; days: number; hours: number; }
@@ -40,7 +42,7 @@ function ymd(d: Date): string {
     return `${d.getFullYear()}-${m}-${day}`;
 }
 
-export function LeaveFormModal({ isOpen, onClose, onSuccess }: Props) {
+export function LeaveFormModal({ isOpen, onClose, onSuccess, editing }: Props) {
     const { showToast } = useToast();
     const { user } = useAuth();
     const [saving, setSaving] = useState(false);
@@ -62,7 +64,19 @@ export function LeaveFormModal({ isOpen, onClose, onSuccess }: Props) {
     useEffect(() => {
         if (!isOpen) return;
         const today = new Date().toISOString().slice(0, 10);
-        setForm({ projectId: '', leaveType: 'ANNUAL', from: today, to: today, halfDay: false, reason: '', attachmentName: '' });
+        if (editing) {
+            const fromD = editing.startTime?.slice(0, 10) ?? today;
+            const toD = editing.endTime?.slice(0, 10) ?? fromD;
+            // Half-day is encoded as a same-day request ending at 12:00.
+            const half = fromD === toD && editing.endTime?.slice(11, 16) === '12:00';
+            setForm({
+                projectId: '', leaveType: (editing.leaveType as LeaveType) ?? 'ANNUAL',
+                from: fromD, to: half ? fromD : toD, halfDay: !!half,
+                reason: editing.reason ?? '', attachmentName: '',
+            });
+        } else {
+            setForm({ projectId: '', leaveType: 'ANNUAL', from: today, to: today, halfDay: false, reason: '', attachmentName: '' });
+        }
         setErrors({});
         getMyBalances()
             .then(res => setBalances(Array.isArray(res.data) ? res.data : []))
