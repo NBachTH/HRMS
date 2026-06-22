@@ -83,26 +83,98 @@ public class OTRequestService {
     }
 
     /**
-     * Logs an actual OT session against an approved OT plan. Runs the four-step
-     * validation (plan → attendance → legal limits → overlap) and, when everything
-     * passes, auto-approves the request — the manager-approved plan plus the device
-     * attendance are the objective evidence, so no further approval round is needed.
+     * Logs an actual OT session against an approved OT plan as a DRAFT — editable until submitted.
+     * Heavy validation (plan → attendance → legal limits → overlap) runs at {@link #submitOTRequest},
+     * which auto-approves: the manager-approved plan plus device attendance are objective evidence,
+     * so no further approval round is needed.
      */
     @Transactional
     public OTRequestResponse createOTRequest(OTRequestCreateDto req) {
-        String employeeId = req.getEmployeeId();
         LocalDateTime start = req.getActualStartTime();
         LocalDateTime end   = req.getActualEndTime();
-
         if (!end.isAfter(start)) {
             throw new BadRequestException("Actual end time must be after actual start time");
         }
+        OTPlan plan = otPlanRepository.findById(req.getOtPlanId())
+                .orElseThrow(() -> new ResourceNotFoundException("OTPlan", "id", req.getOtPlanId()));
+
+        EmployeeInfo empRef = new EmployeeInfo();
+        empRef.setEmployeeId(req.getEmployeeId());
+
+        OTRequest ot = OTRequest.builder()
+                .otRequestId(UUID.randomUUID().toString())
+                .employeeInfo(empRef)
+                .otPlan(plan)
+                .startTime(start)
+                .endTime(end)
+                .status(RequestStatus.DRAFT)
+                .coefficient(otCoefficient(start.toLocalDate()))
+                .build();
+        otRequestRepository.save(ot);
+        return toResponse(ot);
+    }
+
+    /** Edit a DRAFT OT request before submitting (owner-only, DRAFT-only). */
+    @Transactional
+    public OTRequestResponse updateOTRequest(String id, OTRequestCreateDto req, String callerEmployeeId) {
+        OTRequest ot = findById(id);
+        if (ot.getStatus() != RequestStatus.DRAFT) {
+            throw new BadRequestException("Only DRAFT requests can be edited. Current: " + ot.getStatus());
+        }
+        if (callerEmployeeId != null && ot.getEmployeeInfo() != null
+                && !callerEmployeeId.equals(ot.getEmployeeInfo().getEmployeeId())) {
+            throw new BadRequestException("You can only edit your own OT request.");
+        }
+        LocalDateTime start = req.getActualStartTime();
+        LocalDateTime end   = req.getActualEndTime();
+        if (!end.isAfter(start)) {
+            throw new BadRequestException("Actual end time must be after actual start time");
+        }
+        OTPlan plan = otPlanRepository.findById(req.getOtPlanId())
+                .orElseThrow(() -> new ResourceNotFoundException("OTPlan", "id", req.getOtPlanId()));
+        ot.setOtPlan(plan);
+        ot.setStartTime(start);
+        ot.setEndTime(end);
+        ot.setCoefficient(otCoefficient(start.toLocalDate()));
+        ot.setUpdatedAt(LocalDateTime.now());
+        otRequestRepository.save(ot);
+        return toResponse(ot);
+    }
+
+    /**
+     * Submit a DRAFT OT request: run the four-step validation and auto-approve on success,
+     * feeding the OT minutes into the WorkDay for that day.
+     */
+    @Transactional
+    public OTRequestResponse submitOTRequest(String id) {
+        OTRequest ot = findById(id);
+        if (ot.getStatus() != RequestStatus.DRAFT) {
+            throw new BadRequestException("Only DRAFT requests can be submitted. Current: " + ot.getStatus());
+        }
+        validateForApproval(ot);
+        ot.setStatus(RequestStatus.APPROVED);
+        ot.setCoefficient(otCoefficient(ot.getStartTime().toLocalDate()));
+        ot.setUpdatedAt(LocalDateTime.now());
+        otRequestRepository.save(ot);
+        eventPublisher.publishEvent(new OTApprovedEvent(
+                this, ot.getOtRequestId(), ot.getEmployeeInfo().getEmployeeId(),
+                ot.getStartTime(), ot.getEndTime()));
+        return toResponse(ot);
+    }
+
+    /** Four-step validation (plan → attendance → legal limits → overlap) run before auto-approval. */
+    private void validateForApproval(OTRequest ot) {
+        String employeeId = ot.getEmployeeInfo().getEmployeeId();
+        LocalDateTime start = ot.getStartTime();
+        LocalDateTime end   = ot.getEndTime();
         long requestedMinutes = Duration.between(start, end).toMinutes();
         LocalDate otDate = start.toLocalDate();
 
         // ── Step 1: OT plan exists, is approved, includes this employee, matches the date ──
-        OTPlan plan = otPlanRepository.findById(req.getOtPlanId())
-                .orElseThrow(() -> new ResourceNotFoundException("OTPlan", "id", req.getOtPlanId()));
+        OTPlan plan = ot.getOtPlan();
+        if (plan == null) {
+            throw new BadRequestException("OT request has no linked OT plan.");
+        }
         if (plan.getStatus() != RequestStatus.APPROVED) {
             throw new BadRequestException("OT plan is not approved (status: " + plan.getStatus() + ").");
         }
@@ -162,26 +234,6 @@ public class OTRequestService {
         if (overlaps > 0) {
             throw new BadRequestException("This OT session overlaps another OT request for the same period.");
         }
-
-        // All checks pass → auto-approve.
-        EmployeeInfo empRef = new EmployeeInfo();
-        empRef.setEmployeeId(employeeId);
-
-        OTRequest ot = OTRequest.builder()
-                .otRequestId(UUID.randomUUID().toString())
-                .employeeInfo(empRef)
-                .otPlan(plan)
-                .startTime(start)
-                .endTime(end)
-                .status(RequestStatus.APPROVED)
-                .coefficient(otCoefficient(otDate))
-                .build();
-
-        otRequestRepository.save(ot);
-
-        // Auto-approved → feed the OT minutes into the WorkDay for that day.
-        eventPublisher.publishEvent(new OTApprovedEvent(this, ot.getOtRequestId(), employeeId, start, end));
-        return toResponse(ot);
     }
 
     public PageResponse<OTRequestResponse> getAllOTRequests(String status, Pageable pageable) {

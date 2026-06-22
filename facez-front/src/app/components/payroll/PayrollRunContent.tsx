@@ -10,7 +10,7 @@ import { useAuth } from '@/app/commons/contexts/AuthContext';
 import { useToast } from '@/app/commons/contexts/ToastContext';
 import { Modal } from '@/app/components/common/Modal';
 import { getEffectiveConfigs, type EffectiveConfig } from '@/app/services/PayrollConfigService';
-import { formatVnd } from '@/app/commons/utils/formatters';
+import { formatVnd, exportToCsv } from '@/app/commons/utils/formatters';
 import type { Payroll } from '@/app/commons/types';
 
 const CONFIG_LABEL: Record<string, string> = {
@@ -135,6 +135,26 @@ export function PayrollRunContent() {
         } finally { setBusy(false); }
     };
 
+    const exportLines = () => {
+        if (!selected || lines.length === 0) return;
+        const mm = String(selected.month).padStart(2, '0');
+        exportToCsv(`payroll_${selected.year}_${mm}.csv`, lines.map(p => ({
+            Employee: p.employeeName || p.employeeId,
+            ID: p.employeeId,
+            BaseGross: p.baseGross,
+            OtPay: p.otPay,
+            TotalGross: p.totalGross,
+            BHXH: p.bhxhEmployee,
+            BHYT: p.bhytEmployee,
+            BHTN: p.bhtnEmployee,
+            PIT: p.pit,
+            Net: p.netSalary,
+            HS1: p.kpi1Score,
+            HS2: p.kpi2Score,
+            Status: p.status,
+        })));
+    };
+
     const act = async (fn: () => Promise<any>, msg: string, run?: PayrollRun) => {
         setBusy(true);
         try {
@@ -233,6 +253,10 @@ export function PayrollRunContent() {
                                     <Banknote className="w-4 h-4" /> Đánh dấu đã trả
                                 </button>
                             )}
+                            <button onClick={exportLines} disabled={lines.length === 0}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50">
+                                Export CSV
+                            </button>
                         </div>
                     </div>
                     <div className="overflow-x-auto">

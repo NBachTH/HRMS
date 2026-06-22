@@ -18,12 +18,22 @@ export async function getOTRequestById(id: string) {
     return apiClient<OTRequest>(`/api/ot-requests/${id}`);
 }
 
-// Logs an actual OT session against an approved plan; backend validates + auto-approves.
+// Logs an actual OT session against an approved plan as a DRAFT (editable until submitted).
 export async function createOTRequest(data: OTRequestCreate) {
     return apiClient<OTRequest>('/api/ot-requests', {
         method: 'POST',
         body: JSON.stringify(data),
     });
+}
+
+// Edit a DRAFT OT request before submitting (owner-only, DRAFT-only — enforced server-side).
+export async function updateOTRequest(id: string, data: OTRequestCreate) {
+    return apiClient<OTRequest>(`/api/ot-requests/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+}
+
+// Submit a DRAFT OT request — backend validates + auto-approves (DRAFT → APPROVED).
+export async function submitOTRequest(id: string) {
+    return apiClient<OTRequest>(`/api/ot-requests/${id}/submit`, { method: 'PUT' });
 }
 
 export async function approveOTRequest(id: string) {

@@ -42,6 +42,24 @@ public class OTRequestController {
                 .body(ApiResponse.ok(response, "OT request created"));
     }
 
+    /** Edit a DRAFT OT request before submitting it. Owner-only, DRAFT-only (enforced in the service). */
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('EMPLOYEE') or hasAuthority('LEADER') or hasAuthority('MANAGER') or hasAuthority('HR_ADMIN')")
+    public ResponseEntity<ApiResponse<OTRequestResponse>> update(
+            @PathVariable String id, @Valid @RequestBody OTRequestCreateDto req, Authentication auth) {
+        String callerId = ((UserAccount) auth.getPrincipal()).getEmployeeId();
+        OTRequestResponse response = otRequestService.updateOTRequest(id, req, callerId);
+        return ResponseEntity.ok(ApiResponse.ok(response, "OT request updated"));
+    }
+
+    /** Submit a DRAFT OT request — validated and auto-approved on success (DRAFT → APPROVED). */
+    @PutMapping("/{id}/submit")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<OTRequestResponse>> submit(@PathVariable String id) {
+        OTRequestResponse response = otRequestService.submitOTRequest(id);
+        return ResponseEntity.ok(ApiResponse.ok(response, "OT request submitted"));
+    }
+
     /** LEADER, MANAGER, HR_ADMIN can view all OT requests, optionally filtered by status */
     @GetMapping
     @PreAuthorize("hasAuthority('HR_ADMIN') or hasAuthority('MANAGER') or hasAuthority('LEADER')")

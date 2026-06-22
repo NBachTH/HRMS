@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { getOTRequests, deleteOTRequest } from '@/app/services/OTRequestService';
+import { getOTRequests, deleteOTRequest, submitOTRequest } from '@/app/services/OTRequestService';
 import { OTFormModal } from './OTFormModal';
 import { OTDetailModal } from './OTDetailModal';
 import { useToast } from '@/app/commons/contexts/ToastContext';
@@ -15,6 +15,8 @@ export function OTContent() {
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
     const [showCreate, setShowCreate] = useState(false);
+    const [editing, setEditing] = useState<OTRequest | null>(null);
+    const [submittingId, setSubmittingId] = useState<string | null>(null);
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
     const [selected, setSelected] = useState<OTRequest | null>(null);
     const [from, setFrom] = useState('');
@@ -46,6 +48,19 @@ export function OTContent() {
             fetchData();
         } catch (err: any) {
             showToast(err?.body?.message || 'Failed to delete', 'error');
+        }
+    };
+
+    const handleSubmitOt = async (id: string) => {
+        setSubmittingId(id);
+        try {
+            await submitOTRequest(id);
+            showToast('OT request submitted and approved');
+            fetchData();
+        } catch (err: any) {
+            showToast(err?.body?.message || 'Submit failed', 'error');
+        } finally {
+            setSubmittingId(null);
         }
     };
 
@@ -135,11 +150,24 @@ export function OTContent() {
                                             <td className="px-6 py-4 text-sm text-gray-500">{ot.createdAt ? new Date(ot.createdAt).toLocaleDateString() : '—'}</td>
                                             <td className="px-6 py-4 text-sm">
                                                 {ot.status === 'DRAFT' && (
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); setDeleteConfirm(ot.otRequestId); }}
-                                                        className="text-red-500 hover:text-red-700 text-xs">
-                                                        Cancel
-                                                    </button>
+                                                    <div className="flex items-center gap-3">
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); setEditing(ot); }}
+                                                            className="text-blue-600 hover:text-blue-800 text-xs">
+                                                            Edit
+                                                        </button>
+                                                        <button
+                                                            disabled={submittingId === ot.otRequestId}
+                                                            onClick={(e) => { e.stopPropagation(); handleSubmitOt(ot.otRequestId); }}
+                                                            className="text-green-600 hover:text-green-800 text-xs disabled:opacity-40">
+                                                            Submit
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); setDeleteConfirm(ot.otRequestId); }}
+                                                            className="text-red-500 hover:text-red-700 text-xs">
+                                                            Cancel
+                                                        </button>
+                                                    </div>
                                                 )}
                                             </td>
                                         </tr>
@@ -159,8 +187,9 @@ export function OTContent() {
             </div>
 
             <OTFormModal
-                isOpen={showCreate}
-                onClose={() => setShowCreate(false)}
+                isOpen={showCreate || !!editing}
+                editing={editing}
+                onClose={() => { setShowCreate(false); setEditing(null); }}
                 onSuccess={fetchData}
             />
 

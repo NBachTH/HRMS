@@ -3,21 +3,23 @@
 import React, { useState, useEffect } from 'react';
 import { Info } from 'lucide-react';
 import { Modal } from '@/app/components/common/Modal';
-import { createOTRequest } from '@/app/services/OTRequestService';
+import { createOTRequest, updateOTRequest } from '@/app/services/OTRequestService';
 import { getMyApprovedOTPlans } from '@/app/services/OTPlanService';
 import { useToast } from '@/app/commons/contexts/ToastContext';
 import { useAuth } from '@/app/commons/contexts/AuthContext';
-import type { OTPlan } from '@/app/commons/types';
+import type { OTPlan, OTRequest } from '@/app/commons/types';
 
 interface Props {
     isOpen: boolean;
     onClose: () => void;
     onSuccess: () => void;
+    /** When set, the modal edits this DRAFT OT request instead of creating a new one. */
+    editing?: OTRequest | null;
 }
 
 const hhmm = (t?: string) => (t ? t.slice(0, 5) : '');
 
-export function OTFormModal({ isOpen, onClose, onSuccess }: Props) {
+export function OTFormModal({ isOpen, onClose, onSuccess, editing }: Props) {
     const { showToast } = useToast();
     const { user } = useAuth();
     const [saving, setSaving] = useState(false);
@@ -30,11 +32,18 @@ export function OTFormModal({ isOpen, onClose, onSuccess }: Props) {
 
     useEffect(() => {
         if (!isOpen) return;
-        setOtPlanId(''); setActualStart(''); setActualEnd(''); setError('');
+        if (editing) {
+            setOtPlanId(editing.otPlanId ?? '');
+            setActualStart(editing.startTime ? editing.startTime.slice(0, 16) : '');
+            setActualEnd(editing.endTime ? editing.endTime.slice(0, 16) : '');
+        } else {
+            setOtPlanId(''); setActualStart(''); setActualEnd('');
+        }
+        setError('');
         getMyApprovedOTPlans()
             .then(res => setPlans(Array.isArray(res.data) ? res.data : []))
             .catch(() => setPlans([]));
-    }, [isOpen]);
+    }, [isOpen, editing]);
 
     const selectedPlan = plans.find(p => p.id === otPlanId);
 
@@ -63,13 +72,19 @@ export function OTFormModal({ isOpen, onClose, onSuccess }: Props) {
         if (!validate()) return;
         setSaving(true);
         try {
-            await createOTRequest({
+            const payload = {
                 employeeId: user?.employeeId,   // server derives identity from the JWT; this is ignored
                 otPlanId,
                 actualStartTime: actualStart.length === 16 ? actualStart + ':00' : actualStart,
                 actualEndTime: actualEnd.length === 16 ? actualEnd + ':00' : actualEnd,
-            });
-            showToast('OT request logged and approved');
+            };
+            if (editing) {
+                await updateOTRequest(editing.otRequestId, payload);
+                showToast('OT request updated');
+            } else {
+                await createOTRequest(payload);
+                showToast('OT request saved as draft');
+            }
             onSuccess();
             onClose();
         } catch (err: any) {
@@ -85,7 +100,7 @@ export function OTFormModal({ isOpen, onClose, onSuccess }: Props) {
     const inputCls = 'w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500';
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Log OT Request">
+        <Modal isOpen={isOpen} onClose={onClose} title={editing ? 'Edit OT Request' : 'Log OT Request'}>
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="flex items-start gap-2 rounded-md bg-blue-50 border border-blue-100 px-3 py-2 text-xs text-blue-700">
                     <Info className="w-4 h-4 mt-0.5 flex-none" />
@@ -141,7 +156,7 @@ export function OTFormModal({ isOpen, onClose, onSuccess }: Props) {
                     </button>
                     <button type="submit" disabled={saving || plans.length === 0}
                         className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50">
-                        {saving ? 'Submitting…' : 'Log OT'}
+                        {saving ? 'Saving…' : (editing ? 'Save Changes' : 'Save Draft')}
                     </button>
                 </div>
             </form>
