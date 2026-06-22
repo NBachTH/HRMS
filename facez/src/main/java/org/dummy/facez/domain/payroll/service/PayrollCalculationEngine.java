@@ -64,21 +64,25 @@ public class PayrollCalculationEngine {
         double kpi2   = kpi2Override != null ? kpi2Override : resolveKpi2(kpi2Rating, workDays);
         double kpiAvg = (kpi1 + kpi2) / 2.0;
 
-        // Step 4 — HTi allowances
+        // Step 4 — HTi allowances (full monthly amounts; proration is applied once below
+        // by the (NCtt/Nt) factor of the base-gross formula — do NOT pre-prorate here).
         long lhq     = contract.getBaseSalary();
         String levelKey = positionCodeToLevelKey(contract.getPositionCode());
         long ht2Full    = configService.getLivingAllowance(levelKey, period);
-        long ht2Prorated = nt > 0 ? Math.round(ht2Full * (double) nctt / nt) : 0L;
         long ht1        = configService.getJapaneseAllowance(japaneseLevel, period);
-        long hti        = ht2Prorated + ht1 + odcAllowance;
+        long hti        = ht2Full + ht1 + odcAllowance;
 
         // Step 5 — Base gross: [(Lhq × KPItb) + Li + HTi] × (NCtt / Nt)
         long baseGross = nt > 0
                 ? Math.round(((lhq * kpiAvg) + li + hti) * (double) nctt / nt)
                 : 0L;
 
-        // Step 6 — OT pay
-        long otPay      = computeOtPay(otRequests, lhq, nt);
+        // Living allowance actually applied (prorated once) — stored only for payslip display.
+        long ht2Prorated = nt > 0 ? Math.round(ht2Full * (double) nctt / nt) : 0L;
+
+        // Step 6 — OT pay + hour breakdown
+        OtResult ot     = computeOt(otRequests, lhq, nt);
+        long otPay      = ot.pay();
         long totalGross = baseGross + otPay + bonus;
 
         // Step 7 — Insurance deductions (employee portion with BHXH cap)
@@ -136,6 +140,10 @@ public class PayrollCalculationEngine {
                 .actualWorkingDays(nctt)
                 .standardWorkingDays(nt)
                 .otPay(otPay)
+                .otWeekdayHours(ot.weekdayHours())
+                .otWeekendHours(ot.weekendHours())
+                .otHolidayHours(ot.holidayHours())
+                .otNightHours(ot.nightHours())
                 .bonus(bonus)
                 .baseGross(baseGross)
                 .totalGross(totalGross)
@@ -174,9 +182,14 @@ public class PayrollCalculationEngine {
      * Calculates OT pay by splitting each request into day and night minutes.
      * Night period: 22:00–06:00. Night adds +0.3 on top of the base rate.
      */
-    private long computeOtPay(List<OTRequest> approvedOt, long lhq, int nt) {
+    /** OT pay plus the hour breakdown shown on the payslip. */
+    private record OtResult(long pay, double weekdayHours, double weekendHours,
+                            double holidayHours, double nightHours) {}
+
+    private OtResult computeOt(List<OTRequest> approvedOt, long lhq, int nt) {
         double hourlyWage = nt > 0 ? (double) lhq / (nt * 8) : 0.0;
         long totalOtPay = 0L;
+        double weekdayH = 0, weekendH = 0, holidayH = 0, nightH = 0;
 
         for (OTRequest ot : approvedOt) {
             if (ot.getStartTime() == null || ot.getEndTime() == null) continue;
@@ -198,9 +211,17 @@ public class PayrollCalculationEngine {
 
             double pay = (hourlyWage / 60.0) * (dayMinutes * baseRate + nightMinutes * (baseRate + 0.3));
             totalOtPay += Math.round(pay);
+
+            double hours = totalMinutes / 60.0;
+            if (isPublicHoliday)   holidayH += hours;
+            else if (isWeekend)    weekendH += hours;
+            else                   weekdayH += hours;
+            nightH += nightMinutes / 60.0;
         }
-        return totalOtPay;
+        return new OtResult(totalOtPay, round2(weekdayH), round2(weekendH), round2(holidayH), round2(nightH));
     }
+
+    private static double round2(double v) { return Math.round(v * 100.0) / 100.0; }
 
     /**
      * Returns minutes within [start, end) that fall in the statutory night period (22:00–06:00).

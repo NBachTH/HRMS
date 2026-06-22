@@ -79,8 +79,10 @@ public class SecurityConfig {
                         // Department reads — authenticated only (not public)
                         .requestMatchers(HttpMethod.GET,    "/api/departments/**").authenticated()
 
-                        // Contract management — HR and Finance (Finance needs salary data)
-                        .requestMatchers("/api/contracts/**").hasAnyAuthority("HR_ADMIN", "FINANCE_ADMIN")
+                        // Contract management — HR and Finance (Finance needs salary data).
+                        // Self-service: any authenticated user may read their OWN current contract.
+                        .requestMatchers(HttpMethod.GET, "/api/contracts/my").authenticated()
+                        .requestMatchers("/api/contracts/**").hasAnyAuthority("HR_ADMIN", "FINANCE_ADMIN", "DIRECTOR")
 
                         // Payroll calculation and management — Finance only (was HR_ADMIN)
                         .requestMatchers(HttpMethod.POST,  "/api/payrolls/calculate").hasAnyAuthority("FINANCE_ADMIN")
@@ -119,7 +121,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(allowedOrigins);
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);

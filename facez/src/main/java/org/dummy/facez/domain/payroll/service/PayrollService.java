@@ -17,15 +17,13 @@ import org.dummy.facez.domain.employee.repository.EmployeeInfoRepository;
 import org.dummy.facez.domain.employee.service.EmployeeService;
 import org.dummy.facez.domain.otrequest.model.OTRequest;
 import org.dummy.facez.domain.otrequest.repository.OTRequestRepository;
-import org.dummy.facez.domain.notification.event.PayrollApprovedEvent;
-import org.dummy.facez.domain.payroll.dto.PayrollCalculateRequest;
 import org.dummy.facez.domain.payroll.dto.PayrollResponse;
 import org.dummy.facez.domain.payroll.dto.PayslipResponse;
 import org.dummy.facez.domain.payroll.model.Payroll;
 import org.dummy.facez.domain.payroll.repository.PayrollRepository;
 import org.dummy.facez.domain.workday.model.WorkDay;
 import org.dummy.facez.domain.workday.repository.WorkDayRepository;
-import org.springframework.context.ApplicationEventPublisher;
+import org.dummy.facez.domain.workday.repository.TimesheetRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -55,7 +53,8 @@ public class PayrollService {
     private final EmployeeService employeeService;
     private final EmployeeInfoRepository employeeInfoRepository;
     private final DepartmentRepository departmentRepository;
-    private final ApplicationEventPublisher eventPublisher;
+    private final TimesheetRepository timesheetRepository;
+    private final Kpi1Service kpi1Service;
 
     public PayrollService(PayrollRepository payrollRepository,
                           ContractRepository contractRepository,
@@ -66,7 +65,8 @@ public class PayrollService {
                           EmployeeService employeeService,
                           EmployeeInfoRepository employeeInfoRepository,
                           DepartmentRepository departmentRepository,
-                          ApplicationEventPublisher eventPublisher) {
+                          TimesheetRepository timesheetRepository,
+                          Kpi1Service kpi1Service) {
         this.payrollRepository    = payrollRepository;
         this.contractRepository   = contractRepository;
         this.workDayRepository    = workDayRepository;
@@ -76,72 +76,47 @@ public class PayrollService {
         this.employeeService      = employeeService;
         this.employeeInfoRepository = employeeInfoRepository;
         this.departmentRepository = departmentRepository;
-        this.eventPublisher       = eventPublisher;
+        this.timesheetRepository  = timesheetRepository;
+        this.kpi1Service          = kpi1Service;
     }
 
-    // ── Calculate & save as DRAFT ─────────────────────────────────────────────
-
-    @Transactional
-    public PayrollResponse calculate(PayrollCalculateRequest req) {
-        // Phase 1.4 guard: attendance period must be closed before payroll can be calculated
-        if (!periodCloseRepository.existsByCloseYearAndCloseMonth(req.getPayrollYear(), req.getPayrollMonth())) {
-            throw new BadRequestException(
-                    "Attendance period " + req.getPayrollYear() + "/" + req.getPayrollMonth() +
-                    " has not been closed yet. Close the attendance period before calculating payroll.");
+    /**
+     * Computes one payroll line for a run (no period/duplicate guard — the run owns its lines).
+     * Returns the unsaved entity tagged with the run id; the caller persists it.
+     */
+    public Payroll calculateLine(String employeeId, int year, int month, String runId) {
+        Contract contract = contractRepository.findContractByEmployeeInfo_EmployeeId(employeeId);
+        if (contract == null || contract.getBaseSalary() == null || contract.getBaseSalary() <= 0
+                || contract.getPositionCode() == null || contract.getSalaryStep() == null) {
+            throw new BadRequestException("missing or invalid contract");
         }
-
-        // Guard: only one DRAFT/APPROVED record per employee per period
-        payrollRepository.findByEmployeeInfo_EmployeeIdAndPayrollYearAndPayrollMonth(
-                req.getEmployeeId(), req.getPayrollYear(), req.getPayrollMonth())
-                .ifPresent(existing -> {
-                    throw new BadRequestException(
-                            "Payroll record already exists for employee " + req.getEmployeeId() +
-                            " in " + req.getPayrollYear() + "/" + req.getPayrollMonth() +
-                            " (status: " + existing.getStatus() + "). Delete the existing DRAFT first.");
-                });
-
-        Contract contract = contractRepository.findContractByEmployeeInfo_EmployeeId(req.getEmployeeId());
-        if (contract == null) {
-            throw new ResourceNotFoundException("Contract", "employeeId", req.getEmployeeId());
-        }
-        if (contract.getBaseSalary() == null || contract.getBaseSalary() <= 0) {
-            throw new BadRequestException("Contract is missing baseSalary for employee: " + req.getEmployeeId());
-        }
-        if (contract.getPositionCode() == null || contract.getSalaryStep() == null) {
-            throw new BadRequestException("Contract is missing positionCode or salaryStep for employee: " + req.getEmployeeId());
-        }
-
-        int year  = req.getPayrollYear();
-        int month = req.getPayrollMonth();
-        int nt    = req.getStandardWorkingDays() != null
-                    ? req.getStandardWorkingDays()
-                    : PayrollConfigService.DEFAULT_STANDARD_DAYS;
+        Integer ntTs = timesheetRepository.findByEmployeeInfo_EmployeeIdAndYearAndMonth(employeeId, year, month)
+                .map(t -> t.getStandardWorkingDays()).orElse(null);
+        int nt = (ntTs != null && ntTs > 0) ? ntTs : PayrollConfigService.DEFAULT_STANDARD_DAYS;
 
         LocalDate from = LocalDate.of(year, month, 1);
         LocalDate to   = YearMonth.of(year, month).atEndOfMonth();
-
-        // Load the month's WorkDays — single source for NCtt and KPI2 in the engine
         List<WorkDay> workDays = workDayRepository
-                .findByEmployeeInfo_EmployeeIdAndWorkDateBetween(req.getEmployeeId(), from, to);
+                .findByEmployeeInfo_EmployeeIdAndWorkDateBetween(employeeId, from, to);
         List<OTRequest> otRequests = otRequestRepository
                 .findByEmployeeInfo_EmployeeIdAndStatusAndStartTimeBetween(
-                        req.getEmployeeId(), RequestStatus.APPROVED,
-                        from.atStartOfDay(), to.atTime(23, 59, 59));
+                        employeeId, RequestStatus.APPROVED, from.atStartOfDay(), to.atTime(23, 59, 59));
 
-        // MANAGER = unit average KPI; DIRECTOR = company average KPI; others = own.
-        double[] kpiOverride = computeKpiOverride(req.getEmployeeId(), from, to);
+        String kpi1Rating = kpi1Service.getRating(employeeId, year, month).orElse("B");
+        double[] override = computeKpiOverride(employeeId, year, month, from, to);
 
         Payroll payroll = calculationEngine.buildPayroll(
-                req.getEmployeeId(), year, month, nt, contract,
-                workDays, otRequests,
-                req.getKpi1Rating(), req.getKpi2Rating(),
-                req.getJapaneseLevel(), req.getOdcAllowance(),
-                req.getBonus(), req.getNotes(),
-                kpiOverride != null ? kpiOverride[0] : null,
-                kpiOverride != null ? kpiOverride[1] : null);
+                employeeId, year, month, nt, contract, workDays, otRequests,
+                kpi1Rating, null, null, 0L, 0L, "Payroll run " + month + "/" + year,
+                override != null ? override[0] : null,
+                override != null ? override[1] : null);
+        payroll.setPayrollRunId(runId);
+        return payroll;
+    }
 
-        payrollRepository.save(payroll);
-        return toResponse(payroll);
+    @Transactional(readOnly = true)
+    public List<PayrollResponse> getLinesForRun(String runId) {
+        return payrollRepository.findByPayrollRunId(runId).stream().map(this::toResponse).toList();
     }
 
     // ── Read ──────────────────────────────────────────────────────────────────
@@ -160,91 +135,16 @@ public class PayrollService {
         return PageResponse.from(page.map(this::toResponse));
     }
 
-    public PageResponse<PayrollResponse> getByPeriod(int year, int month, Pageable pageable) {
-        Page<Payroll> page = payrollRepository.findByPayrollYearAndPayrollMonth(year, month, pageable);
+    /** Employee self-service list: only finalized payslips (APPROVED/PAID) — never unapproved drafts. */
+    public PageResponse<PayrollResponse> getMyPayslips(String employeeId, Pageable pageable) {
+        Page<Payroll> page = payrollRepository.findByEmployeeInfo_EmployeeIdAndStatusIn(
+                employeeId, List.of(PayrollStatus.APPROVED, PayrollStatus.PAID), pageable);
         return PageResponse.from(page.map(this::toResponse));
     }
 
-    // ── Approve ───────────────────────────────────────────────────────────────
-
-    /**
-     * FINANCE_ADMIN: submits a calculated payroll for Director authorisation.
-     * Transition: DRAFT → PENDING_APPROVAL
-     */
-    @Transactional
-    public PayrollResponse submitForApproval(String id) {
-        Payroll payroll = findById(id);
-        if (payroll.getStatus() != PayrollStatus.DRAFT) {
-            throw new BadRequestException("Only DRAFT payrolls can be submitted. Current status: " + payroll.getStatus());
-        }
-        payroll.setStatus(PayrollStatus.PENDING_APPROVAL);
-        payrollRepository.save(payroll);
-        return toResponse(payroll);
-    }
-
-    /**
-     * DIRECTOR: authorises disbursement.
-     * Transition: PENDING_APPROVAL → APPROVED
-     */
-    @Transactional
-    public PayrollResponse approve(String id) {
-        Payroll payroll = findById(id);
-        if (payroll.getStatus() != PayrollStatus.PENDING_APPROVAL) {
-            throw new BadRequestException("Only PENDING_APPROVAL payrolls can be approved. Current status: " + payroll.getStatus());
-        }
-        payroll.setStatus(PayrollStatus.APPROVED);
-        payroll.setRejectionReason(null);
-        payrollRepository.save(payroll);
-
-        if (payroll.getEmployeeInfo() != null) {
-            eventPublisher.publishEvent(new PayrollApprovedEvent(
-                    this,
-                    payroll.getEmployeeInfo().getEmployeeId(),
-                    payroll.getPayrollYear(),
-                    payroll.getPayrollMonth()));
-        }
-        return toResponse(payroll);
-    }
-
-    /**
-     * DIRECTOR: sends back to Finance for correction.
-     * Transition: PENDING_APPROVAL → REJECTED
-     */
-    @Transactional
-    public PayrollResponse reject(String id, String reason) {
-        Payroll payroll = findById(id);
-        if (payroll.getStatus() != PayrollStatus.PENDING_APPROVAL) {
-            throw new BadRequestException(
-                    "Only PENDING_APPROVAL payrolls can be rejected. Current status: " + payroll.getStatus());
-        }
-        payroll.setStatus(PayrollStatus.REJECTED);
-        payroll.setRejectionReason(reason);
-        payrollRepository.save(payroll);
-        return toResponse(payroll);
-    }
-
-    // ── Mark as paid ──────────────────────────────────────────────────────────
-
-    @Transactional
-    public PayrollResponse markPaid(String id) {
-        Payroll payroll = findById(id);
-        if (payroll.getStatus() != PayrollStatus.APPROVED) {
-            throw new BadRequestException("Only APPROVED payrolls can be marked as paid. Current status: " + payroll.getStatus());
-        }
-        payroll.setStatus(PayrollStatus.PAID);
-        payrollRepository.save(payroll);
-        return toResponse(payroll);
-    }
-
-    // ── Delete (DRAFT only) ───────────────────────────────────────────────────
-
-    @Transactional
-    public void delete(String id) {
-        Payroll payroll = findById(id);
-        if (payroll.getStatus() != PayrollStatus.DRAFT) {
-            throw new BadRequestException("Only DRAFT payrolls can be deleted. Current status: " + payroll.getStatus());
-        }
-        payrollRepository.delete(payroll);
+    public PageResponse<PayrollResponse> getByPeriod(int year, int month, Pageable pageable) {
+        Page<Payroll> page = payrollRepository.findByPayrollYearAndPayrollMonth(year, month, pageable);
+        return PageResponse.from(page.map(this::toResponse));
     }
 
     // ── Phase 7.6 — Employee payslip ─────────────────────────────────────────
@@ -274,6 +174,10 @@ public class PayrollService {
                 .actualWorkingDays(p.getActualWorkingDays())
                 .standardWorkingDays(p.getStandardWorkingDays())
                 .otPay(p.getOtPay())
+                .otWeekdayHours(p.getOtWeekdayHours())
+                .otWeekendHours(p.getOtWeekendHours())
+                .otHolidayHours(p.getOtHolidayHours())
+                .otNightHours(p.getOtNightHours())
                 .bonus(p.getBonus())
                 .totalGross(p.getTotalGross())
                 .insuranceBase(p.getInsuranceBase())
@@ -296,8 +200,12 @@ public class PayrollService {
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    /** KPI override: MANAGER → average of their unit; DIRECTOR → company average; others → null. */
-    private double[] computeKpiOverride(String employeeId, LocalDate from, LocalDate to) {
+    /**
+     * KPI override for supervisors: MANAGER → average of their unit, DIRECTOR → company average.
+     * Returns {HS1, HS2} where HS1 = average of members' KPI1 ratings, HS2 = average of members'
+     * attendance-derived KPI2. Returns null for regular employees (use their own values).
+     */
+    private double[] computeKpiOverride(String employeeId, int year, int month, LocalDate from, LocalDate to) {
         EmployeeInfo emp = employeeInfoRepository.findById(employeeId).orElse(null);
         if (emp == null) return null;
 
@@ -322,10 +230,14 @@ public class PayrollService {
         Map<String, List<WorkDay>> wdMap = workDayRepository
                 .findByEmployeeInfo_EmployeeIdInAndWorkDateBetween(members, from, to)
                 .stream().collect(Collectors.groupingBy(w -> w.getEmployeeInfo().getEmployeeId()));
+        Map<String, String> ratings = kpi1Service.ratingsForPeriod(year, month);
+
+        double kpi1 = members.stream()
+                .mapToDouble(id -> calculationEngine.ratingToKpi1(ratings.getOrDefault(id, "B")))
+                .average().orElse(1.0);
         double kpi2 = members.stream()
                 .mapToDouble(id -> calculationEngine.computeKpi2(wdMap.getOrDefault(id, List.of())))
                 .average().orElse(1.0);
-        double kpi1 = calculationEngine.ratingToKpi1("B");
         return new double[]{kpi1, kpi2};
     }
 
@@ -350,6 +262,10 @@ public class PayrollService {
                 .actualWorkingDays(p.getActualWorkingDays())
                 .standardWorkingDays(p.getStandardWorkingDays())
                 .otPay(p.getOtPay())
+                .otWeekdayHours(p.getOtWeekdayHours())
+                .otWeekendHours(p.getOtWeekendHours())
+                .otHolidayHours(p.getOtHolidayHours())
+                .otNightHours(p.getOtNightHours())
                 .bonus(p.getBonus())
                 .baseGross(p.getBaseGross())
                 .totalGross(p.getTotalGross())
@@ -370,6 +286,8 @@ public class PayrollService {
                 .status(p.getStatus() != null ? p.getStatus().name() : null)
                 .rejectionReason(p.getRejectionReason())
                 .notes(p.getNotes())
+                .locked(p.isLocked())
+                .payrollRunId(p.getPayrollRunId())
                 .createdAt(p.getCreatedAt())
                 .updatedAt(p.getUpdatedAt());
 

@@ -352,6 +352,8 @@ export interface Project {
 // --- Payroll ---
 export interface Payroll {
     payrollId: string;
+    locked?: boolean;
+    payrollRunId?: string;
     employeeId: string;
     employeeName: string;
     payrollYear: number;
@@ -369,6 +371,10 @@ export interface Payroll {
     actualWorkingDays: number;
     standardWorkingDays: number;
     otPay: number;
+    otWeekdayHours?: number;
+    otWeekendHours?: number;
+    otHolidayHours?: number;
+    otNightHours?: number;
     bonus: number;
 
     // Computed
@@ -406,20 +412,12 @@ export interface PayrollCalculateRequest {
     employeeId: string;
     payrollYear: number;
     payrollMonth: number;
-    kpi1Rating?: 'A' | 'B' | 'C';
-    kpi2Rating?: 'A' | 'B' | 'C' | null;
-    standardWorkingDays?: number;
-    bonus?: number;
-    japaneseLevel?: 'N1' | 'N2' | null;
-    odcAllowance?: number;
-    notes?: string;
+    // HS1 (điểm cấp trên), HS2/Nt/NCtt suy tự động. Không nhập tay JP/ODC/bonus/note.
 }
 
 export interface PayrollBatchCalculateRequest {
     payrollYear: number;
     payrollMonth: number;
-    standardWorkingDays?: number;
-    kpi1Rating?: 'A' | 'B' | 'C';
 }
 
 export interface PayrollJobResponse {
@@ -576,7 +574,7 @@ export interface SystemConfigCreateRequest {
 }
 
 // --- Payroll Config (typed, effective-dated) ---
-export type ConfigStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+export type ConfigStatus = 'DRAFT' | 'PENDING_APPROVAL' | 'PUBLISHED' | 'ARCHIVED';
 
 interface ConfigMeta {
     id: string;

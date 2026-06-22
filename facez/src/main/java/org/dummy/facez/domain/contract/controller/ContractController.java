@@ -41,7 +41,7 @@ public class ContractController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('HR_ADMIN','FINANCE_ADMIN','SYSTEM_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('HR_ADMIN','FINANCE_ADMIN','DIRECTOR','SYSTEM_ADMIN')")
     public ResponseEntity<ApiResponse<PageResponse<ContractResponse>>> getAll(
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.ok(contractService.getAllContracts(pageable)));
@@ -56,13 +56,13 @@ public class ContractController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('HR_ADMIN','FINANCE_ADMIN','SYSTEM_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('HR_ADMIN','FINANCE_ADMIN','DIRECTOR','SYSTEM_ADMIN')")
     public ResponseEntity<ApiResponse<ContractResponse>> getById(@PathVariable String id) {
         return ResponseEntity.ok(ApiResponse.ok(contractService.getContractById(id)));
     }
 
     @GetMapping("/employee/{employeeId}/history")
-    @PreAuthorize("hasAnyAuthority('HR_ADMIN','FINANCE_ADMIN','SYSTEM_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('HR_ADMIN','FINANCE_ADMIN','DIRECTOR','SYSTEM_ADMIN')")
     public ResponseEntity<ApiResponse<List<ContractResponse>>> getHistory(@PathVariable String employeeId) {
         return ResponseEntity.ok(ApiResponse.ok(contractService.getContractHistoryByEmployee(employeeId)));
     }
@@ -86,6 +86,20 @@ public class ContractController {
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable String id) {
         contractService.deleteContract(id);
         return ResponseEntity.ok(ApiResponse.ok(null, "Contract deleted"));
+    }
+
+    /** DIRECTOR approves a pending contract → it becomes effective (current=true). */
+    @PatchMapping("/{id}/approve")
+    @PreAuthorize("hasAnyAuthority('DIRECTOR','SYSTEM_ADMIN')")
+    public ResponseEntity<ApiResponse<ContractResponse>> approve(@PathVariable String id) {
+        return ResponseEntity.ok(ApiResponse.ok(contractService.approveContract(id), "Contract approved"));
+    }
+
+    /** DIRECTOR rejects a pending contract. */
+    @PatchMapping("/{id}/reject")
+    @PreAuthorize("hasAnyAuthority('DIRECTOR','SYSTEM_ADMIN')")
+    public ResponseEntity<ApiResponse<ContractResponse>> reject(@PathVariable String id) {
+        return ResponseEntity.ok(ApiResponse.ok(contractService.rejectContract(id), "Contract rejected"));
     }
 
     /** Upload (or replace) the contract document (PDF) into MinIO. */

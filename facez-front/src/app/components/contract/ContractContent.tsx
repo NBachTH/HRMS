@@ -1,18 +1,190 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { Edit2Icon, Trash2Icon, AlertTriangleIcon, PaperclipIcon } from 'lucide-react';
-import { getContracts, getExpiringSoon, createContract, updateContract, deleteContract } from '@/app/services/ContractService';
+import { Edit2Icon, Trash2Icon, AlertTriangleIcon, PaperclipIcon, CheckCircleIcon, XCircleIcon, PlusIcon, UsersIcon } from 'lucide-react';
+import { getContracts, getExpiringSoon, createContract, updateContract, deleteContract, approveContract, rejectContract } from '@/app/services/ContractService';
+import { getByEmployee as getDependents, createDependent, deleteDependent } from '@/app/services/TaxDependentService';
 import { getEmployees } from '@/app/services/EmployeeService';
 import { Modal } from '@/app/components/common/Modal';
 import { Pagination } from '@/app/components/common/Pagination';
 import { ContractDocumentModal } from './ContractDocumentModal';
 import { useToast } from '@/app/commons/contexts/ToastContext';
 import { useAuth } from '@/app/commons/contexts/AuthContext';
-import type { Contract, Employee } from '@/app/commons/types';
+import { formatVnd, formatDate } from '@/app/commons/utils/formatters';
+import type { Contract, Employee, TaxDependent } from '@/app/commons/types';
 
 const CONTRACT_TYPES = ['PROBATION', 'FULLTIME', 'PARTTIME'];
-const CONTRACT_STATUSES = ['ACTIVE', 'EXPIRED', 'TERMINATED'];
+const POSITION_CODES = ['NV1', 'NV2', 'TL1', 'TL2', 'DL', 'BOD2', 'BOD'];
+
+// ── Dependents sub-section (used inside the contract create/edit form) ─────────
+function DependentsSection({ employeeId }: { employeeId: string }) {
+    const { showToast } = useToast();
+    const [list, setList] = useState<TaxDependent[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [adding, setAdding] = useState(false);
+    const [draft, setDraft] = useState({ fullName: '', relationship: 'CHILD', dateOfBirth: '', nationalId: '' });
+
+    const load = useCallback(async () => {
+        setLoading(true);
+        try {
+            const res = await getDependents(employeeId);
+            setList((res.data ?? []).filter(d => d.active));
+        } catch { setList([]); } finally { setLoading(false); }
+    }, [employeeId]);
+
+    useEffect(() => { load(); }, [load]);
+
+    const add = async () => {
+        if (!draft.fullName.trim()) { showToast('Nhập họ tên người phụ thuộc', 'error'); return; }
+        try {
+            await createDependent({
+                employeeId, fullName: draft.fullName.trim(), relationship: draft.relationship,
+                dateOfBirth: draft.dateOfBirth || undefined, nationalId: draft.nationalId || undefined, active: true,
+            } as any);
+            setDraft({ fullName: '', relationship: 'CHILD', dateOfBirth: '', nationalId: '' });
+            setAdding(false);
+            load();
+        } catch (err: any) { showToast(err?.body?.message || 'Thêm thất bại', 'error'); }
+    };
+
+    const remove = async (id: string) => {
+        try { await deleteDependent(id); load(); }
+        catch (err: any) { showToast(err?.body?.message || 'Xóa thất bại', 'error'); }
+    };
+
+    return (
+        <div className="border border-gray-200 rounded-md p-3">
+            <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                    <UsersIcon className="w-4 h-4" /> Người phụ thuộc — số lượng: <strong>{list.length}</strong>
+                </span>
+                <button type="button" onClick={() => setAdding(a => !a)}
+                    className="inline-flex items-center gap-1 px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded">
+                    <PlusIcon className="w-3.5 h-3.5" /> Thêm
+                </button>
+            </div>
+            <p className="text-xs text-gray-400 mb-2">Số người phụ thuộc trên hợp đồng được tính tự động từ danh sách này (dùng cho giảm trừ thuế).</p>
+
+            {adding && (
+                <div className="grid grid-cols-2 gap-2 mb-2 bg-gray-50 rounded-md p-2">
+                    <input value={draft.fullName} onChange={e => setDraft(d => ({ ...d, fullName: e.target.value }))}
+                        placeholder="Họ tên *" className="px-2 py-1 border border-gray-300 rounded text-sm" />
+                    <select value={draft.relationship} onChange={e => setDraft(d => ({ ...d, relationship: e.target.value }))}
+                        className="px-2 py-1 border border-gray-300 rounded text-sm">
+                        <option value="CHILD">Con</option>
+                        <option value="PARENT">Cha/Mẹ</option>
+                        <option value="SPOUSE">Vợ/Chồng</option>
+                        <option value="OTHER">Khác</option>
+                    </select>
+                    <input type="date" value={draft.dateOfBirth} onChange={e => setDraft(d => ({ ...d, dateOfBirth: e.target.value }))}
+                        className="px-2 py-1 border border-gray-300 rounded text-sm" />
+                    <input value={draft.nationalId} onChange={e => setDraft(d => ({ ...d, nationalId: e.target.value }))}
+                        placeholder="CCCD" className="px-2 py-1 border border-gray-300 rounded text-sm" />
+                    <div className="col-span-2 flex justify-end gap-2">
+                        <button type="button" onClick={() => setAdding(false)} className="px-3 py-1 text-xs border border-gray-300 rounded">Hủy</button>
+                        <button type="button" onClick={add} className="px-3 py-1 text-xs bg-blue-600 text-white rounded">Lưu</button>
+                    </div>
+                </div>
+            )}
+
+            {loading ? (
+                <p className="text-xs text-gray-400">Đang tải…</p>
+            ) : list.length === 0 ? (
+                <p className="text-xs text-gray-400">Chưa có người phụ thuộc.</p>
+            ) : (
+                <ul className="divide-y divide-gray-100">
+                    {list.map(d => (
+                        <li key={d.id} className="flex items-center justify-between py-1.5 text-sm">
+                            <span>{d.fullName} <span className="text-gray-400 text-xs">({d.relationship})</span></span>
+                            <button type="button" onClick={() => remove(d.id)} className="text-red-500 hover:text-red-700 text-xs">Xóa</button>
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </div>
+    );
+}
+
+// ── Read-only contract detail ─────────────────────────────────────────────────
+const STATUS_FLOW = ['PENDING_APPROVAL', 'ACTIVE', 'EXPIRED'];
+const STATUS_VI: Record<string, string> = {
+    PENDING_APPROVAL: 'Chờ duyệt', ACTIVE: 'Hiệu lực', REJECTED: 'Bị từ chối', EXPIRED: 'Hết hạn', TERMINATED: 'Đã chấm dứt',
+};
+
+function DRow({ label, value }: { label: string; value: React.ReactNode }) {
+    return (
+        <div className="flex justify-between py-1.5 border-b border-gray-100 last:border-0">
+            <span className="text-sm text-gray-500">{label}</span>
+            <span className="text-sm text-gray-800 font-medium text-right">{value ?? '—'}</span>
+        </div>
+    );
+}
+
+function ContractDetailModal({ contract, onClose, onAttach }: {
+    contract: Contract | null; onClose: () => void; onAttach: (c: Contract) => void;
+}) {
+    return (
+        <Modal isOpen={contract !== null} onClose={onClose}
+            title={contract ? `Hợp đồng — ${contract.employeeName || contract.employeeId}` : ''} width="max-w-2xl">
+            {contract && (
+                <div className="space-y-4">
+                    {/* status stepper */}
+                    <div className="flex items-center gap-1 flex-wrap">
+                        {contract.status === 'REJECTED' ? (
+                            <span className="px-3 py-1 text-xs rounded-full bg-red-100 text-red-700">Bị từ chối</span>
+                        ) : STATUS_FLOW.map((s, i) => {
+                            const curIdx = STATUS_FLOW.indexOf(contract.status);
+                            const done = curIdx >= 0 && i <= curIdx;
+                            return (
+                                <React.Fragment key={s}>
+                                    <span className={`px-3 py-1 text-xs rounded-full ${done ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                                        {STATUS_VI[s]}
+                                    </span>
+                                    {i < STATUS_FLOW.length - 1 && <span className="text-gray-300">→</span>}
+                                </React.Fragment>
+                            );
+                        })}
+                        {contract.current && <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700">Đang áp dụng</span>}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-x-6">
+                        <div>
+                            <p className="text-xs font-semibold text-gray-400 uppercase mb-1">Nhân sự</p>
+                            <DRow label="Nhân viên" value={contract.employeeName || contract.employeeId} />
+                            <DRow label="Loại hợp đồng" value={contract.contractType} />
+                            <DRow label="Ngạch" value={contract.positionCode} />
+                            <DRow label="Bậc" value={contract.salaryStep != null ? `Bậc ${contract.salaryStep}` : '—'} />
+                            <DRow label="Số người phụ thuộc" value={contract.dependentCount ?? 0} />
+                        </div>
+                        <div>
+                            <p className="text-xs font-semibold text-gray-400 uppercase mb-1">Lương & thời hạn</p>
+                            <DRow label="Lương cơ bản" value={contract.baseSalary != null ? formatVnd(contract.baseSalary) : '—'} />
+                            <DRow label="Lương đóng BH" value={contract.insuranceBase != null ? formatVnd(contract.insuranceBase) : '—'} />
+                            <DRow label="Ngày bắt đầu" value={contract.startDate ? formatDate(contract.startDate) : '—'} />
+                            <DRow label="Ngày kết thúc" value={contract.endDate ? formatDate(contract.endDate) : 'Vô thời hạn'} />
+                            <DRow label="Hiệu lực từ" value={contract.effectiveFrom ? formatDate(contract.effectiveFrom) : '—'} />
+                        </div>
+                    </div>
+
+                    {contract.terms && (
+                        <div>
+                            <p className="text-xs font-semibold text-gray-400 uppercase mb-1">Điều khoản</p>
+                            <p className="text-sm text-gray-700 whitespace-pre-wrap">{contract.terms}</p>
+                        </div>
+                    )}
+
+                    <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+                        <button onClick={() => onAttach(contract)}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50">
+                            <PaperclipIcon className="w-4 h-4" /> {contract.hasDocument ? 'Xem tài liệu' : 'Đính kèm tài liệu'}
+                        </button>
+                        <button onClick={onClose} className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50">Đóng</button>
+                    </div>
+                </div>
+            )}
+        </Modal>
+    );
+}
 
 interface ContractFormProps {
     isOpen: boolean;
@@ -28,15 +200,11 @@ function ContractFormModal({ isOpen, onClose, onSuccess, contract, employees }: 
     const [saving, setSaving] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
-    const [form, setForm] = useState({
-        employeeId: '',
-        contractType: 'FULLTIME',
-        startDate: '',
-        endDate: '',
-        terms: '',
-        salaryRank: '',
-        status: 'ACTIVE',
-    });
+    const blank = {
+        employeeId: '', contractType: 'FULLTIME', startDate: '', endDate: '', terms: '',
+        baseSalary: '', insuranceBase: '', positionCode: 'NV1', salaryStep: '1',
+    };
+    const [form, setForm] = useState(blank);
 
     useEffect(() => {
         if (contract) {
@@ -46,13 +214,16 @@ function ContractFormModal({ isOpen, onClose, onSuccess, contract, employees }: 
                 startDate: contract.startDate ?? '',
                 endDate: contract.endDate ?? '',
                 terms: contract.terms ?? '',
-                salaryRank: contract.salaryRank?.toString() ?? '',
-                status: contract.status ?? 'ACTIVE',
+                baseSalary: contract.baseSalary?.toString() ?? '',
+                insuranceBase: contract.insuranceBase?.toString() ?? '',
+                positionCode: contract.positionCode ?? 'NV1',
+                salaryStep: contract.salaryStep?.toString() ?? '1',
             });
         } else {
-            setForm({ employeeId: '', contractType: 'FULLTIME', startDate: '', endDate: '', terms: '', salaryRank: '', status: 'ACTIVE' });
+            setForm(blank);
         }
         setErrors({});
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [contract, isOpen]);
 
     const set = (field: string, value: string) => {
@@ -62,9 +233,12 @@ function ContractFormModal({ isOpen, onClose, onSuccess, contract, employees }: 
 
     const validate = () => {
         const errs: Record<string, string> = {};
-        if (!form.employeeId) errs.employeeId = 'Employee is required';
-        if (!form.contractType) errs.contractType = 'Contract type is required';
-        if (!form.startDate) errs.startDate = 'Start date is required';
+        if (!form.employeeId) errs.employeeId = 'Bắt buộc chọn nhân viên';
+        if (!form.contractType) errs.contractType = 'Bắt buộc chọn loại hợp đồng';
+        if (!form.startDate) errs.startDate = 'Bắt buộc nhập ngày bắt đầu';
+        if (!form.baseSalary || Number(form.baseSalary) <= 0) errs.baseSalary = 'Bắt buộc nhập lương cơ bản';
+        if (!form.positionCode) errs.positionCode = 'Bắt buộc chọn ngạch';
+        if (!form.salaryStep || Number(form.salaryStep) < 1) errs.salaryStep = 'Bắt buộc chọn bậc';
         setErrors(errs);
         return Object.keys(errs).length === 0;
     };
@@ -80,8 +254,10 @@ function ContractFormModal({ isOpen, onClose, onSuccess, contract, employees }: 
                 startDate: form.startDate,
                 endDate: form.endDate || undefined,
                 terms: form.terms || undefined,
-                salaryRank: form.salaryRank || undefined,
-                status: form.status || undefined,
+                baseSalary: form.baseSalary ? Number(form.baseSalary) : undefined,
+                insuranceBase: form.insuranceBase ? Number(form.insuranceBase) : undefined,
+                positionCode: form.positionCode || undefined,
+                salaryStep: form.salaryStep ? Number(form.salaryStep) : undefined,
             };
             if (isEdit && contract) {
                 await updateContract(contract.id, payload);
@@ -100,7 +276,7 @@ function ContractFormModal({ isOpen, onClose, onSuccess, contract, employees }: 
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={isEdit ? 'Edit Contract' : 'New Contract'} width="max-w-xl">
+        <Modal isOpen={isOpen} onClose={onClose} title={isEdit ? 'Sửa hợp đồng (tạo bản chờ duyệt)' : 'Tạo hợp đồng mới'} width="max-w-2xl">
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -137,16 +313,6 @@ function ContractFormModal({ isOpen, onClose, onSuccess, contract, employees }: 
                         </select>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                        <select
-                            value={form.status}
-                            onChange={e => set('status', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        >
-                            {CONTRACT_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                        </select>
-                    </div>
-                    <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Start Date <span className="text-red-500">*</span>
                         </label>
@@ -169,36 +335,69 @@ function ContractFormModal({ isOpen, onClose, onSuccess, contract, employees }: 
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Salary Rank</label>
-                        <input
-                            type="number"
-                            value={form.salaryRank}
-                            onChange={e => set('salaryRank', e.target.value)}
-                            placeholder="e.g. 1"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        />
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Ngạch (positionCode) <span className="text-red-500">*</span>
+                        </label>
+                        <select value={form.positionCode} onChange={e => set('positionCode', e.target.value)}
+                            className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${errors.positionCode ? 'border-red-400' : 'border-gray-300'}`}>
+                            {POSITION_CODES.map(p => <option key={p} value={p}>{p}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Bậc (salaryStep) <span className="text-red-500">*</span>
+                        </label>
+                        <select value={form.salaryStep} onChange={e => set('salaryStep', e.target.value)}
+                            className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${errors.salaryStep ? 'border-red-400' : 'border-gray-300'}`}>
+                            {Array.from({ length: 10 }, (_, i) => i + 1).map(s => <option key={s} value={s}>Bậc {s}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Lương cơ bản (VND) <span className="text-red-500">*</span>
+                        </label>
+                        <input type="number" min={0} value={form.baseSalary}
+                            onChange={e => set('baseSalary', e.target.value)} placeholder="VD: 40000000"
+                            className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${errors.baseSalary ? 'border-red-400' : 'border-gray-300'}`} />
+                        {errors.baseSalary && <p className="text-xs text-red-500 mt-1">{errors.baseSalary}</p>}
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Lương đóng bảo hiểm (VND)</label>
+                        <input type="number" min={0} value={form.insuranceBase}
+                            onChange={e => set('insuranceBase', e.target.value)} placeholder="Mặc định = lương cơ bản"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
                     </div>
                 </div>
 
+                {/* #5 — người phụ thuộc (dependentCount tự đếm từ danh sách này) */}
+                {form.employeeId && (
+                    <DependentsSection employeeId={form.employeeId} />
+                )}
+
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Terms</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Điều khoản</label>
                     <textarea
                         rows={3}
                         value={form.terms}
                         onChange={e => set('terms', e.target.value)}
-                        placeholder="Contract terms and conditions..."
+                        placeholder="Điều khoản hợp đồng…"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
                     />
                 </div>
 
+                <p className="text-xs text-gray-500 bg-amber-50 border border-amber-100 rounded-md p-2">
+                    Hợp đồng mới/sửa sẽ ở trạng thái <strong>Chờ duyệt</strong> và chỉ có hiệu lực (dùng để tính lương)
+                    sau khi <strong>Giám đốc</strong> phê duyệt.
+                </p>
+
                 <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
                     <button type="button" onClick={onClose}
                         className="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50">
-                        Cancel
+                        Hủy
                     </button>
                     <button type="submit" disabled={saving}
                         className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50">
-                        {saving ? 'Saving…' : isEdit ? 'Update Contract' : 'Create Contract'}
+                        {saving ? 'Đang lưu…' : isEdit ? 'Lưu (trình duyệt)' : 'Tạo hợp đồng'}
                     </button>
                 </div>
             </form>
@@ -212,6 +411,8 @@ export function ContractContent() {
     const { showToast } = useToast();
     const { role } = useAuth();
     const canWrite = role === 'HR_ADMIN';
+    const isDirector = role === 'DIRECTOR';
+    const [busy, setBusy] = useState<string | null>(null);
     const [contracts, setContracts] = useState<Contract[]>([]);
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [loading, setLoading] = useState(true);
@@ -220,6 +421,7 @@ export function ContractContent() {
     const [editTarget, setEditTarget] = useState<Contract | null>(null);
     const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
     const [docTarget, setDocTarget] = useState<Contract | null>(null);
+    const [detailItem, setDetailItem] = useState<Contract | null>(null);
     const [search, setSearch] = useState('');
     const [activeTab, setActiveTab] = useState<ViewTab>('all');
     const [page, setPage] = useState(0);
@@ -259,15 +461,42 @@ export function ContractContent() {
         }
     };
 
+    const handleApprove = async (id: string) => {
+        setBusy(id);
+        try {
+            await approveContract(id);
+            showToast('Đã duyệt — hợp đồng có hiệu lực');
+            fetchData();
+        } catch (err: any) {
+            showToast(err?.body?.message || 'Duyệt thất bại', 'error');
+        } finally { setBusy(null); }
+    };
+
+    const handleReject = async (id: string) => {
+        setBusy(id);
+        try {
+            await rejectContract(id);
+            showToast('Đã trả lại hợp đồng');
+            fetchData();
+        } catch (err: any) {
+            showToast(err?.body?.message || 'Trả lại thất bại', 'error');
+        } finally { setBusy(null); }
+    };
+
     const getStatusBadge = (status: string) => {
         const styles: Record<string, string> = {
             ACTIVE: 'bg-green-100 text-green-800',
+            PENDING_APPROVAL: 'bg-orange-100 text-orange-800',
+            REJECTED: 'bg-red-100 text-red-800',
             EXPIRED: 'bg-gray-100 text-gray-600',
             TERMINATED: 'bg-red-100 text-red-800',
         };
+        const labels: Record<string, string> = {
+            PENDING_APPROVAL: 'Chờ duyệt', ACTIVE: 'Hiệu lực', REJECTED: 'Bị từ chối', EXPIRED: 'Hết hạn',
+        };
         return (
             <span className={`px-2 py-1 text-xs rounded-full ${styles[status] || 'bg-gray-100 text-gray-600'}`}>
-                {status}
+                {labels[status] || status}
             </span>
         );
     };
@@ -339,26 +568,29 @@ export function ContractContent() {
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Start Date</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">End Date</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Salary Rank</th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ngạch/Bậc</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Document</th>
-                                    {canWrite && <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>}
+                                    {(canWrite || isDirector) && <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>}
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
                                 {filtered.length === 0 ? (
-                                    <tr><td colSpan={canWrite ? 8 : 7} className="px-6 py-8 text-center text-gray-400">No contracts found</td></tr>
+                                    <tr><td colSpan={(canWrite || isDirector) ? 8 : 7} className="px-6 py-8 text-center text-gray-400">No contracts found</td></tr>
                                 ) : filtered.map(c => (
                                     <tr key={c.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                                            {c.employeeName || c.employeeId}
+                                        <td className="px-6 py-4 text-sm font-medium">
+                                            <button onClick={() => setDetailItem(c)}
+                                                className="text-blue-700 hover:text-blue-900 hover:underline text-left">
+                                                {c.employeeName || c.employeeId}
+                                            </button>
                                         </td>
                                         <td className="px-6 py-4 text-sm">
                                             <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">{c.contractType}</span>
                                         </td>
                                         <td className="px-6 py-4 text-sm text-gray-500">{c.startDate || '—'}</td>
                                         <td className="px-6 py-4 text-sm text-gray-500">{c.endDate || '—'}</td>
-                                        <td className="px-6 py-4 text-sm text-gray-500">{c.salaryRank ?? '—'}</td>
+                                        <td className="px-6 py-4 text-sm text-gray-500">{c.positionCode ? `${c.positionCode} / Bậc ${c.salaryStep ?? '—'}` : (c.salaryRank ?? '—')}</td>
                                         <td className="px-6 py-4">{getStatusBadge(c.status)}</td>
                                         <td className="px-6 py-4">
                                             <button onClick={() => setDocTarget(c)}
@@ -369,17 +601,33 @@ export function ContractContent() {
                                                 {c.hasDocument ? 'Xem' : 'Đính kèm'}
                                             </button>
                                         </td>
-                                        {canWrite && (
+                                        {(canWrite || isDirector) && (
                                             <td className="px-6 py-4 text-sm">
                                                 <div className="flex items-center space-x-2">
-                                                    <button onClick={() => setEditTarget(c)}
-                                                        className="p-1 text-gray-600 hover:text-blue-600" title="Edit">
-                                                        <Edit2Icon className="w-4 h-4" />
-                                                    </button>
-                                                    <button onClick={() => setDeleteConfirm(c.id)}
-                                                        className="p-1 text-gray-600 hover:text-red-600" title="Delete">
-                                                        <Trash2Icon className="w-4 h-4" />
-                                                    </button>
+                                                    {canWrite && (
+                                                        <>
+                                                            <button onClick={() => setEditTarget(c)}
+                                                                className="p-1 text-gray-600 hover:text-blue-600" title="Sửa (tạo bản chờ duyệt)">
+                                                                <Edit2Icon className="w-4 h-4" />
+                                                            </button>
+                                                            <button onClick={() => setDeleteConfirm(c.id)}
+                                                                className="p-1 text-gray-600 hover:text-red-600" title="Xóa">
+                                                                <Trash2Icon className="w-4 h-4" />
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                    {isDirector && c.status === 'PENDING_APPROVAL' && (
+                                                        <>
+                                                            <button disabled={busy === c.id} onClick={() => handleApprove(c.id)}
+                                                                className="p-1 text-gray-600 hover:text-green-600 disabled:opacity-40" title="Duyệt & kích hoạt">
+                                                                <CheckCircleIcon className="w-4 h-4" />
+                                                            </button>
+                                                            <button disabled={busy === c.id} onClick={() => handleReject(c.id)}
+                                                                className="p-1 text-gray-600 hover:text-red-600 disabled:opacity-40" title="Trả lại">
+                                                                <XCircleIcon className="w-4 h-4" />
+                                                            </button>
+                                                        </>
+                                                    )}
                                                 </div>
                                             </td>
                                         )}
@@ -416,6 +664,12 @@ export function ContractContent() {
                 canUpload={canWrite}
                 onClose={() => setDocTarget(null)}
                 onUploaded={fetchData}
+            />
+
+            <ContractDetailModal
+                contract={detailItem}
+                onClose={() => setDetailItem(null)}
+                onAttach={(c) => { setDetailItem(null); setDocTarget(c); }}
             />
 
             {deleteConfirm && (

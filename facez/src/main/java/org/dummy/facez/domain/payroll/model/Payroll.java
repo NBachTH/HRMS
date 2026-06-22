@@ -79,6 +79,16 @@ public class Payroll extends AuditableEntity {
     /** Approved OT pay (VND) */
     private long otPay;
 
+    /** OT hour breakdown (for the payslip). Night hours overlap with the other three. */
+    @Column(name = "ot_weekday_hours")
+    private double otWeekdayHours;
+    @Column(name = "ot_weekend_hours")
+    private double otWeekendHours;
+    @Column(name = "ot_holiday_hours")
+    private double otHolidayHours;
+    @Column(name = "ot_night_hours")
+    private double otNightHours;
+
     /** Variable bonus for the month (VND) */
     private long bonus;
 
@@ -151,6 +161,15 @@ public class Payroll extends AuditableEntity {
 
     @Column(length = 500)
     private String notes;
+
+    /** The payroll run (period) this line belongs to. */
+    @Column(name = "payroll_run_id", length = 64)
+    private String payrollRunId;
+
+    /** Manually edited/recalculated lines are locked and skipped by a whole-period recalc. */
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean locked = false;
 
     // createdAt / updatedAt / createdBy / updatedBy are inherited from AuditableEntity.
 }

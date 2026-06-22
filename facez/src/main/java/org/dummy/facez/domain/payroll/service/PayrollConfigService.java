@@ -1,6 +1,7 @@
 package org.dummy.facez.domain.payroll.service;
 
 import org.dummy.facez.common.enums.ConfigStatus;
+import org.dummy.facez.domain.payroll.dto.EffectiveConfigResponse;
 import org.dummy.facez.domain.payroll.model.*;
 import org.dummy.facez.domain.payroll.repository.AllowanceConfigRepository;
 import org.dummy.facez.domain.payroll.repository.InsuranceConfigRepository;
@@ -9,7 +10,9 @@ import org.dummy.facez.domain.payroll.repository.SalaryGradeConfigRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -161,6 +164,55 @@ public class PayrollConfigService {
     public long getStatutoryMinimumWage(LocalDate period) {
         Long min = insurance(period).getStatutoryMinWage();
         return min != null ? min : 2_340_000L;
+    }
+
+    // ── Effective-config summary (transparency for Finance) ─────────────────────
+
+    /**
+     * The PUBLISHED version each config type resolves to for the given period — same selection
+     * the engine uses at calc time. {@code found=false} means no PUBLISHED version is effective.
+     */
+    public List<EffectiveConfigResponse> effectiveConfigs(int year, int month) {
+        LocalDate p = LocalDate.of(year, month, 1);
+        List<EffectiveConfigResponse> out = new ArrayList<>();
+
+        SalaryGradeConfig sg = salaryGradeRepo
+                .findFirstByStatusAndEffectiveFromLessThanEqualOrderByEffectiveFromDesc(ConfigStatus.PUBLISHED, p)
+                .orElse(null);
+        out.add(EffectiveConfigResponse.builder().configType("SALARY_GRADE")
+                .id(sg != null ? sg.getId() : null)
+                .effectiveFrom(sg != null ? sg.getEffectiveFrom() : null)
+                .legalBasis(sg != null ? sg.getLegalBasis() : null)
+                .found(sg != null).build());
+
+        AllowanceConfig al = allowanceRepo
+                .findFirstByStatusAndEffectiveFromLessThanEqualOrderByEffectiveFromDesc(ConfigStatus.PUBLISHED, p)
+                .orElse(null);
+        out.add(EffectiveConfigResponse.builder().configType("ALLOWANCE")
+                .id(al != null ? al.getId() : null)
+                .effectiveFrom(al != null ? al.getEffectiveFrom() : null)
+                .legalBasis(al != null ? al.getLegalBasis() : null)
+                .found(al != null).build());
+
+        PitConfig pit = pitRepo
+                .findFirstByStatusAndEffectiveFromLessThanEqualOrderByEffectiveFromDesc(ConfigStatus.PUBLISHED, p)
+                .orElse(null);
+        out.add(EffectiveConfigResponse.builder().configType("PIT")
+                .id(pit != null ? pit.getId() : null)
+                .effectiveFrom(pit != null ? pit.getEffectiveFrom() : null)
+                .legalBasis(pit != null ? pit.getLegalBasis() : null)
+                .found(pit != null).build());
+
+        InsuranceConfig ins = insuranceRepo
+                .findFirstByStatusAndEffectiveFromLessThanEqualOrderByEffectiveFromDesc(ConfigStatus.PUBLISHED, p)
+                .orElse(null);
+        out.add(EffectiveConfigResponse.builder().configType("INSURANCE")
+                .id(ins != null ? ins.getId() : null)
+                .effectiveFrom(ins != null ? ins.getEffectiveFrom() : null)
+                .legalBasis(ins != null ? ins.getLegalBasis() : null)
+                .found(ins != null).build());
+
+        return out;
     }
 
     // ── Internal resolution + cache ─────────────────────────────────────────────

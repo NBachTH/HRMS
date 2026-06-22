@@ -7,7 +7,7 @@ import { ContractContent } from '@/app/components/contract/ContractContent';
 
 export default function ContractPage() {
     return (
-        <ProtectedRoute allowedRoles={['HR_ADMIN', 'FINANCE_ADMIN', 'SYSTEM_ADMIN']}>
+        <ProtectedRoute allowedRoles={['HR_ADMIN', 'FINANCE_ADMIN', 'DIRECTOR', 'SYSTEM_ADMIN']}>
             <div className="flex h-screen w-full bg-gray-50">
                 <Sidebar />
                 <div className="flex-1 flex flex-col overflow-hidden">

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { CheckCircleIcon, PlayIcon, Trash2Icon, CopyIcon } from 'lucide-react';
+import { CheckCircleIcon, PlayIcon, Trash2Icon, CopyIcon, PencilIcon, SendIcon, ClockIcon, XCircleIcon } from 'lucide-react';
 import { useToast } from '@/app/commons/contexts/ToastContext';
 import { useAuth } from '@/app/commons/contexts/AuthContext';
 import { Modal } from '@/app/components/common/Modal';
@@ -10,10 +10,10 @@ import type {
     SalaryGradeConfig, PitConfig, InsuranceConfig, AllowanceConfig,
 } from '@/app/commons/types';
 import {
-    listSalaryGradeConfigs, createSalaryGradeConfig, publishSalaryGradeConfig, deleteSalaryGradeConfig,
-    listPitConfigs, createPitConfig, publishPitConfig, deletePitConfig,
-    listInsuranceConfigs, createInsuranceConfig, publishInsuranceConfig, deleteInsuranceConfig,
-    listAllowanceConfigs, createAllowanceConfig, publishAllowanceConfig, deleteAllowanceConfig,
+    listSalaryGradeConfigs, createSalaryGradeConfig, updateSalaryGradeConfig, submitSalaryGradeConfig, rejectSalaryGradeConfig, publishSalaryGradeConfig, deleteSalaryGradeConfig,
+    listPitConfigs, createPitConfig, updatePitConfig, submitPitConfig, rejectPitConfig, publishPitConfig, deletePitConfig,
+    listInsuranceConfigs, createInsuranceConfig, updateInsuranceConfig, submitInsuranceConfig, rejectInsuranceConfig, publishInsuranceConfig, deleteInsuranceConfig,
+    listAllowanceConfigs, createAllowanceConfig, updateAllowanceConfig, submitAllowanceConfig, rejectAllowanceConfig, publishAllowanceConfig, deleteAllowanceConfig,
 } from '@/app/services/PayrollConfigService';
 import { SalaryGradeEditor } from './editors/SalaryGradeEditor';
 import { PitEditor } from './editors/PitEditor';
@@ -64,6 +64,9 @@ function StatusBadge({ status }: { status: string }) {
             <CheckCircleIcon className="w-3 h-3" /> Published</span>;
     if (status === 'ARCHIVED')
         return <span className="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-500 rounded-full">Archived</span>;
+    if (status === 'PENDING_APPROVAL')
+        return <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-700 rounded-full">
+            <ClockIcon className="w-3 h-3" /> Chờ duyệt</span>;
     return <span className="px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700 rounded-full">Draft</span>;
 }
 
@@ -82,8 +85,10 @@ export function SystemConfigContent() {
 
     const [modalOpen, setModalOpen] = useState(false);
     const [prefill, setPrefill] = useState<AnyConfig | null>(null);
+    const [editId, setEditId] = useState<string | null>(null); // null = create mode; set = editing this draft
     const [saving, setSaving] = useState(false);
     const [publishingId, setPublishingId] = useState<string | null>(null);
+    const [submittingId, setSubmittingId] = useState<string | null>(null);
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [detailItem, setDetailItem] = useState<AnyConfig | null>(null);
 
@@ -101,25 +106,78 @@ export function SystemConfigContent() {
 
     useEffect(() => { fetchItems(); }, [fetchItems]);
 
-    const openNew = (clone?: AnyConfig) => { setPrefill(clone ?? null); setModalOpen(true); };
+    // Clone = new draft prefilled from an existing version (keeps create mode).
+    const openNew = (clone?: AnyConfig) => { setEditId(null); setPrefill(clone ?? null); setModalOpen(true); };
+    // Edit = replace the content of an existing DRAFT in place.
+    const openEdit = (cfg: AnyConfig) => { setEditId(cfg.id); setPrefill(cfg); setModalOpen(true); };
 
-    const handleCreate = async (req: any) => {
+    const handleSave = async (req: any) => {
         setSaving(true);
         try {
-            const create = {
-                SALARY_GRADE: createSalaryGradeConfig,
-                PIT: createPitConfig,
-                INSURANCE: createInsuranceConfig,
-                ALLOWANCE: createAllowanceConfig,
-            }[activeTab] as (b: any) => Promise<any>;
-            await create(req);
-            showToast('Draft created');
+            if (editId) {
+                const update = {
+                    SALARY_GRADE: updateSalaryGradeConfig,
+                    PIT: updatePitConfig,
+                    INSURANCE: updateInsuranceConfig,
+                    ALLOWANCE: updateAllowanceConfig,
+                }[activeTab] as (id: string, b: any) => Promise<any>;
+                await update(editId, req);
+                showToast('Đã cập nhật bản nháp');
+            } else {
+                const create = {
+                    SALARY_GRADE: createSalaryGradeConfig,
+                    PIT: createPitConfig,
+                    INSURANCE: createInsuranceConfig,
+                    ALLOWANCE: createAllowanceConfig,
+                }[activeTab] as (b: any) => Promise<any>;
+                await create(req);
+                showToast('Draft created');
+            }
             setModalOpen(false);
+            setEditId(null);
             setRefreshKey(k => k + 1);
         } catch (err: any) {
-            showToast(err?.body?.message || 'Failed to create draft', 'error');
+            showToast(err?.body?.message || 'Failed to save draft', 'error');
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleSubmit = async (id: string) => {
+        setSubmittingId(id);
+        try {
+            const submit = {
+                SALARY_GRADE: submitSalaryGradeConfig,
+                PIT: submitPitConfig,
+                INSURANCE: submitInsuranceConfig,
+                ALLOWANCE: submitAllowanceConfig,
+            }[activeTab] as (id: string) => Promise<any>;
+            await submit(id);
+            showToast('Đã trình duyệt — chờ Giám đốc phê duyệt');
+            setRefreshKey(k => k + 1);
+        } catch (err: any) {
+            showToast(err?.body?.message || 'Trình duyệt thất bại', 'error');
+        } finally {
+            setSubmittingId(null);
+        }
+    };
+
+    const handleReject = async (id: string) => {
+        setPublishingId(id);
+        try {
+            const reject = {
+                SALARY_GRADE: rejectSalaryGradeConfig,
+                PIT: rejectPitConfig,
+                INSURANCE: rejectInsuranceConfig,
+                ALLOWANCE: rejectAllowanceConfig,
+            }[activeTab] as (id: string) => Promise<any>;
+            await reject(id);
+            showToast('Đã trả lại bản nháp cho Finance chỉnh sửa');
+            setRefreshKey(k => k + 1);
+        } catch (err: any) {
+            showToast(err?.body?.message || 'Trả lại thất bại', 'error');
+        } finally {
+            setPublishingId(null);
         }
     };
 
@@ -161,7 +219,7 @@ export function SystemConfigContent() {
     };
 
     const renderEditor = () => {
-        const common = { saving, onSave: handleCreate, onCancel: () => setModalOpen(false) };
+        const common = { saving, onSave: handleSave, onCancel: () => { setModalOpen(false); setEditId(null); } };
         switch (activeTab) {
             case 'SALARY_GRADE': return <SalaryGradeEditor initial={prefill as SalaryGradeConfig} {...common} />;
             case 'PIT': return <PitEditor initial={prefill as PitConfig} {...common} />;
@@ -175,7 +233,7 @@ export function SystemConfigContent() {
             <div className="mb-6 flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold text-blue-900 mb-2">Payroll Config</h1>
-                    <p className="text-sm text-gray-500">Effective-dated payroll configuration. Drafts go live only when published.</p>
+                    <p className="text-sm text-gray-500">Cấu hình lương hiệu lực-theo-ngày. Finance soạn nháp → Submit → Giám đốc duyệt mới có hiệu lực.</p>
                 </div>
                 {canCreate && (
                     <button onClick={() => openNew()}
@@ -233,21 +291,42 @@ export function SystemConfigContent() {
                                             {canCreate && (
                                                 <button onClick={() => openNew(cfg)}
                                                     className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded"
-                                                    title="New draft based on this">
+                                                    title="Tạo bản nháp mới từ bản này">
                                                     <CopyIcon className="w-4 h-4" />
                                                 </button>
                                             )}
-                                            {cfg.status === 'DRAFT' && canPublish && (
+                                            {cfg.status === 'DRAFT' && canCreate && (
+                                                <button onClick={() => openEdit(cfg)}
+                                                    className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded"
+                                                    title="Sửa bản nháp">
+                                                    <PencilIcon className="w-4 h-4" />
+                                                </button>
+                                            )}
+                                            {cfg.status === 'DRAFT' && canCreate && (
+                                                <button onClick={() => handleSubmit(cfg.id)} disabled={submittingId === cfg.id}
+                                                    className="p-1.5 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded disabled:opacity-40"
+                                                    title="Trình Giám đốc duyệt">
+                                                    <SendIcon className="w-4 h-4" />
+                                                </button>
+                                            )}
+                                            {cfg.status === 'PENDING_APPROVAL' && canPublish && (
                                                 <button onClick={() => handlePublish(cfg.id)} disabled={publishingId === cfg.id}
                                                     className="p-1.5 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded disabled:opacity-40"
-                                                    title="Publish (go live)">
+                                                    title="Duyệt & kích hoạt (go live)">
                                                     <PlayIcon className="w-4 h-4" />
+                                                </button>
+                                            )}
+                                            {cfg.status === 'PENDING_APPROVAL' && canPublish && (
+                                                <button onClick={() => handleReject(cfg.id)} disabled={publishingId === cfg.id}
+                                                    className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded disabled:opacity-40"
+                                                    title="Trả lại bản nháp">
+                                                    <XCircleIcon className="w-4 h-4" />
                                                 </button>
                                             )}
                                             {cfg.status === 'DRAFT' && canCreate && (
                                                 <button onClick={() => setDeleteId(cfg.id)}
                                                     className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded"
-                                                    title="Delete draft">
+                                                    title="Xóa bản nháp">
                                                     <Trash2Icon className="w-4 h-4" />
                                                 </button>
                                             )}
@@ -260,8 +339,8 @@ export function SystemConfigContent() {
                 )}
             </div>
 
-            <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)}
-                title={`${prefill ? 'New draft (from existing)' : 'New'} — ${CONFIG_LABELS[activeTab]}`} width="max-w-4xl">
+            <Modal isOpen={modalOpen} onClose={() => { setModalOpen(false); setEditId(null); }}
+                title={`${editId ? 'Sửa bản nháp' : prefill ? 'New draft (from existing)' : 'New'} — ${CONFIG_LABELS[activeTab]}`} width="max-w-4xl">
                 {renderEditor()}
             </Modal>
 

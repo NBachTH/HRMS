@@ -2,14 +2,10 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { CheckCircleIcon, XCircleIcon, BanknoteIcon } from 'lucide-react';
-import {
-    getPayrollsByPeriod,
-    approvePayroll,
-    rejectPayroll,
-} from '@/app/services/PayrollService';
+import { useRouter } from 'next/navigation';
+import { getRuns, approveRun, rejectRun, type PayrollRun } from '@/app/services/PayrollRunService';
 import { Modal } from '@/app/components/common/Modal';
 import { useToast } from '@/app/commons/contexts/ToastContext';
-import type { Payroll } from '@/app/commons/types';
 import { formatVnd } from '@/app/commons/utils/formatters';
 
 const MONTHS = [
@@ -18,7 +14,7 @@ const MONTHS = [
 ];
 
 const STATUS_STYLES: Record<string, string> = {
-    DRAFT:            'bg-yellow-100 text-yellow-800',
+    DRAFT:            'bg-gray-100 text-gray-600',
     PENDING_APPROVAL: 'bg-orange-100 text-orange-800',
     APPROVED:         'bg-blue-100 text-blue-800',
     REJECTED:         'bg-red-100 text-red-800',
@@ -31,22 +27,22 @@ function RejectModal({ isOpen, onClose, onConfirm }: {
     const [reason, setReason] = useState('');
     useEffect(() => { if (isOpen) setReason(''); }, [isOpen]);
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Reject Payroll" width="max-w-sm">
+        <Modal isOpen={isOpen} onClose={onClose} title="Trả lại kỳ lương" width="max-w-sm">
             <div className="space-y-4">
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Rejection Reason <span className="text-red-500">*</span>
+                        Lý do trả lại <span className="text-red-500">*</span>
                     </label>
                     <textarea rows={3} value={reason} onChange={e => setReason(e.target.value)}
-                        placeholder="Explain why this payroll is rejected..."
+                        placeholder="Giải thích vì sao trả lại kỳ lương này…"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm resize-none focus:outline-none focus:ring-1 focus:ring-blue-500" />
                 </div>
                 <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
-                    <button onClick={onClose} className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50">Cancel</button>
+                    <button onClick={onClose} className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50">Hủy</button>
                     <button disabled={!reason.trim()}
                         onClick={() => { if (reason.trim()) { onConfirm(reason); onClose(); } }}
                         className="px-4 py-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50">
-                        Reject
+                        Trả lại
                     </button>
                 </div>
             </div>
@@ -56,102 +52,69 @@ function RejectModal({ isOpen, onClose, onConfirm }: {
 
 export function DirectorApprovalContent() {
     const { showToast } = useToast();
-    const [payrolls, setPayrolls] = useState<Payroll[]>([]);
+    const router = useRouter();
+    const [runs, setRuns] = useState<PayrollRun[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [rejectTarget, setRejectTarget] = useState<string | null>(null);
-    const [page, setPage] = useState(0);
-    const [totalPages, setTotalPages] = useState(0);
+    const [busy, setBusy] = useState<string | null>(null);
 
-    const now = new Date();
-    const [filterMonth, setFilterMonth] = useState(now.getMonth() + 1);
-    const [filterYear, setFilterYear] = useState(now.getFullYear());
-
-    const fetchPayrolls = useCallback(async () => {
+    const fetchRuns = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
-            const res = await getPayrollsByPeriod(filterYear, filterMonth, page, 20);
-            if (res.success && res.data) {
-                setPayrolls(res.data.content);
-                setTotalPages(res.data.totalPages);
-            }
+            const res = await getRuns();
+            setRuns(res.data ?? []);
         } catch (err: any) {
-            setError(err?.body?.message || 'Failed to load payroll data');
+            setError(err?.body?.message || 'Không tải được danh sách kỳ lương');
         } finally {
             setLoading(false);
         }
-    }, [filterMonth, filterYear, page]);
+    }, []);
 
-    useEffect(() => { fetchPayrolls(); }, [fetchPayrolls]);
+    useEffect(() => { fetchRuns(); }, [fetchRuns]);
 
     const handleApprove = async (id: string) => {
+        setBusy(id);
         try {
-            await approvePayroll(id);
-            showToast('Payroll approved');
-            fetchPayrolls();
+            await approveRun(id);
+            showToast('Đã duyệt kỳ lương');
+            fetchRuns();
         } catch (err: any) {
-            showToast(err?.body?.message || 'Failed to approve', 'error');
-        }
+            showToast(err?.body?.message || 'Duyệt thất bại', 'error');
+        } finally { setBusy(null); }
     };
 
     const handleReject = async (id: string, reason: string) => {
+        setBusy(id);
         try {
-            await rejectPayroll(id, reason);
-            showToast('Payroll rejected');
-            fetchPayrolls();
+            await rejectRun(id, reason);
+            showToast('Đã trả lại kỳ lương');
+            fetchRuns();
         } catch (err: any) {
-            showToast(err?.body?.message || 'Failed to reject', 'error');
-        }
+            showToast(err?.body?.message || 'Trả lại thất bại', 'error');
+        } finally { setBusy(null); }
     };
 
-    const currentYear = now.getFullYear();
-    const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
-
-    const pending = payrolls.filter(p => p.status === 'PENDING_APPROVAL');
-    const totalNet = payrolls.reduce((sum, p) => sum + (p.netSalary || 0), 0);
-    const totalCost = payrolls.reduce((sum, p) => sum + (p.totalEmploymentCost || 0), 0);
+    const pending = runs.filter(r => r.status === 'PENDING_APPROVAL');
+    const totalNet = pending.reduce((s, r) => s + (r.totalNet || 0), 0);
 
     return (
         <div className="p-8">
             <div className="mb-6">
-                <h1 className="text-3xl font-bold text-blue-900 mb-2">Payroll Approvals</h1>
-                <p className="text-sm text-gray-500">Director / Approvals</p>
+                <h1 className="text-3xl font-bold text-blue-900 mb-2">Duyệt bảng lương</h1>
+                <p className="text-sm text-gray-500">Director / Duyệt cả kỳ lương (PayrollRun)</p>
             </div>
 
-            {/* Period filter */}
-            <div className="bg-white rounded-lg shadow-sm p-4 mb-4 flex flex-wrap gap-3 items-end">
-                <div>
-                    <label className="block text-xs text-gray-500 mb-1">Month</label>
-                    <select value={filterMonth} onChange={e => { setFilterMonth(Number(e.target.value)); setPage(0); }}
-                        className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
-                        {MONTHS.map((m, i) => <option key={i + 1} value={i + 1}>{m}</option>)}
-                    </select>
-                </div>
-                <div>
-                    <label className="block text-xs text-gray-500 mb-1">Year</label>
-                    <select value={filterYear} onChange={e => { setFilterYear(Number(e.target.value)); setPage(0); }}
-                        className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
-                        {years.map(y => <option key={y} value={y}>{y}</option>)}
-                    </select>
-                </div>
-            </div>
-
-            {/* Summary */}
             {!loading && (
-                <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="grid grid-cols-2 gap-4 mb-6">
                     <div className="bg-orange-50 rounded-xl border border-orange-100 p-4">
-                        <p className="text-xs text-orange-600 font-medium mb-1">Awaiting Approval</p>
+                        <p className="text-xs text-orange-600 font-medium mb-1">Kỳ chờ duyệt</p>
                         <p className="text-2xl font-bold text-orange-900">{pending.length}</p>
-                        <p className="text-xs text-orange-500">payroll records</p>
                     </div>
                     <div className="bg-blue-50 rounded-xl border border-blue-100 p-4">
-                        <p className="text-xs text-blue-600 font-medium mb-1">Total Net Salary</p>
+                        <p className="text-xs text-blue-600 font-medium mb-1">Tổng lương net (chờ duyệt)</p>
                         <p className="text-xl font-bold text-blue-900">{formatVnd(totalNet)}</p>
-                    </div>
-                    <div className="bg-indigo-50 rounded-xl border border-indigo-100 p-4">
-                        <p className="text-xs text-indigo-600 font-medium mb-1">Total Employment Cost</p>
-                        <p className="text-xl font-bold text-indigo-900">{formatVnd(totalCost)}</p>
                     </div>
                 </div>
             )}
@@ -159,13 +122,11 @@ export function DirectorApprovalContent() {
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-200 flex items-center gap-2">
                     <BanknoteIcon className="w-5 h-5 text-blue-600" />
-                    <h2 className="text-lg font-semibold text-gray-800">
-                        {MONTHS[filterMonth - 1]} {filterYear} Payroll — {payrolls.length} records
-                    </h2>
+                    <h2 className="text-lg font-semibold text-gray-800">Kỳ lương — {runs.length}</h2>
                 </div>
 
                 {loading ? (
-                    <div className="p-6 text-center text-gray-500">Loading…</div>
+                    <div className="p-6 text-center text-gray-500">Đang tải…</div>
                 ) : error ? (
                     <div className="p-6 text-center text-red-500">{error}</div>
                 ) : (
@@ -173,68 +134,58 @@ export function DirectorApprovalContent() {
                         <table className="w-full">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
-                                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Gross</th>
-                                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Net Salary</th>
-                                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Employment Cost</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kỳ</th>
+                                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Số NV</th>
+                                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Tổng Gross</th>
+                                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Tổng Net</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Trạng thái</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Thao tác</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {payrolls.length === 0 ? (
+                                {runs.length === 0 ? (
                                     <tr>
                                         <td colSpan={6} className="px-6 py-10 text-center text-gray-400">
-                                            No payroll records for this period.
+                                            Chưa có kỳ lương nào. Finance tạo kỳ ở màn &quot;Payroll Runs&quot;.
                                         </td>
                                     </tr>
-                                ) : payrolls.map(p => (
-                                    <tr key={p.payrollId} className={`hover:bg-gray-50 ${p.status === 'PENDING_APPROVAL' ? 'bg-orange-50/30' : ''}`}>
+                                ) : runs.map(r => (
+                                    <tr key={r.id} className={`hover:bg-gray-50 ${r.status === 'PENDING_APPROVAL' ? 'bg-orange-50/30' : ''}`}>
                                         <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                                            {p.employeeName || p.employeeId}
+                                            {MONTHS[r.month - 1]} {r.year}
                                         </td>
-                                        <td className="px-4 py-3 text-sm text-gray-700 text-right">{formatVnd(p.totalGross)}</td>
-                                        <td className="px-4 py-3 text-sm font-semibold text-gray-900 text-right">{formatVnd(p.netSalary)}</td>
-                                        <td className="px-4 py-3 text-sm text-gray-500 text-right">
-                                            {p.totalEmploymentCost ? formatVnd(p.totalEmploymentCost) : '—'}
-                                        </td>
+                                        <td className="px-4 py-3 text-sm text-gray-700 text-right">{r.employeeCount}</td>
+                                        <td className="px-4 py-3 text-sm text-gray-700 text-right">{formatVnd(r.totalGross)}</td>
+                                        <td className="px-4 py-3 text-sm font-semibold text-gray-900 text-right">{formatVnd(r.totalNet)}</td>
                                         <td className="px-4 py-3">
-                                            <span className={`px-2 py-1 text-xs rounded-full ${STATUS_STYLES[p.status] || 'bg-gray-100 text-gray-600'}`}>
-                                                {p.status}
+                                            <span className={`px-2 py-1 text-xs rounded-full ${STATUS_STYLES[r.status] || 'bg-gray-100 text-gray-600'}`}>
+                                                {r.status}
                                             </span>
                                         </td>
                                         <td className="px-4 py-3">
-                                            {p.status === 'PENDING_APPROVAL' ? (
-                                                <div className="flex items-center gap-1">
-                                                    <button onClick={() => handleApprove(p.payrollId)}
-                                                        className="p-1 text-gray-500 hover:text-green-600" title="Approve">
-                                                        <CheckCircleIcon className="w-5 h-5" />
-                                                    </button>
-                                                    <button onClick={() => setRejectTarget(p.payrollId)}
-                                                        className="p-1 text-gray-500 hover:text-red-600" title="Reject">
-                                                        <XCircleIcon className="w-5 h-5" />
-                                                    </button>
-                                                </div>
-                                            ) : (
-                                                <span className="text-xs text-gray-400">—</span>
-                                            )}
+                                            <div className="flex items-center gap-1">
+                                                <button onClick={() => router.push('/finance/payroll-runs')}
+                                                    className="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded">
+                                                    Xem dòng
+                                                </button>
+                                                {r.status === 'PENDING_APPROVAL' && (
+                                                    <>
+                                                        <button disabled={busy === r.id} onClick={() => handleApprove(r.id)}
+                                                            className="p-1 text-gray-500 hover:text-green-600 disabled:opacity-50" title="Duyệt cả kỳ">
+                                                            <CheckCircleIcon className="w-5 h-5" />
+                                                        </button>
+                                                        <button disabled={busy === r.id} onClick={() => setRejectTarget(r.id)}
+                                                            className="p-1 text-gray-500 hover:text-red-600 disabled:opacity-50" title="Trả lại cả kỳ">
+                                                            <XCircleIcon className="w-5 h-5" />
+                                                        </button>
+                                                    </>
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
-                    </div>
-                )}
-
-                {totalPages > 1 && (
-                    <div className="px-6 py-4 border-t border-gray-200 flex justify-between items-center text-sm text-gray-600">
-                        <span>Page {page + 1} of {totalPages}</span>
-                        <div className="flex gap-2">
-                            <button disabled={page === 0} onClick={() => setPage(p => p - 1)}
-                                className="px-3 py-1 border border-gray-300 rounded disabled:opacity-40 hover:bg-gray-50">Previous</button>
-                            <button disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}
-                                className="px-3 py-1 border border-gray-300 rounded disabled:opacity-40 hover:bg-gray-50">Next</button>
-                        </div>
                     </div>
                 )}
             </div>

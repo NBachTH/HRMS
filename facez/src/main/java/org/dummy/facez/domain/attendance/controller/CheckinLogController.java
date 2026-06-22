@@ -56,8 +56,10 @@ public class CheckinLogController {
     @GetMapping
     @PreAuthorize("hasAnyAuthority('HR_ADMIN','MANAGER','SYSTEM_ADMIN')")
     public ResponseEntity<ApiResponse<List<CheckinLogResponse>>> getAllByDate(
-            @RequestParam(name = "date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        List<CheckinLogResponse> responses = checkinLogService.findByCheckinDateWithEmployee(date);
+            @RequestParam(name = "date", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        LocalDate target = date != null ? date : LocalDate.now();
+        List<CheckinLogResponse> responses = checkinLogService.findByCheckinDateWithEmployee(target);
         return ResponseEntity.ok(ApiResponse.ok(responses));
     }
 

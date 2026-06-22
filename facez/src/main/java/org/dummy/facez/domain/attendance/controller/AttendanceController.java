@@ -100,4 +100,12 @@ public class AttendanceController {
         return ResponseEntity.ok(ApiResponse.ok(java.util.Map.of("notified", notified),
                 "Đã gửi nhắc nhở tới " + notified + " nhân viên."));
     }
+
+    /** HR recalculates the monthly timesheets of an already-closed period (re-aggregates WorkDays). */
+    @PostMapping("/close-period/rebuild-timesheets")
+    @PreAuthorize("hasAuthority('HR_ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> rebuildTimesheets(@RequestBody PeriodCloseRequest req) {
+        periodCloseService.rebuildTimesheets(req.getYear(), req.getMonth());
+        return ResponseEntity.ok(ApiResponse.ok(null, "Đã tính lại bảng công tổng hợp."));
+    }
 }

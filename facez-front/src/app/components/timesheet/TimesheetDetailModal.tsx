@@ -65,8 +65,8 @@ export function TimesheetDetailModal({ timesheet: t, onClose }: Props) {
                         <Row label="Nghỉ làm không thông báo" value={t.unnotifiedAbsenceCount} />
                         <Row label="Số lần vi phạm thời gian làm việc không đủ 8h" value={t.under8hCount} />
                         <Row label="Lỗi log Attendance Request quá 4 lần" value={t.attendanceRequestErrors} />
-                        <Row label="Trừ lương KPI2" value={t.kpi2Deduction?.toLocaleString('vi-VN')} />
-                        <Row label="Chỉ số KPI2" value={n(t.kpi2Index)} strong />
+                        <Row label="Trừ lương HS2" value={t.kpi2Deduction?.toLocaleString('vi-VN')} />
+                        <Row label="Chỉ số HS2" value={n(t.kpi2Index)} strong />
                         <Row label="Bù/trừ vi phạm chấm công tháng trước" value={n(t.prevMonthViolationAdjust)} />
                         {t.notes && <Row label="Ghi chú" value={t.notes} />}
                     </tbody>
