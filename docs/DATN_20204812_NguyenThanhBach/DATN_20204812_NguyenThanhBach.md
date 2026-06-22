@@ -17,6 +17,7 @@ Quản lý nhân sự trong doanh nghiệp công nghệ Việt Nam hiện nay v�
 Xuất phát từ thực tế đó, đồ án xây dựng hệ thống quản lý nhân sự tích hợp chấm công nhận diện khuôn mặt mang tên FaceZ HRMS, nhằm số hóa toàn bộ vòng đời quản lý nhân viên trong một nền tảng tập trung, duy nhất. Hướng tiếp cận là xây dựng ứng dụng web theo kiến trúc client–server, với backend Spring Boot 4.0.0-M3 (Java 21) và frontend Next.js 15 (TypeScript, React 19). Trọng tâm kỹ thuật của đồ án nằm ở ba điểm: (1) pipeline chấm công tự động kết nối thiết bị nhận diện khuôn mặt với bản ghi chấm công qua cơ chế Spring Application Events; (2) công thức tính lương tuân thủ đầy đủ quy định pháp luật Việt Nam (biểu thuế TNCN 7 bậc theo Thông tư 111/2013/TT-BTC, trần đóng bảo hiểm 46,8 triệu VND, KPI song phần); và (3) mô hình phân tách nhiệm vụ 7 vai trò nhằm khôi phục kiểm soát tài chính nội bộ mà quy trình giấy tờ truyền thống thực hiện qua chữ ký vật lý.
 
 Sản phẩm cuối cùng là một hệ thống hoàn chỉnh, bao gồm backend RESTful API với schema quản lý bằng 31 script SQL migration có phiên bản, và frontend đa vai trò với giao diện phù hợp từng nhóm người dùng. FaceZ HRMS bao phủ đầy đủ các nghiệp vụ cốt lõi: quản lý nhân viên và phòng ban, vòng đời hợp đồng, chấm công tự động và chốt kỳ, phê duyệt nghỉ phép/tăng ca đa cấp, tính lương và báo cáo tài chính. Hệ thống là nền tảng để tiếp tục mở rộng theo hướng tích hợp giải pháp nhận diện khuôn mặt thực tế và triển khai thương mại trong tương lai.
+Sản phẩm cuối cùng là một hệ thống hoàn chỉnh, bao gồm backend RESTful API với schema quản lý bằng 31 script SQL migration có phiên bản, và frontend đa vai trò với giao diện phù hợp từng nhóm người dùng. FaceZ HRMS bao phủ đầy đủ các nghiệp vụ cốt lõi: quản lý nhân viên và phòng ban, vòng đời hợp đồng, chấm công tự động và chốt kỳ, phê duyệt nghỉ phép/tăng ca đa cấp, tính lương và báo cáo tài chính. Hệ thống là nền tảng để tiếp tục mở rộng theo hướng tích hợp giải pháp nhận diện khuôn mặt thực tế và triển khai thương mại trong tương lai.
 
 # CHƯƠNG 1. GIỚI THIỆU ĐỀ TÀI
 
@@ -65,6 +66,7 @@ Mục tiêu 4 — Tuân thủ pháp luật Việt Nam: Triển khai công thức
 Phạm vi thị trường: Đồ án hướng riêng tới các doanh nghiệp công nghệ tại Việt Nam, với quy mô nhân sự từ 20 đến 500 người. Các đặc thù pháp luật, ngôn ngữ giao diện và quy trình nghiệp vụ đều được thiết kế cho thị trường trong nước.
 
 Phạm vi tính năng: Hệ thống tập trung vào tám nhóm nghiệp vụ cốt lõi. Thứ nhất, quản lý nhân viên bao gồm thông tin cá nhân và pháp lý (CMND/CCCD, mã số thuế, số BHXH), tài khoản ngân hàng, ảnh đại diện và người phụ thuộc thuế. Thứ hai, quản lý tổ chức gồm phòng ban và phân công quản lý. Thứ ba, quản lý hợp đồng lao động theo vòng đời đầy đủ kèm cảnh báo hết hạn và đính kèm tài liệu hợp đồng PDF (lưu trên MinIO). Thứ tư, chấm công tích hợp thiết bị nhận diện khuôn mặt qua API key xác thực, xử lý tự động và chốt kỳ hằng tháng. Thứ năm, nghỉ phép và tăng ca với chín loại nghỉ phép theo Bộ Luật Lao Động, số dư theo dõi thời gian thực, phê duyệt hai cấp (LEADER → MANAGER, MANAGER là cấp duyệt cuối) và giới hạn OT theo pháp luật. Thứ sáu, tính lương cá nhân và hàng loạt, phê duyệt qua luồng Finance → Director, kèm ba loại báo cáo tài chính (chi phí lao động, nộp bảo hiểm, tổng hợp thuế TNCN). Thứ bảy, hệ thống thông báo in-app cho các sự kiện nghiệp vụ. Thứ tám, cấu hình quản lý phiên bản các thông số tính lương gồm bậc lương, phụ cấp, thuế và bảo hiểm.
+Phạm vi tính năng: Hệ thống tập trung vào tám nhóm nghiệp vụ cốt lõi. Thứ nhất, quản lý nhân viên bao gồm thông tin cá nhân và pháp lý (CMND/CCCD, mã số thuế, số BHXH), tài khoản ngân hàng, ảnh đại diện và người phụ thuộc thuế. Thứ hai, quản lý tổ chức gồm phòng ban và phân công quản lý. Thứ ba, quản lý hợp đồng lao động theo vòng đời đầy đủ kèm cảnh báo hết hạn và đính kèm tài liệu hợp đồng PDF (lưu trên MinIO). Thứ tư, chấm công tích hợp thiết bị nhận diện khuôn mặt qua API key xác thực, xử lý tự động và chốt kỳ hằng tháng. Thứ năm, nghỉ phép và tăng ca với chín loại nghỉ phép theo Bộ Luật Lao Động, số dư theo dõi thời gian thực, phê duyệt hai cấp (LEADER → MANAGER, MANAGER là cấp duyệt cuối) và giới hạn OT theo pháp luật. Thứ sáu, tính lương cá nhân và hàng loạt, phê duyệt qua luồng Finance → Director, kèm ba loại báo cáo tài chính (chi phí lao động, nộp bảo hiểm, tổng hợp thuế TNCN). Thứ bảy, hệ thống thông báo in-app cho các sự kiện nghiệp vụ. Thứ tám, cấu hình quản lý phiên bản các thông số tính lương gồm bậc lương, phụ cấp, thuế và bảo hiểm.
 
 Ngoài phạm vi: Hệ thống không bao gồm tích hợp phần mềm kế toán (MISA, Fast), xuất báo cáo theo mẫu biểu của Bộ Tài chính, quản lý tuyển dụng và đào tạo, phiếu lương dạng PDF có thể in, và tích hợp ngân hàng để thanh toán lương tự động. Đây là các hướng phát triển tiếp theo được xác định trong Chương 6.
 
@@ -73,11 +75,14 @@ Ngoài phạm vi: Hệ thống không bao gồm tích hợp phần mềm kế to
 Đồ án đi theo hướng xây dựng một ứng dụng web theo mô hình client–server, trong đó frontend và backend tách biệt hoàn toàn và giao tiếp qua REST API. Quyết định này xuất phát từ hai lý do: (1) tách biệt concern — backend thuần nghiệp vụ, frontend thuần giao diện; và (2) cho phép tương lai tích hợp ứng dụng di động hoặc ứng dụng bên thứ ba mà không phải thay đổi backend.
 
 Về backend, đồ án chọn Spring Boot 4.0.0-M3 trên Java 21 vì hệ sinh thái trưởng thành phù hợp với nghiệp vụ doanh nghiệp và hỗ trợ xử lý đồng thời tốt cho tác vụ tính lương hàng loạt. Về frontend, Next.js 15 và React 19 được chọn để cân bằng giữa hiệu suất tải trang và độ an toàn kiểu dữ liệu. Về dữ liệu, PostgreSQL 15 đáp ứng các nhu cầu lưu trữ linh hoạt và truy vấn tổng hợp của bài toán, kết hợp với Redis 7 cho các tác vụ bộ nhớ đệm và bảo mật phiên, và MinIO (lưu trữ đối tượng tương thích S3) cho tài liệu hợp đồng PDF. Lý do lựa chọn chi tiết của từng công nghệ, cùng các phương án thay thế được cân nhắc, được phân tích trong Chương 3.
+Về backend, đồ án chọn Spring Boot 4.0.0-M3 trên Java 21 vì hệ sinh thái trưởng thành phù hợp với nghiệp vụ doanh nghiệp và hỗ trợ xử lý đồng thời tốt cho tác vụ tính lương hàng loạt. Về frontend, Next.js 15 và React 19 được chọn để cân bằng giữa hiệu suất tải trang và độ an toàn kiểu dữ liệu. Về dữ liệu, PostgreSQL 15 đáp ứng các nhu cầu lưu trữ linh hoạt và truy vấn tổng hợp của bài toán, kết hợp với Redis 7 cho các tác vụ bộ nhớ đệm và bảo mật phiên, và MinIO (lưu trữ đối tượng tương thích S3) cho tài liệu hợp đồng PDF. Lý do lựa chọn chi tiết của từng công nghệ, cùng các phương án thay thế được cân nhắc, được phân tích trong Chương 3.
 
 Về bảo mật, hệ thống áp dụng cơ chế xác thực dựa trên JWT cho người dùng và khóa API cho thiết bị chấm công, với các chi tiết thiết kế được trình bày trong mục 3.4.
 
 Sản phẩm của đồ án là hệ thống FaceZ HRMS — nền tảng quản lý nhân sự hoàn chỉnh với backend RESTful API (schema quản lý bằng 31 script SQL migration có phiên bản, tài liệu Swagger đầy đủ) và frontend đa vai trò. Bốn đóng góp kỹ thuật chính, được trình bày chi tiết trong Chương 5, gồm: (1) kiến trúc phân tách nhiệm vụ 7 vai trò; (2) pipeline chấm công tự động qua Spring Application Events; (3) công thức tính lương tuân thủ đầy đủ pháp luật Việt Nam; và (4) cơ chế trừ hai giai đoạn số dư nghỉ phép chống race condition.
+Sản phẩm của đồ án là hệ thống FaceZ HRMS — nền tảng quản lý nhân sự hoàn chỉnh với backend RESTful API (schema quản lý bằng 31 script SQL migration có phiên bản, tài liệu Swagger đầy đủ) và frontend đa vai trò. Bốn đóng góp kỹ thuật chính, được trình bày chi tiết trong Chương 5, gồm: (1) kiến trúc phân tách nhiệm vụ 7 vai trò; (2) pipeline chấm công tự động qua Spring Application Events; (3) công thức tính lương tuân thủ đầy đủ pháp luật Việt Nam; và (4) cơ chế trừ hai giai đoạn số dư nghỉ phép chống race condition.
 
+Hệ thống được thiết kế để triển khai bằng Docker Compose với cấu hình dịch vụ tối giản (backend + PostgreSQL + Redis + MinIO), phù hợp với hạ tầng VPS tiêu chuẩn mà các doanh nghiệp quy mô vừa đang sử dụng.
 Hệ thống được thiết kế để triển khai bằng Docker Compose với cấu hình dịch vụ tối giản (backend + PostgreSQL + Redis + MinIO), phù hợp với hạ tầng VPS tiêu chuẩn mà các doanh nghiệp quy mô vừa đang sử dụng.
 
 ## 1.4 Bố cục đồ án
@@ -109,7 +114,9 @@ Chương này xác lập nền tảng yêu cầu cho FaceZ HRMS từ ba góc đ�
 Nhân viên (Employee): Đây là nhóm người dùng đông nhất. Nhu cầu chính là tra cứu thông tin cá nhân, theo dõi chấm công của bản thân, đăng ký nghỉ phép hoặc tăng ca, và xem phiếu lương. Nhóm này không cần giao diện phức tạp nhưng đòi hỏi thông tin rõ ràng, cập nhật real-time (số ngày nghỉ còn lại, lịch sử check-in trong tháng) và luồng thao tác đơn giản nhất có thể.
 
 Cấp quản lý trực tiếp (Leader, Manager): Nhóm này chịu trách nhiệm phê duyệt các yêu cầu từ nhân viên trong nhóm của mình. Nhu cầu chính là dashboard hiển thị các yêu cầu chờ xử lý, xem tổng quan tình trạng nhân sự của bộ phận, và xử lý phê duyệt/từ chối nhanh chóng có ghi chú lý do. Leader thực hiện phê duyệt cấp 1, Manager thực hiện phê duyệt cấp cuối. Riêng đơn bổ sung chấm công của nhân viên do Leader/Manager cùng phòng ban duyệt.
+Cấp quản lý trực tiếp (Leader, Manager): Nhóm này chịu trách nhiệm phê duyệt các yêu cầu từ nhân viên trong nhóm của mình. Nhu cầu chính là dashboard hiển thị các yêu cầu chờ xử lý, xem tổng quan tình trạng nhân sự của bộ phận, và xử lý phê duyệt/từ chối nhanh chóng có ghi chú lý do. Leader thực hiện phê duyệt cấp 1, Manager thực hiện phê duyệt cấp cuối. Riêng đơn bổ sung chấm công của nhân viên do Leader/Manager cùng phòng ban duyệt.
 
+Bộ phận Nhân sự — HR Admin: Đây là nhóm người dùng có quyền rộng nhất trên phân hệ dữ liệu nhân viên. Nhu cầu gồm: quản lý toàn bộ vòng đời nhân viên (tuyển dụng, điều chỉnh hợp đồng, nghỉ việc), giám sát tổng thể chấm công của toàn công ty, chốt kỳ chấm công cuối tháng (qua đó sinh bảng công tổng hợp Timesheet) trước khi bàn giao cho Kế toán, và quản lý số dư nghỉ phép. HR không tham gia luồng phê duyệt nghỉ phép/tăng ca và không sửa trực tiếp bản ghi chấm công — mọi điều chỉnh chấm công đi qua đơn bổ sung của nhân viên.
 Bộ phận Nhân sự — HR Admin: Đây là nhóm người dùng có quyền rộng nhất trên phân hệ dữ liệu nhân viên. Nhu cầu gồm: quản lý toàn bộ vòng đời nhân viên (tuyển dụng, điều chỉnh hợp đồng, nghỉ việc), giám sát tổng thể chấm công của toàn công ty, chốt kỳ chấm công cuối tháng (qua đó sinh bảng công tổng hợp Timesheet) trước khi bàn giao cho Kế toán, và quản lý số dư nghỉ phép. HR không tham gia luồng phê duyệt nghỉ phép/tăng ca và không sửa trực tiếp bản ghi chấm công — mọi điều chỉnh chấm công đi qua đơn bổ sung của nhân viên.
 
 Bộ phận Kế toán/Tài chính — Finance Admin: Nhóm này tiếp nhận dữ liệu đầu vào đã được HR chuẩn bị và thực hiện tính toán tài chính. Nhu cầu gồm: tính lương cá nhân và hàng loạt với đầy đủ tham số (KPI, phụ cấp, thưởng), quản lý cấu hình thông số tính lương (bảng lương, biểu thuế, tỷ lệ bảo hiểm), trình bảng lương lên Ban Giám đốc phê duyệt, và xuất các báo cáo tài chính định kỳ (chi phí lao động, nộp BHXH, PIT summary).
@@ -140,8 +147,10 @@ Bảng 2.1: So sánh FaceZ HRMS với các giải pháp hiện có
 | Tích hợp thiết bị chấm công qua REST API | Không | Một phần | Không | Không | Có (API key SHA-256) |
 | Phân tách nhiệm vụ HR / Finance / Director | Không | Không | Không | Không | Có (7 vai trò) |
 | Phê duyệt đa cấp tùy chỉnh | Cứng nhắc | Cơ bản | Có | Không | Có (LEADER → MANAGER) |
+| Phê duyệt đa cấp tùy chỉnh | Cứng nhắc | Cơ bản | Có | Không | Có (LEADER → MANAGER) |
 | Lịch sử hợp đồng đầy đủ | Một phần | Không | Có | Không | Có (history model) |
 | Audit trail tự động | Một phần | Một phần | Có | Không | Có (createdBy/updatedBy) |
+| Migration schema có kiểm soát | N/A | N/A | N/A | N/A | Có (31 script SQL migration có phiên bản) |
 | Migration schema có kiểm soát | N/A | N/A | N/A | N/A | Có (31 script SQL migration có phiên bản) |
 | Giới hạn OT theo Bộ Luật Lao Động 2019 | Không | Không | Không | Thủ công | Có (40h/tháng, 200h/năm) |
 | Chi phí triển khai | Thuê bao SaaS | Thuê bao SaaS | Thuê bao SaaS | ~0 | Tự triển khai |
@@ -233,11 +242,17 @@ graph TD
     DEV["Thiết bị chấm công"] --> A["Gửi sự kiện check-in/out (real-time)"]
     DEV --> B["Tải lên lô (batch upload)"]
     A --> C["Xử lý: Attendance → WorkDay (per-day)"]
+    A --> C["Xử lý: Attendance → WorkDay (per-day)"]
     B --> C
     HR["HR_ADMIN"] --> D["Xem danh sách chấm công toàn công ty"]
     HR --> F["Chốt kỳ: sinh WorkDay/Timesheet, khóa kỳ"]
     HR --> N["Gửi nhắc nhở NV vắng bổ sung chấm công"]
+    HR --> F["Chốt kỳ: sinh WorkDay/Timesheet, khóa kỳ"]
+    HR --> N["Gửi nhắc nhở NV vắng bổ sung chấm công"]
     HR --> G["Quản lý ngày lễ công"]
+    EMP["EMPLOYEE"] --> H["Xem lịch chấm công cá nhân"]
+    EMP --> I["Nộp đơn bổ sung chấm công"]
+    MGR["LEADER/MANAGER"] --> J["Duyệt đơn bổ sung (cùng phòng ban)"]
     EMP["EMPLOYEE"] --> H["Xem lịch chấm công cá nhân"]
     EMP --> I["Nộp đơn bổ sung chấm công"]
     MGR["LEADER/MANAGER"] --> J["Duyệt đơn bổ sung (cùng phòng ban)"]
@@ -248,6 +263,7 @@ graph TD
 
 Hình 2.3: Use case Chấm công & Quản lý thời gian
 
+Mỗi sự kiện check-in/out được tổng hợp vào một bản ghi WorkDay — nguồn-sự-thật theo từng ngày của mỗi nhân viên (xem mục 5.2). HR không sửa trực tiếp bản ghi chấm công; thay vào đó nhân viên nộp đơn bổ sung chấm công và Leader/Manager cùng phòng ban duyệt (khi duyệt sẽ ghi vào Attendance/WorkDay). HR_ADMIN chốt kỳ chấm công là bước gate bắt buộc trước khi Finance tính lương: thao tác chốt kỳ điền nốt các ngày thiếu (ABSENT/HOLIDAY), khóa toàn bộ WorkDay và sinh bảng công tổng hợp tháng (Timesheet) cho từng nhân viên. Một kỳ đã chốt chỉ có thể mở lại qua can thiệp trực tiếp vào cơ sở dữ liệu.
 Mỗi sự kiện check-in/out được tổng hợp vào một bản ghi WorkDay — nguồn-sự-thật theo từng ngày của mỗi nhân viên (xem mục 5.2). HR không sửa trực tiếp bản ghi chấm công; thay vào đó nhân viên nộp đơn bổ sung chấm công và Leader/Manager cùng phòng ban duyệt (khi duyệt sẽ ghi vào Attendance/WorkDay). HR_ADMIN chốt kỳ chấm công là bước gate bắt buộc trước khi Finance tính lương: thao tác chốt kỳ điền nốt các ngày thiếu (ABSENT/HOLIDAY), khóa toàn bộ WorkDay và sinh bảng công tổng hợp tháng (Timesheet) cho từng nhân viên. Một kỳ đã chốt chỉ có thể mở lại qua can thiệp trực tiếp vào cơ sở dữ liệu.
 
 #### c. Use case Nghỉ phép & Tăng ca
@@ -264,10 +280,15 @@ graph TD
     EMP --> C["Xem số dư nghỉ phép"]
     EMP --> D["Hủy/Sửa yêu cầu (khi còn DRAFT)"]
     EMP --> K["Nộp đơn bổ sung chấm công"]
+    EMP --> D["Hủy/Sửa yêu cầu (khi còn DRAFT)"]
+    EMP --> K["Nộp đơn bổ sung chấm công"]
     LEAD["LEADER"] --> E["Phê duyệt cấp 1 (LEADER_APPROVED)"]
     LEAD --> F["Từ chối (bất kỳ cấp)"]
     MGR["MANAGER"] --> G["Phê duyệt cấp cuối (APPROVED)"]
+    MGR["MANAGER"] --> G["Phê duyệt cấp cuối (APPROVED)"]
     MGR --> F
+    MGR --> L["Duyệt đơn bổ sung chấm công (cùng phòng ban)"]
+    HR["HR_ADMIN"] --> J["Khởi tạo số dư nghỉ phép hàng năm"]
     MGR --> L["Duyệt đơn bổ sung chấm công (cùng phòng ban)"]
     HR["HR_ADMIN"] --> J["Khởi tạo số dư nghỉ phép hàng năm"]
 ```
@@ -275,6 +296,9 @@ graph TD
 
 Hình 2.4: Use case Nghỉ phép & Tăng ca
 
+Hai ràng buộc quan trọng: (1) Yêu cầu nghỉ phép phải qua đúng thứ tự cấp phê duyệt (LEADER rồi MANAGER) — không thể nhảy cóc, và MANAGER là cấp duyệt cuối; (2) Nộp yêu cầu nghỉ phép ngay lập tức trừ vào số dư "đang chờ duyệt", ngăn nhân viên nộp nhiều yêu cầu trùng thời gian vượt quá số ngày còn lại. Yêu cầu chỉ được sửa/hủy khi còn ở trạng thái DRAFT.
+
+Khác với nghỉ phép, **tăng ca (OT) đi theo quy trình kế hoạch (OT Plan)**: Leader lập kế hoạch OT và gán nhân viên, Manager duyệt kế hoạch; sau đó nhân viên ghi nhận (log) phiên OT thực tế theo kế hoạch. Hệ thống chạy bốn bước kiểm tra (đúng kế hoạch đã duyệt → khớp bản ghi chấm công ngày đó → trong giới hạn pháp luật 40 giờ/tháng & 200 giờ/năm → không trùng phiên OT khác) và **tự động phê duyệt** khi đạt — vì kế hoạch đã được Manager duyệt và chấm công thiết bị là bằng chứng khách quan, không cần thêm vòng duyệt. Mỗi phiên OT được gắn hệ số lương theo ngày thường (×1.5), cuối tuần (×2.0) hoặc ngày lễ (×3.0).
 Hai ràng buộc quan trọng: (1) Yêu cầu nghỉ phép phải qua đúng thứ tự cấp phê duyệt (LEADER rồi MANAGER) — không thể nhảy cóc, và MANAGER là cấp duyệt cuối; (2) Nộp yêu cầu nghỉ phép ngay lập tức trừ vào số dư "đang chờ duyệt", ngăn nhân viên nộp nhiều yêu cầu trùng thời gian vượt quá số ngày còn lại. Yêu cầu chỉ được sửa/hủy khi còn ở trạng thái DRAFT.
 
 Khác với nghỉ phép, **tăng ca (OT) đi theo quy trình kế hoạch (OT Plan)**: Leader lập kế hoạch OT và gán nhân viên, Manager duyệt kế hoạch; sau đó nhân viên ghi nhận (log) phiên OT thực tế theo kế hoạch. Hệ thống chạy bốn bước kiểm tra (đúng kế hoạch đã duyệt → khớp bản ghi chấm công ngày đó → trong giới hạn pháp luật 40 giờ/tháng & 200 giờ/năm → không trùng phiên OT khác) và **tự động phê duyệt** khi đạt — vì kế hoạch đã được Manager duyệt và chấm công thiết bị là bằng chứng khách quan, không cần thêm vòng duyệt. Mỗi phiên OT được gắn hệ số lương theo ngày thường (×1.5), cuối tuần (×2.0) hoặc ngày lễ (×3.0).
@@ -315,13 +339,23 @@ graph TD
     FIN --> D["Đánh dấu đã trả (APPROVED → PAID)"]
     DIR["DIRECTOR"] --> F["Duyệt cả kỳ (PENDING → APPROVED)"]
     DIR --> G["Trả lại kỳ có lý do (PENDING → DRAFT)"]
+    FIN["FINANCE_ADMIN"] --> A["Tạo kỳ lương (PayrollRun) — tính toàn bộ dòng DRAFT"]
+    FIN --> R1["Tính lại 1 nhân viên (khóa thành ngoại lệ)"]
+    FIN --> R2["Tính lại cả kỳ (giữ dòng đã khóa)"]
+    FIN --> R3["Loại 1 dòng khỏi kỳ (ngoại lệ per-line)"]
+    FIN --> C["Submit cả kỳ (DRAFT → PENDING_APPROVAL)"]
+    FIN --> D["Đánh dấu đã trả (APPROVED → PAID)"]
+    DIR["DIRECTOR"] --> F["Duyệt cả kỳ (PENDING → APPROVED)"]
+    DIR --> G["Trả lại kỳ có lý do (PENDING → DRAFT)"]
     EMP["EMPLOYEE"] --> H["Xem phiếu lương cá nhân (khi APPROVED/PAID)"]
+    SCHED["PayrollScheduler (ngày 1 hàng tháng)"] --> A
     SCHED["PayrollScheduler (ngày 1 hàng tháng)"] --> A
 ```
 </details>
 
 Hình 2.6: Use case Tính lương & Phê duyệt
 
+Tính lương được tổ chức theo **kỳ lương bền vững (PayrollRun)**: Finance tạo kỳ cho một tháng, hệ thống tính tất cả dòng lương ở trạng thái DRAFT. Finance có thể tính lại một nhân viên (dòng đó bị khóa, trở thành ngoại lệ và được giữ nguyên khi tính lại cả kỳ) hoặc loại một dòng khỏi kỳ mà không chặn cả lô. Hai gate kiểm soát quan trọng: (1) chỉ tạo kỳ lương sau khi HR đã chốt kỳ chấm công; (2) **không cho Submit cả kỳ nếu còn nhân viên thiếu điểm HS1** — đảm bảo lương không dựa trên dữ liệu chấm công chưa kiểm tra hoặc đánh giá hiệu quả còn thiếu. Sau khi Director duyệt cả kỳ, nhân viên mới thấy phiếu lương.
 Tính lương được tổ chức theo **kỳ lương bền vững (PayrollRun)**: Finance tạo kỳ cho một tháng, hệ thống tính tất cả dòng lương ở trạng thái DRAFT. Finance có thể tính lại một nhân viên (dòng đó bị khóa, trở thành ngoại lệ và được giữ nguyên khi tính lại cả kỳ) hoặc loại một dòng khỏi kỳ mà không chặn cả lô. Hai gate kiểm soát quan trọng: (1) chỉ tạo kỳ lương sau khi HR đã chốt kỳ chấm công; (2) **không cho Submit cả kỳ nếu còn nhân viên thiếu điểm HS1** — đảm bảo lương không dựa trên dữ liệu chấm công chưa kiểm tra hoặc đánh giá hiệu quả còn thiếu. Sau khi Director duyệt cả kỳ, nhân viên mới thấy phiếu lương.
 
 #### f. Use case Cấu hình hệ thống & Báo cáo
@@ -332,10 +366,15 @@ Tính lương được tổ chức theo **kỳ lương bền vững (PayrollRun)
 ```mermaid
 graph TD
     FIN["FINANCE_ADMIN"] --> A["Tạo phiên bản cấu hình bảng lương (DRAFT)"]
+    FIN["FINANCE_ADMIN"] --> A["Tạo phiên bản cấu hình bảng lương (DRAFT)"]
     FIN --> B["Xem báo cáo chi phí lao động"]
     FIN --> C["Xuất báo cáo nộp BHXH/BHYT/BHTN"]
     FIN --> D["Xuất báo cáo PIT summary"]
     DIR["DIRECTOR"] --> B
+    DIR --> P["Phát hành cấu hình (PUBLISH)"]
+    SYS["SYSTEM_ADMIN"] --> E["Quản lý tài khoản (khóa/mở, reset mật khẩu)"]
+    SYS --> Q["Quản lý thiết bị & API key"]
+    SYS --> R["Xem Checkin Log (view-only)"]
     DIR --> P["Phát hành cấu hình (PUBLISH)"]
     SYS["SYSTEM_ADMIN"] --> E["Quản lý tài khoản (khóa/mở, reset mật khẩu)"]
     SYS --> Q["Quản lý thiết bị & API key"]
@@ -348,6 +387,7 @@ graph TD
 
 Hình 2.7: Use case Cấu hình hệ thống & Báo cáo
 
+Cấu hình tính lương được quản lý theo phiên bản có hiệu lực (effective-dated) trong các bảng riêng (SALARY_GRADE, PIT, INSURANCE, ALLOWANCE), theo mô hình maker-checker: **Finance tạo phiên bản nháp, Director phát hành (publish)**; phiên bản đã phát hành là bất biến và được chọn theo ngày hiệu lực. Việc tách quyền tạo/phát hành cấu hình giúp ngăn một người đơn phương thay đổi tham số tính lương. Quản trị viên hệ thống (SYSTEM_ADMIN) là tài khoản đặc biệt — không phải nhân viên thực và không tính lương — chỉ phụ trách quản lý tài khoản, thiết bị chấm công và xem nhật ký check-in.
 Cấu hình tính lương được quản lý theo phiên bản có hiệu lực (effective-dated) trong các bảng riêng (SALARY_GRADE, PIT, INSURANCE, ALLOWANCE), theo mô hình maker-checker: **Finance tạo phiên bản nháp, Director phát hành (publish)**; phiên bản đã phát hành là bất biến và được chọn theo ngày hiệu lực. Việc tách quyền tạo/phát hành cấu hình giúp ngăn một người đơn phương thay đổi tham số tính lương. Quản trị viên hệ thống (SYSTEM_ADMIN) là tài khoản đặc biệt — không phải nhân viên thực và không tính lương — chỉ phụ trách quản lý tài khoản, thiết bị chấm công và xem nhật ký check-in.
 
 ### 2.2.3 Quy trình nghiệp vụ
@@ -403,6 +443,9 @@ stateDiagram-v2
     TO_APPROVE --> REJECTED : Từ chối (giải phóng pendingDays)
     LEADER_APPROVED --> APPROVED : MANAGER phê duyệt cuối (pendingDays → usedDays)
     LEADER_APPROVED --> REJECTED : Từ chối (giải phóng pendingDays)
+    TO_APPROVE --> REJECTED : Từ chối (giải phóng pendingDays)
+    LEADER_APPROVED --> APPROVED : MANAGER phê duyệt cuối (pendingDays → usedDays)
+    LEADER_APPROVED --> REJECTED : Từ chối (giải phóng pendingDays)
 ```
 </details>
 
@@ -420,8 +463,10 @@ sequenceDiagram
     participant HR as HR_ADMIN
     participant FIN as FINANCE_ADMIN
     participant PRS as PayrollRunService
+    participant PRS as PayrollRunService
     participant DIR as DIRECTOR
 
+    HR->>HR: Chốt kỳ chấm công → sinh Timesheet, khóa WorkDay
     HR->>HR: Chốt kỳ chấm công → sinh Timesheet, khóa WorkDay
     Note over HR: AttendancePeriodClose record tạo ra
     FIN->>PRS: POST /api/payroll-runs {year, month}
@@ -436,7 +481,20 @@ sequenceDiagram
         DIR->>PRS: PUT /approve → APPROVED (dòng lương hiển thị cho NV)
     else Director trả lại
         DIR->>PRS: PUT /reject {reason} → DRAFT
+    FIN->>PRS: POST /api/payroll-runs {year, month}
+    PRS->>PRS: Kiểm tra kỳ đã chốt
+    PRS->>PRS: Tính từng dòng: HS1 (điểm cấp trên), HS2 (chuyên cần),<br/>Nt từ Timesheet, OT, bảo hiểm, thuế TNCN
+    PRS-->>FIN: PayrollRun (DRAFT) + các dòng lương
+    opt Điều chỉnh
+        FIN->>PRS: recalc 1 dòng (khóa) / loại dòng / tính lại cả kỳ
     end
+    FIN->>PRS: PUT /submit → kiểm tra đủ HS1 → PENDING_APPROVAL
+    alt Director duyệt
+        DIR->>PRS: PUT /approve → APPROVED (dòng lương hiển thị cho NV)
+    else Director trả lại
+        DIR->>PRS: PUT /reject {reason} → DRAFT
+    end
+    FIN->>PRS: PUT /mark-paid → PAID
     FIN->>PRS: PUT /mark-paid → PAID
 ```
 </details>
@@ -487,12 +545,18 @@ Bảng 2.3: Đặc tả ca sử dụng Phê duyệt nghỉ phép
 | Mã use case | UC-LV-01 |
 | Tác nhân chính | EMPLOYEE (nộp), LEADER (cấp 1), MANAGER (cấp cuối) |
 | Mô tả | Nhân viên nộp yêu cầu nghỉ phép; hệ thống kiểm tra số dư và dự trữ ngay; yêu cầu đi qua hai cấp phê duyệt (LEADER rồi MANAGER) |
+| Tác nhân chính | EMPLOYEE (nộp), LEADER (cấp 1), MANAGER (cấp cuối) |
+| Mô tả | Nhân viên nộp yêu cầu nghỉ phép; hệ thống kiểm tra số dư và dự trữ ngay; yêu cầu đi qua hai cấp phê duyệt (LEADER rồi MANAGER) |
 | Điều kiện tiên quyết | Nhân viên đã đăng nhập; `LeaveBalance` đã khởi tạo cho năm hiện tại; ngày kết thúc ≥ ngày bắt đầu |
 | Luồng chính | 1. Nhân viên chọn loại nghỉ phép, ngày bắt đầu, ngày kết thúc, lý do |
 | | 2. Hệ thống kiểm tra `leaveType` không phải PUBLIC_HOLIDAY hoặc COMPENSATORY |
 | | 3. Hệ thống so sánh `requestedDays` với `remainingDays` trong `LeaveBalance` |
 | | 4. Hệ thống trừ `requestedDays` khỏi `remainingDays`, cộng vào `pendingDays`; lưu yêu cầu trạng thái `TO_APPROVE` |
 | | 5. Hệ thống gửi thông báo cho LEADER của nhân viên |
+| | 6. LEADER phê duyệt → `LEADER_APPROVED` |
+| | 7. MANAGER phê duyệt cuối → `APPROVED`; hệ thống chuyển `pendingDays` sang `usedDays` |
+| Luồng thay thế | 6a–7a. LEADER hoặc MANAGER từ chối: `REJECTED`; `pendingDays` hoàn trả về `remainingDays` |
+| | 4a. Nhân viên hủy/sửa khi còn `DRAFT`: `pendingDays` hoàn trả (chỉ sửa/hủy được ở DRAFT) |
 | | 6. LEADER phê duyệt → `LEADER_APPROVED` |
 | | 7. MANAGER phê duyệt cuối → `APPROVED`; hệ thống chuyển `pendingDays` sang `usedDays` |
 | Luồng thay thế | 6a–7a. LEADER hoặc MANAGER từ chối: `REJECTED`; `pendingDays` hoàn trả về `remainingDays` |
@@ -514,7 +578,12 @@ Bảng 2.4: Đặc tả ca sử dụng Tính lương
 | Mô tả | Finance tính toán lương đầy đủ cho một nhân viên trong một kỳ dựa trên chấm công, hợp đồng và cấu hình hệ thống |
 | Điều kiện tiên quyết | Kỳ chấm công đã chốt (đã sinh Timesheet); nhân viên có hợp đồng `current=true`; cấu hình lương (PayrollConfig) đã PUBLISH và hiệu lực cho đủ 4 nhóm (SALARY_GRADE, ALLOWANCE, PIT, INSURANCE) |
 | | 1. Finance yêu cầu tính lương cho một nhân viên trong kỳ (các khoản thưởng/phụ cấp tùy chọn) |
+| Điều kiện tiên quyết | Kỳ chấm công đã chốt (đã sinh Timesheet); nhân viên có hợp đồng `current=true`; cấu hình lương (PayrollConfig) đã PUBLISH và hiệu lực cho đủ 4 nhóm (SALARY_GRADE, ALLOWANCE, PIT, INSURANCE) |
+| | 1. Finance yêu cầu tính lương cho một nhân viên trong kỳ (các khoản thưởng/phụ cấp tùy chọn) |
 | | 2. Hệ thống kiểm tra kỳ chấm công đã được chốt; nếu chưa, từ chối yêu cầu |
+| | 3. Hệ thống nạp hợp đồng đang hiệu lực và cấu hình tính lương đang áp dụng |
+| | 4. Tính `HStb = (HS1 + HS2) / 2`: HS1 lấy từ điểm cấp trên chấm (mặc định B nếu chưa có), HS2 suy từ chuyên cần (WorkDay). Với MANAGER, HS1 và HS2 = trung bình của đơn vị quản lý; với DIRECTOR = trung bình toàn công ty |
+| | 5. `baseGross = [(Lhq × HStb) + Li + HTi] × (NCtt / Nt)`, trong đó Nt (ngày công chuẩn) tự suy từ bảng công Timesheet đã chốt, NCtt lấy từ WorkDay |
 | | 3. Hệ thống nạp hợp đồng đang hiệu lực và cấu hình tính lương đang áp dụng |
 | | 4. Tính `HStb = (HS1 + HS2) / 2`: HS1 lấy từ điểm cấp trên chấm (mặc định B nếu chưa có), HS2 suy từ chuyên cần (WorkDay). Với MANAGER, HS1 và HS2 = trung bình của đơn vị quản lý; với DIRECTOR = trung bình toàn công ty |
 | | 5. `baseGross = [(Lhq × HStb) + Li + HTi] × (NCtt / Nt)`, trong đó Nt (ngày công chuẩn) tự suy từ bảng công Timesheet đã chốt, NCtt lấy từ WorkDay |
@@ -584,6 +653,7 @@ Bảng 2.7: Các yêu cầu phi chức năng
 | PF-02 | Hiệu năng | Tính lương hàng loạt cho 200 nhân viên hoàn thành trong < 60 giây | Trung bình | `@Async` với thread pool cấu hình; `PayrollCalculationEngine` là pure computation không có I/O blocking |
 | PF-03 | Hiệu năng | Xử lý sự kiện check-in real-time < 500ms end-to-end | Cao | DeviceApiKeyFilter nhẹ; AttendanceService xử lý sau AFTER_COMMIT không block response |
 | RC-01 | Độ tin cậy | Schema database quản lý bằng script SQL có phiên bản; `ddl-auto: none`, không dùng `ddl-auto: update` | Cao | 31 file migration (V1–V30), hợp nhất trong `final_schema.sql` |
+| RC-01 | Độ tin cậy | Schema database quản lý bằng script SQL có phiên bản; `ddl-auto: none`, không dùng `ddl-auto: update` | Cao | 31 file migration (V1–V30), hợp nhất trong `final_schema.sql` |
 | RC-02 | Độ tin cậy | Toàn bộ thay đổi dữ liệu nghiệp vụ có audit trail | Cao | `AuditableEntity` mapped superclass; Spring Data JPA auditing |
 | RC-03 | Độ tin cậy | Bản ghi chấm công không bị mất khi kết nối thiết bị gián đoạn | Cao | `CheckinLog` lưu trước; `AttendanceSchedule` backfill lúc nửa đêm |
 | RC-04 | Độ tin cậy | Xóa mềm trên tất cả entity; không xóa vật lý dữ liệu lịch sử | Trung bình | Trường `deleteFlag` và `deletedAt` trên mọi entity |
@@ -595,6 +665,7 @@ Bảng 2.7: Các yêu cầu phi chức năng
 | US-01 | Khả năng sử dụng | Giao diện tự động điều chỉnh menu theo vai trò đăng nhập | Cao | `ProtectedRoute` component và role-aware `Sidebar` trong frontend |
 | US-02 | Khả năng sử dụng | Thông báo lỗi rõ ràng bằng tiếng Việt khi thao tác không hợp lệ | Trung bình | `ApiResponse<T>` với trường `message` từ backend; toast notification ở frontend |
 | US-03 | Khả năng sử dụng | Session tự động gia hạn trong suốt phiên làm việc | Cao | Silent refresh: `apiClient()` bắt 401, tự gọi `/api/auth/refresh`, retry request gốc |
+| MT-01 | Khả năng bảo trì | Mọi thay đổi schema phải qua script migration có số phiên bản | Cao | Convention V{n}__{description}.sql; áp thủ công theo thứ tự |
 | MT-01 | Khả năng bảo trì | Mọi thay đổi schema phải qua script migration có số phiên bản | Cao | Convention V{n}__{description}.sql; áp thủ công theo thứ tự |
 | MT-02 | Khả năng bảo trì | API có tài liệu Swagger tự động cập nhật | Trung bình | SpringDoc OpenAPI; truy cập tại `/swagger-ui.html` |
 | MT-03 | Khả năng bảo trì | Log có cấu trúc JSON ở production; log có màu ở development | Trung bình | `logback-spring.xml` với profile-aware configuration; `RequestLoggingFilter` |
@@ -619,10 +690,13 @@ Bảng 3.1: Tóm tắt các lựa chọn công nghệ
 | Backend Runtime | Java 21 + Spring Boot 4.0.0-M3 | Node.js/Express, Python/Django, Go/Gin | Hệ sinh thái doanh nghiệp trưởng thành; Spring Security, JPA, Events sẵn có; Virtual Threads cho I/O-bound workload |
 | Bảo mật | Spring Security + JWT | OAuth2/Keycloak, Session-based | Kiểm soát hoàn toàn luồng xác thực; không phụ thuộc dịch vụ ngoài; JWT phù hợp SPA stateless |
 | Schema Migration | Script SQL có phiên bản (`V{n}__*.sql`) | Liquibase, Hibernate ddl-auto | Convention đơn giản, áp thủ công/CI; `ddl-auto: none` an toàn hơn `ddl-auto: update`/`create`; không phụ thuộc công cụ migration runtime |
+| Schema Migration | Script SQL có phiên bản (`V{n}__*.sql`) | Liquibase, Hibernate ddl-auto | Convention đơn giản, áp thủ công/CI; `ddl-auto: none` an toàn hơn `ddl-auto: update`/`create`; không phụ thuộc công cụ migration runtime |
 | ORM | Spring Data JPA (Hibernate) | JOOQ, MyBatis, JDBC Template | Giảm boilerplate; tích hợp sẵn Spring Auditing và Soft Delete |
+| Cơ sở dữ liệu chính | PostgreSQL 15 | MySQL 8, MongoDB, MariaDB | Bảng cấu hình lương có kiểu, hiệu lực-theo-ngày; partial unique index cho hợp đồng; database view cho truy vấn OT |
 | Cơ sở dữ liệu chính | PostgreSQL 15 | MySQL 8, MongoDB, MariaDB | Bảng cấu hình lương có kiểu, hiệu lực-theo-ngày; partial unique index cho hợp đồng; database view cho truy vấn OT |
 | Cache & Session Store | Redis 7 | Memcached, Hazelcast, in-memory | Persistent TTL cho JWT blacklist; atomic counter cho rate limiting; pub/sub nếu cần mở rộng |
 | Rate Limiting | Redis counter (tự triển khai) | Bucket4j, resilience4j | Đủ đơn giản cho bài toán; không thêm dependency; tương thích multi-instance |
+| Lưu trữ đối tượng | MinIO (S3-compatible) | AWS S3, lưu file hệ thống, BLOB trong DB | Lưu tài liệu hợp đồng PDF (bucket `facez-contracts`); API tương thích S3 nên dễ chuyển sang cloud; tách tệp nhị phân khỏi CSDL |
 | Lưu trữ đối tượng | MinIO (S3-compatible) | AWS S3, lưu file hệ thống, BLOB trong DB | Lưu tài liệu hợp đồng PDF (bucket `facez-contracts`); API tương thích S3 nên dễ chuyển sang cloud; tách tệp nhị phân khỏi CSDL |
 | Frontend Framework | Next.js 15 (App Router) | Create React App, Vite+React, Vue 3 | SSR cho hiệu suất; App Router cho nested layouts theo role; TypeScript first-class |
 | UI Styling | Tailwind CSS 3 | Bootstrap, MUI, Chakra UI | Utility-first phù hợp dashboard phức tạp; không bị ràng buộc design system bên thứ ba |
@@ -643,6 +717,7 @@ Java 21 là phiên bản LTS (Long-Term Support) mới nhất, mang hai cải ti
 Spring Boot 4.0.0-M3 được chọn vì hệ sinh thái tích hợp sẵn:
 
 - Spring Security: Cung cấp filter chain có thể cấu hình để thêm `DeviceApiKeyFilter` trước `JwtAuthFilter`, phân quyền granular theo URL pattern và HTTP method, tích hợp `@PreAuthorize` cho method-level security.
+- Spring Data JPA: Giảm boilerplate truy cập database; hỗ trợ `@CreatedBy`, `@LastModifiedBy` qua `AuditingEntityListener`; chạy với `ddl-auto: none` để schema do script SQL có phiên bản kiểm soát.
 - Spring Data JPA: Giảm boilerplate truy cập database; hỗ trợ `@CreatedBy`, `@LastModifiedBy` qua `AuditingEntityListener`; chạy với `ddl-auto: none` để schema do script SQL có phiên bản kiểm soát.
 - Spring Events: Cơ chế publish/subscribe nội bộ với `@TransactionalEventListener(AFTER_COMMIT)` cho phép tách `CheckinLogService` và `AttendanceService` mà không tạo circular dependency và không cần message broker ngoài.
 - Spring Scheduling: `@Scheduled` với cron expression cho `AttendanceSchedule`, `PayrollScheduler`, `ContractExpiryScheduler`.
@@ -665,6 +740,7 @@ org.dummy.facez/
 │   ├── leave/      — LeaveRequest, LeaveBalance, PublicHoliday
 │   ├── otrequest/  — OTRequest (cùng approval flow với leave)
 │   ├── contract/   — Contract (history model)
+│   ├── payroll/    — PayrollRun, Payroll, PayrollBatchService, PayrollCalculationEngine, PayrollConfig (maker-checker)
 │   ├── payroll/    — PayrollRun, Payroll, PayrollBatchService, PayrollCalculationEngine, PayrollConfig (maker-checker)
 │   └── notification/ — Notification, Spring Application Events
 └── common/
@@ -722,6 +798,7 @@ public PayrollResponse getMySlip(@AuthenticationPrincipal ...) { ... }
 ```
 
 ### 3.2.3 Spring Data JPA và quản lý schema theo phiên bản
+### 3.2.3 Spring Data JPA và quản lý schema theo phiên bản
 
 Spring Data JPA giải quyết ba bài toán đồng thời:
 
@@ -745,9 +822,12 @@ public abstract class AuditableEntity {
 *Bài toán 3 — Derived Queries:* Spring Data JPA tự sinh SQL từ tên phương thức (`findByEmployeeIdAndYearAndMonth`, `findAllByCurrentTrueAndEmployeeId`) giảm đáng kể boilerplate JPQL/SQL.
 
 Quản lý schema database bằng các **script SQL có đánh số phiên bản**. Vấn đề với `ddl-auto: update` (cách tiếp cận đơn giản ban đầu) là: Hibernate tự sinh SQL thay đổi schema dựa trên so sánh entity class với database, nhưng nó không thể tự xử lý các thao tác phức tạp như đổi tên cột, chia cột, hay migration dữ liệu; và không có cách nào biết chính xác môi trường production đang ở schema version nào.
+Quản lý schema database bằng các **script SQL có đánh số phiên bản**. Vấn đề với `ddl-auto: update` (cách tiếp cận đơn giản ban đầu) là: Hibernate tự sinh SQL thay đổi schema dựa trên so sánh entity class với database, nhưng nó không thể tự xử lý các thao tác phức tạp như đổi tên cột, chia cột, hay migration dữ liệu; và không có cách nào biết chính xác môi trường production đang ở schema version nào.
 
 Giải pháp của đồ án: mỗi thay đổi schema là một file SQL có số thứ tự rõ ràng theo convention `V{n}__{description}.sql` (V1 → V30) — vừa là **nguồn sự thật** của schema, vừa là **nhật ký (audit trail)** đầy đủ lịch sử thay đổi. Ứng dụng chạy với `ddl-auto: none` (Hibernate không tự sửa schema); các script được **áp thủ công theo thứ tự** khi triển khai, hoặc dùng bản hợp nhất `final_schema.sql` (gộp toàn bộ V1 → V30 thành một DDL phẳng, có DROP đầu file) để dựng cơ sở dữ liệu từ đầu chỉ bằng một lệnh.
+Giải pháp của đồ án: mỗi thay đổi schema là một file SQL có số thứ tự rõ ràng theo convention `V{n}__{description}.sql` (V1 → V30) — vừa là **nguồn sự thật** của schema, vừa là **nhật ký (audit trail)** đầy đủ lịch sử thay đổi. Ứng dụng chạy với `ddl-auto: none` (Hibernate không tự sửa schema); các script được **áp thủ công theo thứ tự** khi triển khai, hoặc dùng bản hợp nhất `final_schema.sql` (gộp toàn bộ V1 → V30 thành một DDL phẳng, có DROP đầu file) để dựng cơ sở dữ liệu từ đầu chỉ bằng một lệnh.
 
+FaceZ HRMS có 31 file migration (V1–V30) phản ánh toàn bộ lịch sử phát triển schema, từ baseline đến các thay đổi phức tạp như chuyển đổi `VARCHAR → LocalDate` cho contract dates (V12 dùng kỹ thuật cột song song để zero-downtime).
 FaceZ HRMS có 31 file migration (V1–V30) phản ánh toàn bộ lịch sử phát triển schema, từ baseline đến các thay đổi phức tạp như chuyển đổi `VARCHAR → LocalDate` cho contract dates (V12 dùng kỹ thuật cột song song để zero-downtime).
 
 ## 3.3 Nhóm dữ liệu
@@ -947,6 +1027,7 @@ Recharts được dùng cho bốn loại chart trong `DashboardContent`: `BarCha
 ### 3.6.1 Docker và Docker Compose
 
 Bài toán cần giải quyết: FaceZ HRMS cần các dịch vụ infrastructure (PostgreSQL, Redis, MinIO) chạy đồng nhất trên máy phát triển của mọi thành viên team và trên server production. "Works on my machine" là vấn đề cổ điển khi team phát triển có môi trường khác nhau.
+Bài toán cần giải quyết: FaceZ HRMS cần các dịch vụ infrastructure (PostgreSQL, Redis, MinIO) chạy đồng nhất trên máy phát triển của mọi thành viên team và trên server production. "Works on my machine" là vấn đề cổ điển khi team phát triển có môi trường khác nhau.
 
 Docker Compose giải quyết bằng cách định nghĩa toàn bộ stack infrastructure trong một file `compose.yaml`:
 
@@ -974,7 +1055,17 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_USER:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD:-minioadmin}
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD:-minioadmin}
     ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # Console
+    volumes:
+      - minio_data:/data
       - "9000:9000"   # S3 API
       - "9001:9001"   # Console
     volumes:
@@ -1180,6 +1271,7 @@ graph TD
     OT["domain/otrequest\n(OTRequest)"]
     NOTIF["domain/notification\n(Notification, EventListener)"]
     PAYROLL["domain/payroll\n(PayrollRun, Payroll, BatchService, PayrollCalculationEngine, PayrollConfig)"]
+    PAYROLL["domain/payroll\n(PayrollRun, Payroll, BatchService, PayrollCalculationEngine, PayrollConfig)"]
 
     CONFIGS --> AUTH
     CONFIGS --> COMMON
@@ -1317,6 +1409,10 @@ HR Admin dashboard tổng hợp dữ liệu toàn công ty, bao gồm biểu đ�
 │ ▪ Bảng công  │                                              │
 │ ▪ Ngày lễ    │  Chi phí lao động 6 tháng (BarChart)         │
 │              │  ┌────────────────────────────────────────┐  │
+│ ▪ Chốt kỳ    │  └─────────────┘ └─────────────┘            │
+│ ▪ Bảng công  │                                              │
+│ ▪ Ngày lễ    │  Chi phí lao động 6 tháng (BarChart)         │
+│              │  ┌────────────────────────────────────────┐  │
 │              │  │ ██  ██  ██  ██  ██  ██                 │  │
 │              │  │ T1  T2  T3  T4  T5  T6                 │  │
 │              │  └────────────────────────────────────────┘  │
@@ -1382,6 +1478,7 @@ Hình 4.8: Thiết kế modal tạo đơn nghỉ phép
 ```
 
 Hình 4.9: Thiết kế trang Phê duyệt yêu cầu (Leader/Manager)
+Hình 4.9: Thiết kế trang Phê duyệt yêu cầu (Leader/Manager)
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -1397,21 +1494,46 @@ Hình 4.9: Thiết kế trang Phê duyệt yêu cầu (Leader/Manager)
 ```
 
 Hình 4.10: Thiết kế trang Kỳ lương (Finance Admin)
+Hình 4.10: Thiết kế trang Kỳ lương (Finance Admin)
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │  Kỳ lương 06/2026  (PayrollRun · DRAFT)     [+ Tạo kỳ lương] │
+│  Kỳ lương 06/2026  (PayrollRun · DRAFT)     [+ Tạo kỳ lương] │
 │──────────────────────────────────────────────────────────────│
 │  Trạng thái: DRAFT   [Tính lại cả kỳ] [Trình duyệt]         │
+│  Trạng thái: DRAFT   [Tính lại cả kỳ] [Trình duyệt]         │
 │──────────────────────────────────────────────────────────────│
+│  Nhân viên     │ Lương gross  │ Lương net    │ Dòng         │
 │  Nhân viên     │ Lương gross  │ Lương net    │ Dòng         │
 │────────────────┼──────────────┼──────────────┼──────────────│
 │ Nguyễn Văn A  │ 25,000,000 ₫ │ 21,500,000 ₫ │ [Tính lại][⊘]│
 │ Trần Thị B    │ 18,000,000 ₫ │ 15,800,000 ₫ │ 🔒 đã khóa   │
+│ Nguyễn Văn A  │ 25,000,000 ₫ │ 21,500,000 ₫ │ [Tính lại][⊘]│
+│ Trần Thị B    │ 18,000,000 ₫ │ 15,800,000 ₫ │ 🔒 đã khóa   │
 │──────────────────────────────────────────────────────────────│
+│  Trình duyệt bị chặn nếu còn NV thiếu điểm HS1               │
 │  Trình duyệt bị chặn nếu còn NV thiếu điểm HS1               │
 └──────────────────────────────────────────────────────────────┘
 ```
+
+Toàn bộ một kỳ lương được gói trong một thực thể `PayrollRun` bền vững (DRAFT → PENDING_APPROVAL → APPROVED → PAID). Finance có thể *tính lại một dòng* (khóa dòng đó thành ngoại lệ), *tính lại cả kỳ* (giữ nguyên các dòng đã khóa), hoặc *loại một dòng* khỏi kỳ. Nút "Trình duyệt" bị chặn nếu còn nhân viên chưa được chấm điểm HS1. DIRECTOR phê duyệt hoặc trả lại kỳ (về DRAFT); sau khi thanh toán, Finance đánh dấu PAID.
+
+Hình 4.11: Thiết kế trang Quản trị tài khoản (SYSTEM_ADMIN)
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  Quản trị tài khoản                          [+ Tạo tài khoản]│
+│──────────────────────────────────────────────────────────────│
+│  Tài khoản  │ Vai trò       │ NV gắn kết │ Trạng thái │ T.tác │
+│─────────────┼───────────────┼────────────┼────────────┼───────│
+│ admin       │ SYSTEM_ADMIN  │ (không)    │ Hoạt động  │ 🔑 🔒 │
+│ b.tran      │ HR_ADMIN      │ EMP-002    │ Hoạt động  │ 🔑 🔒 │
+│ c.le        │ FINANCE_ADMIN │ EMP-003    │ Bị khóa    │ 🔑 🔓 │
+└──────────────────────────────────────────────────────────────┘
+```
+
+`SYSTEM_ADMIN` là một tài khoản đặc biệt, **không phải nhân viên thật**: nó không có hồ sơ nhân sự, không có mục "Cá nhân" trên sidebar, và chỉ thực hiện các tác vụ hệ thống — Quản trị tài khoản (tạo/gán vai trò/khóa/đặt lại mật khẩu), quản lý Thiết bị chấm công, và xem Nhật ký check-in (chỉ đọc). Việc chuyển Thiết bị và Nhật ký check-in từ HR sang SYSTEM_ADMIN tách bạch quản trị kỹ thuật khỏi nghiệp vụ nhân sự, đồng thời để SYSTEM_ADMIN ra khỏi mọi luồng phê duyệt nghiệp vụ và tài chính.
 
 Toàn bộ một kỳ lương được gói trong một thực thể `PayrollRun` bền vững (DRAFT → PENDING_APPROVAL → APPROVED → PAID). Finance có thể *tính lại một dòng* (khóa dòng đó thành ngoại lệ), *tính lại cả kỳ* (giữ nguyên các dòng đã khóa), hoặc *loại một dòng* khỏi kỳ. Nút "Trình duyệt" bị chặn nếu còn nhân viên chưa được chấm điểm HS1. DIRECTOR phê duyệt hoặc trả lại kỳ (về DRAFT); sau khi thanh toán, Finance đánh dấu PAID.
 
@@ -1504,6 +1626,7 @@ classDiagram
 ```
 
 Hình 4.12: Sơ đồ lớp domain Attendance (CheckinLog → WorkDay → Timesheet)
+Hình 4.12: Sơ đồ lớp domain Attendance (CheckinLog → WorkDay → Timesheet)
 
 ```mermaid
 classDiagram
@@ -1515,6 +1638,7 @@ classDiagram
         +String deviceId
         +boolean processed
     }
+    class WorkDay {
     class WorkDay {
         +String id
         +String employeeId
@@ -1528,7 +1652,29 @@ classDiagram
         +double paidDay
         +boolean violate
         +boolean locked
+        +boolean locked
         +String note
+    }
+    class Timesheet {
+        +String id
+        +String employeeId
+        +int year
+        +int month
+        +double standardDays
+        +double actualDays
+        +double paidDays
+        +double totalLateHours
+        +int violationDays
+    }
+    class AttendanceAdjustment {
+        +String id
+        +String employeeId
+        +LocalDate workDate
+        +LocalDateTime requestedCheckIn
+        +LocalDateTime requestedCheckOut
+        +String reason
+        +RequestStatus status
+        +String approvedBy
     }
     class Timesheet {
         +String id
@@ -1565,14 +1711,19 @@ classDiagram
         +String apiKeyHash
         +boolean active
         +LocalDateTime createdAt
+        +LocalDateTime createdAt
     }
 
     CheckinLog "*" --> "1" CheckinDevice : sentFrom
     CheckinLog ..> WorkDay : triggers via Event
     WorkDay "*" --> "1" Timesheet : aggregatedInto (on period close)
     AttendanceAdjustment ..> WorkDay : updates after approval
+    CheckinLog ..> WorkDay : triggers via Event
+    WorkDay "*" --> "1" Timesheet : aggregatedInto (on period close)
+    AttendanceAdjustment ..> WorkDay : updates after approval
 ```
 
+Hình 4.13: Sơ đồ lớp domain Leave, OT và LeaveBalance
 Hình 4.13: Sơ đồ lớp domain Leave, OT và LeaveBalance
 
 ```mermaid
@@ -1633,9 +1784,36 @@ classDiagram
         +double coefficient
         +RequestStatus status
     }
+    class OTPlan {
+        +String id
+        +String departmentId
+        +LocalDate workDate
+        +String createdByLeader
+        +RequestStatus status
+        +String managerApprovedBy
+    }
+    class OTPlanEmployee {
+        +String id
+        +String otPlanId FK
+        +String employeeId
+    }
+    class OTRequest {
+        +String id
+        +String employeeId
+        +String otPlanId FK
+        +LocalDate workDate
+        +LocalDateTime startTime
+        +LocalDateTime endTime
+        +double otHours
+        +double nightHours
+        +double coefficient
+        +RequestStatus status
+    }
 
     LeaveRequest "*" --> "1" LeaveBalance : deducts from
     LeaveRequest "*" --> "0..*" PublicHoliday : excludes
+    OTPlan "1" --> "0..*" OTPlanEmployee : assigns
+    OTPlan "1" --> "0..*" OTRequest : authorizes
     OTPlan "1" --> "0..*" OTPlanEmployee : assigns
     OTPlan "1" --> "0..*" OTRequest : authorizes
 ```
@@ -1654,8 +1832,19 @@ classDiagram
         +String rejectionReason
         +LocalDateTime paidAt
     }
+    class PayrollRun {
+        +String id
+        +int year
+        +int month
+        +PayrollRunStatus status
+        +String submittedBy
+        +String approvedBy
+        +String rejectionReason
+        +LocalDateTime paidAt
+    }
     class Payroll {
         +String id
+        +String payrollRunId FK
         +String payrollRunId FK
         +String employeeId
         +int year
@@ -1666,6 +1855,8 @@ classDiagram
         +BigDecimal baseSalary
         +BigDecimal positionAllowance
         +BigDecimal otherAllowances
+        +double hs1Score
+        +double hs2Score
         +double hs1Score
         +double hs2Score
         +BigDecimal otPay
@@ -1681,9 +1872,20 @@ classDiagram
         +BigDecimal totalEmploymentCost
         +PayrollStatus status
         +boolean locked
+        +boolean locked
         +String rejectionReason
         +String approvedBy
     }
+    class Kpi1Rating {
+        +String id
+        +String employeeId
+        +int year
+        +int month
+        +String rating
+        +double coefficient
+        +String ratedBy
+    }
+    class PayrollConfig {
     class Kpi1Rating {
         +String id
         +String employeeId
@@ -1698,7 +1900,11 @@ classDiagram
         +ConfigType configType
         +int version
         +ConfigStatus status
+        +int version
+        +ConfigStatus status
         +LocalDate effectiveFrom
+        +String createdBy
+        +String publishedBy
         +String createdBy
         +String publishedBy
     }
@@ -1710,7 +1916,13 @@ classDiagram
     PayrollCalculationEngine ..> PayrollConfig : reads effective config
     PayrollCalculationEngine ..> Kpi1Rating : reads HS1
     PayrollCalculationEngine ..> Payroll : produces line
+    PayrollRun "1" --> "0..*" Payroll : contains lines
+    PayrollCalculationEngine ..> PayrollConfig : reads effective config
+    PayrollCalculationEngine ..> Kpi1Rating : reads HS1
+    PayrollCalculationEngine ..> Payroll : produces line
 ```
+
+`PayrollConfig` đại diện cho bốn nhóm bảng cấu hình có kiểu, hiệu lực-theo-ngày, append-only (`SALARY_GRADE | ALLOWANCE | PIT | INSURANCE`) với vòng đời `DRAFT → PUBLISHED → ARCHIVED`. `PayrollRun` là thực thể kỳ lương bền vững; mỗi dòng `Payroll` trỏ về một `PayrollRun` qua `payrollRunId` và có cờ `locked` đánh dấu dòng đã tính lại thủ công (ngoại lệ không bị "tính lại cả kỳ" ghi đè).
 
 `PayrollConfig` đại diện cho bốn nhóm bảng cấu hình có kiểu, hiệu lực-theo-ngày, append-only (`SALARY_GRADE | ALLOWANCE | PIT | INSURANCE`) với vòng đời `DRAFT → PUBLISHED → ARCHIVED`. `PayrollRun` là thực thể kỳ lương bền vững; mỗi dòng `Payroll` trỏ về một `PayrollRun` qua `payrollRunId` và có cờ `locked` đánh dấu dòng đã tính lại thủ công (ngoại lệ không bị "tính lại cả kỳ" ghi đè).
 
@@ -1748,7 +1960,14 @@ src/app/services/
 ├── EmployeeService.ts     — CRUD nhân viên, profile picture
 ├── AttendanceService.ts   — workday, timesheet, period close, checkin logs
 ├── AdjustmentService.ts   — đơn bổ sung chấm công
+├── AttendanceService.ts   — workday, timesheet, period close, checkin logs
+├── AdjustmentService.ts   — đơn bổ sung chấm công
 ├── LeaveService.ts        — nghỉ phép, số dư, public holidays
+├── OTService.ts           — tăng ca, OT plan, approval
+├── ContractService.ts     — hợp đồng, tài liệu PDF, sắp hết hạn
+├── PayrollService.ts      — dòng lương, tính lại, approve, reports
+├── PayrollRunService.ts   — kỳ lương (tạo/tính lại/loại dòng/submit/mark-paid)
+├── Kpi1Service.ts         — chấm điểm HS1
 ├── OTService.ts           — tăng ca, OT plan, approval
 ├── ContractService.ts     — hợp đồng, tài liệu PDF, sắp hết hạn
 ├── PayrollService.ts      — dòng lương, tính lại, approve, reports
@@ -1756,6 +1975,8 @@ src/app/services/
 ├── Kpi1Service.ts         — chấm điểm HS1
 ├── DepartmentService.ts   — phòng ban
 ├── NotificationService.ts — thông báo, đánh dấu đã đọc
+├── AccountService.ts      — quản trị tài khoản (SYSTEM_ADMIN)
+└── PayrollConfigService.ts — cấu hình lương hiệu lực-theo-ngày (maker-checker)
 ├── AccountService.ts      — quản trị tài khoản (SYSTEM_ADMIN)
 └── PayrollConfigService.ts — cấu hình lương hiệu lực-theo-ngày (maker-checker)
 ```
@@ -1778,18 +1999,26 @@ sequenceDiagram
     FA->>FE: Tạo kỳ lương / tính lại 1 dòng (employeeId, year, month)
     FE->>PC: POST /api/payroll-runs (hoặc PUT /recalc-line)
     PC->>PS: buildRun() / recalcLine(req)
+    FA->>FE: Tạo kỳ lương / tính lại 1 dòng (employeeId, year, month)
+    FE->>PC: POST /api/payroll-runs (hoặc PUT /recalc-line)
+    PC->>PS: buildRun() / recalcLine(req)
     PS->>DB: Kiểm tra AttendancePeriodClose (kỳ đã chốt?)
     DB-->>PS: Đã chốt ✓
+    PS->>DB: Load Contract (current=true), Timesheet (Nt), WorkDay (NCtt),<br/>LeaveRequest APPROVED, OTRequest APPROVED, Kpi1Rating (HS1)
+    PS->>DB: Load PayrollConfig hiệu lực (SALARY_GRADE, ALLOWANCE, PIT, INSURANCE)
     PS->>DB: Load Contract (current=true), Timesheet (Nt), WorkDay (NCtt),<br/>LeaveRequest APPROVED, OTRequest APPROVED, Kpi1Rating (HS1)
     PS->>DB: Load PayrollConfig hiệu lực (SALARY_GRADE, ALLOWANCE, PIT, INSURANCE)
     DB-->>PS: Toàn bộ dữ liệu đầu vào
     PS->>PCE: calculate(input, config)
     Note over PCE: Tính baseGross (HS1/HS2), OT pay, gross,<br/>BHXH/BHYT/BHTN, PIT 7 bậc, net
+    Note over PCE: Tính baseGross (HS1/HS2), OT pay, gross,<br/>BHXH/BHYT/BHTN, PIT 7 bậc, net
     PCE-->>PS: PayrollResponse
+    PS->>DB: UPSERT payroll line (status=DRAFT, payrollRunId)
     PS->>DB: UPSERT payroll line (status=DRAFT, payrollRunId)
     DB-->>PS: Payroll ID
     PS-->>PC: ApiResponse{payroll}
     PC-->>FE: 201 Created
+    FE-->>FA: Hiển thị dòng lương tạm tính trong kỳ
     FE-->>FA: Hiển thị dòng lương tạm tính trong kỳ
 ```
 
@@ -1816,8 +2045,10 @@ sequenceDiagram
     LS-->>LD: OK
 
     MG->>LS: approve(id) — Manager cấp cuối
+    MG->>LS: approve(id) — Manager cấp cuối
     LS->>DB: UPDATE status = APPROVED
     LS->>DB: UPDATE LeaveBalance: pendingDays -= days, usedDays += days
+    LS-->>MG: OK — Đơn nghỉ có hiệu lực
     LS-->>MG: OK — Đơn nghỉ có hiệu lực
 ```
 
@@ -1867,6 +2098,7 @@ erDiagram
         varchar position_code
         int salary_step
         varchar document_key
+        varchar document_key
         boolean delete_flag
     }
     TAX_DEPENDENT {
@@ -1877,6 +2109,7 @@ erDiagram
         varchar tax_code
         boolean active
     }
+    WORKDAY {
     WORKDAY {
         varchar id PK
         varchar employee_id FK
@@ -1889,7 +2122,29 @@ erDiagram
         float paid_day
         boolean violate
         boolean locked
+        boolean locked
         varchar note
+    }
+    TIMESHEET {
+        varchar id PK
+        varchar employee_id FK
+        int year
+        int month
+        float standard_days
+        float actual_days
+        float paid_days
+        float total_late_hours
+        int violation_days
+    }
+    ATTENDANCE_ADJUSTMENT {
+        varchar id PK
+        varchar employee_id FK
+        date work_date
+        timestamp requested_check_in
+        timestamp requested_check_out
+        varchar reason
+        varchar status
+        varchar approved_by
     }
     TIMESHEET {
         varchar id PK
@@ -1926,6 +2181,7 @@ erDiagram
         varchar location
         varchar api_key_hash
         boolean active
+        timestamp created_at
         timestamp created_at
     }
     ATTENDANCE_PERIOD_CLOSE {
@@ -1976,14 +2232,29 @@ erDiagram
         varchar ot_plan_id FK
         varchar employee_id FK
     }
+    OT_PLAN {
+        varchar id PK
+        varchar department_id FK
+        date work_date
+        varchar created_by_leader
+        varchar status
+        varchar manager_approved_by
+    }
+    OT_PLAN_EMPLOYEE {
+        varchar id PK
+        varchar ot_plan_id FK
+        varchar employee_id FK
+    }
     OT_REQUEST {
         varchar id PK
         varchar employee_id FK
+        varchar ot_plan_id FK
         varchar ot_plan_id FK
         timestamp start_time
         timestamp end_time
         float duration_hours
         varchar ot_type
+        float coefficient
         float coefficient
         varchar reason
         varchar status
@@ -2011,8 +2282,28 @@ erDiagram
         varchar rejection_reason
         timestamp paid_at
     }
+    KPI1_RATING {
+        varchar id PK
+        varchar employee_id FK
+        int year
+        int month
+        varchar rating
+        float coefficient
+        varchar rated_by
+    }
+    PAYROLL_RUN {
+        varchar id PK
+        int year
+        int month
+        varchar status
+        varchar submitted_by
+        varchar approved_by
+        varchar rejection_reason
+        timestamp paid_at
+    }
     PAYROLL {
         varchar id PK
+        varchar payroll_run_id FK
         varchar payroll_run_id FK
         varchar employee_id FK
         int year
@@ -2021,7 +2312,11 @@ erDiagram
         float paid_days
         float hs1_score
         float hs2_score
+        float hs1_score
+        float hs2_score
         decimal base_salary
+        decimal position_allowance
+        decimal ot_pay
         decimal position_allowance
         decimal ot_pay
         decimal gross_salary
@@ -2033,14 +2328,20 @@ erDiagram
         decimal total_employment_cost
         varchar status
         boolean locked
+        boolean locked
         varchar rejection_reason
     }
+    PAYROLL_CONFIG {
     PAYROLL_CONFIG {
         varchar id PK
         varchar config_type
         int version
         varchar status
+        int version
+        varchar status
         date effective_from
+        varchar created_by
+        varchar published_by
         varchar created_by
         varchar published_by
     }
@@ -2061,16 +2362,26 @@ erDiagram
     EMPLOYEE_INFO ||--o{ WORKDAY : "has"
     EMPLOYEE_INFO ||--o{ TIMESHEET : "aggregated into"
     EMPLOYEE_INFO ||--o{ ATTENDANCE_ADJUSTMENT : "requests"
+    EMPLOYEE_INFO ||--o{ WORKDAY : "has"
+    EMPLOYEE_INFO ||--o{ TIMESHEET : "aggregated into"
+    EMPLOYEE_INFO ||--o{ ATTENDANCE_ADJUSTMENT : "requests"
     EMPLOYEE_INFO ||--o{ CHECKIN_LOG : "generates"
     EMPLOYEE_INFO ||--o{ LEAVE_REQUEST : "submits"
     EMPLOYEE_INFO ||--o{ LEAVE_BALANCE : "has"
     EMPLOYEE_INFO ||--o{ OT_REQUEST : "submits"
     EMPLOYEE_INFO ||--o{ KPI1_RATING : "rated by superior"
+    EMPLOYEE_INFO ||--o{ KPI1_RATING : "rated by superior"
     EMPLOYEE_INFO ||--o{ PAYROLL : "has"
     EMPLOYEE_INFO ||--o{ NOTIFICATION : "receives"
     WORKDAY }o--o| TIMESHEET : "rolled up into"
     ATTENDANCE_ADJUSTMENT }o--|| WORKDAY : "amends"
+    WORKDAY }o--o| TIMESHEET : "rolled up into"
+    ATTENDANCE_ADJUSTMENT }o--|| WORKDAY : "amends"
     CHECKIN_LOG }o--|| CHECKIN_DEVICE : "from"
+    OT_PLAN ||--o{ OT_PLAN_EMPLOYEE : "assigns"
+    OT_PLAN ||--o{ OT_REQUEST : "authorizes"
+    DEPARTMENT ||--o{ OT_PLAN : "for"
+    PAYROLL_RUN ||--o{ PAYROLL : "contains lines"
     OT_PLAN ||--o{ OT_PLAN_EMPLOYEE : "assigns"
     OT_PLAN ||--o{ OT_REQUEST : "authorizes"
     DEPARTMENT ||--o{ OT_PLAN : "for"
@@ -2085,14 +2396,19 @@ Bảng 4.2: Các quyết định thiết kế cơ sở dữ liệu quan trọng
 | Tất cả PK là UUID String | Tránh thông tin nhạy cảm trong URL (không đoán được sequential ID), dễ merge data từ nhiều nguồn | `@Id @GeneratedValue(strategy = IDENTITY)` với giá trị UUID sinh tại service layer |
 | Contract: history model | Cần lưu toàn bộ lịch sử thay đổi lương và điều khoản để payroll tính đúng theo từng tháng | `effectiveFrom`, `effectiveTo`, `current` flag; partial unique index `WHERE current = true` |
 | Cấu hình lương: bảng có kiểu, hiệu lực-theo-ngày, append-only | Bản ghi đã PUBLISH phải bất biến để truy vết; mỗi kỳ lương chọn đúng phiên bản theo ngày hiệu lực; tránh JSONB mất kiểm soát kiểu | 4 nhóm (`SALARY_GRADE`/`ALLOWANCE`/`PIT`/`INSURANCE`), `version` + `status` (DRAFT/PUBLISHED/ARCHIVED) + `effective_from`; maker-checker (Finance soạn, Director PUBLISH) |
+| Cấu hình lương: bảng có kiểu, hiệu lực-theo-ngày, append-only | Bản ghi đã PUBLISH phải bất biến để truy vết; mỗi kỳ lương chọn đúng phiên bản theo ngày hiệu lực; tránh JSONB mất kiểm soát kiểu | 4 nhóm (`SALARY_GRADE`/`ALLOWANCE`/`PIT`/`INSURANCE`), `version` + `status` (DRAFT/PUBLISHED/ARCHIVED) + `effective_from`; maker-checker (Finance soạn, Director PUBLISH) |
 | Soft Delete | Dữ liệu nhân sự/tài chính không được xóa vật lý để đảm bảo audit trail | `delete_flag BOOLEAN DEFAULT FALSE` + `deleted_at TIMESTAMP` trên tất cả entity; JPA `@Where(clause = "delete_flag = false")` |
 | Leave balance: 2-stage | Phòng đặt trùng khi nhiều đơn chờ duyệt đồng thời | `pending_days` tăng khi submit, giảm khi approve/reject; `used_days` tăng khi approve |
+| WorkDay: unique per employee-day | Mỗi nhân viên chỉ có một bản ghi ngày công cho mỗi ngày — nguồn sự thật duy nhất; cuối kỳ gộp thành Timesheet | `UNIQUE CONSTRAINT (employee_id, work_date)`; cờ `locked` khi đã chốt kỳ |
+| PayrollRun chứa các dòng Payroll | Gói cả kỳ lương vào một thực thể có vòng đời (DRAFT→PENDING→APPROVED→PAID); hỗ trợ tính lại 1 dòng/cả kỳ và loại dòng | `payroll.payroll_run_id` FK; cờ `payroll.locked` cho dòng tính lại thủ công |
 | WorkDay: unique per employee-day | Mỗi nhân viên chỉ có một bản ghi ngày công cho mỗi ngày — nguồn sự thật duy nhất; cuối kỳ gộp thành Timesheet | `UNIQUE CONSTRAINT (employee_id, work_date)`; cờ `locked` khi đã chốt kỳ |
 | PayrollRun chứa các dòng Payroll | Gói cả kỳ lương vào một thực thể có vòng đời (DRAFT→PENDING→APPROVED→PAID); hỗ trợ tính lại 1 dòng/cả kỳ và loại dòng | `payroll.payroll_run_id` FK; cờ `payroll.locked` cho dòng tính lại thủ công |
 | OT monthly summary: database view | Kiểm tra giới hạn OT cần tổng hợp theo tháng/năm mỗi lần submit | PostgreSQL VIEW `ot_monthly_summary` để tái sử dụng logic tổng hợp |
 
 Chi tiết các script SQL migration (V1–V30):
+Chi tiết các script SQL migration (V1–V30):
 
+Bảng 4.3: Danh sách script SQL migration
 Bảng 4.3: Danh sách script SQL migration
 
 | Migration | Nội dung |
@@ -2116,6 +2432,17 @@ Bảng 4.3: Danh sách script SQL migration
 | V17 | Thêm approved_by vào payroll; thêm read_at vào notification |
 | V18 | Thêm WORK_SCHEDULE config type vào system_config |
 | V19 | Thêm carry_over_cap vào leave_balance; thêm delete_flag, deleted_at cho remaining entities |
+| V20 | Tách attendance thành workday (per-employee-per-day) và timesheet (tổng hợp tháng) |
+| V21 | Thêm attendance_adjustment (đơn bổ sung chấm công, Leader/Manager cùng phòng duyệt) |
+| V22 | Thêm ot_plan, ot_plan_employee; thêm ot_plan_id và coefficient vào ot_request |
+| V23 | Thêm document_key vào contract (tham chiếu tài liệu hợp đồng PDF lưu trên MinIO) |
+| V24 | Thêm created_at cho checkin_device; chuyển quản lý device & checkin_log sang SYSTEM_ADMIN |
+| V25 | Thêm cột locked vào workday; suy Nt từ timesheet (bỏ trường nhập tay) |
+| V26 | Đổi kpi1_score/kpi2_score → hs1_score/hs2_score; thêm position_allowance, ot_pay vào payroll |
+| V27 | Thêm payroll_config — bảng cấu hình lương có kiểu, hiệu lực-theo-ngày, append-only (thay system_config JSONB cho lương) |
+| V28 | Thêm kpi1_rating (điểm HS1 do cấp trên chấm theo tháng) |
+| V29 | Thêm payroll_run; thêm payroll_run_id, locked vào payroll |
+| V30 | Thêm cột giờ OT theo loại (ot_weekday/weekend/holiday/night_hours) vào payroll cho phiếu lương |
 | V20 | Tách attendance thành workday (per-employee-per-day) và timesheet (tổng hợp tháng) |
 | V21 | Thêm attendance_adjustment (đơn bổ sung chấm công, Leader/Manager cùng phòng duyệt) |
 | V22 | Thêm ot_plan, ot_plan_employee; thêm ot_plan_id và coefficient vào ot_request |
@@ -2192,6 +2519,9 @@ Bảng 4.7: Thống kê kỹ thuật dự án
 | Số REST endpoint | > 80 endpoint |
 | Số script SQL migration | 31 file (V1–V30) + final_schema.sql hợp nhất |
 | Số domain module | 10 (employee, department, attendance, leave, otrequest, contract, payroll, payrollconfig, notification, auth) |
+| Số REST endpoint | > 80 endpoint |
+| Số script SQL migration | 31 file (V1–V30) + final_schema.sql hợp nhất |
+| Số domain module | 10 (employee, department, attendance, leave, otrequest, contract, payroll, payrollconfig, notification, auth) |
 | Số scheduled job | 3 (attendance midnight, payroll monthly, contract expiry monthly) |
 | Độ phủ test | Unit test cho PayrollCalculationEngine; Integration test cho auth flow |
 | Frontend | |
@@ -2258,29 +2588,43 @@ paidDay     = paidHour / 8.0
 ```
 
 Chức năng 2: Luồng phê duyệt nghỉ phép hai cấp
+Chức năng 2: Luồng phê duyệt nghỉ phép hai cấp
 
+Minh họa vòng đời của một đơn nghỉ phép từ DRAFT đến APPROVED (LEADER → MANAGER, MANAGER là cấp cuối):
 Minh họa vòng đời của một đơn nghỉ phép từ DRAFT đến APPROVED (LEADER → MANAGER, MANAGER là cấp cuối):
 
 ```
 Bước 1 — Nhân viên tạo đơn (status: DRAFT, có thể sửa/hủy):
+Bước 1 — Nhân viên tạo đơn (status: DRAFT, có thể sửa/hủy):
   POST /api/leaves
+  { "leaveType": "ANNUAL", "startTime": "2026-06-10T08:00", "endTime": "2026-06-12T17:00" }
+  → Lưu nháp, chưa khóa số dư. Sửa qua PUT /api/leaves/{id} khi còn DRAFT.
   { "leaveType": "ANNUAL", "startTime": "2026-06-10T08:00", "endTime": "2026-06-12T17:00" }
   → Lưu nháp, chưa khóa số dư. Sửa qua PUT /api/leaves/{id} khi còn DRAFT.
 
 Bước 2 — Nhân viên gửi duyệt (status: TO_APPROVE):
   PUT /api/leaves/{id}/submit
   → LeaveBalance.pendingDays += 3 (khóa ngay, tránh đặt trùng)
+  PUT /api/leaves/{id}/submit
+  → LeaveBalance.pendingDays += 3 (khóa ngay, tránh đặt trùng)
   → LeaveRequestSubmittedEvent → Notification đến LEADER
 
+Bước 3 — Leader duyệt cấp 1 (status: LEADER_APPROVED):
+  PUT /api/leaves/{id}/approve             [LEADER]
 Bước 3 — Leader duyệt cấp 1 (status: LEADER_APPROVED):
   PUT /api/leaves/{id}/approve             [LEADER]
   → Notification đến MANAGER
 
 Bước 4 — Manager duyệt cấp cuối (status: APPROVED):
   PUT /api/leaves/{id}/approve             [MANAGER]
+Bước 4 — Manager duyệt cấp cuối (status: APPROVED):
+  PUT /api/leaves/{id}/approve             [MANAGER]
   → LeaveBalance.pendingDays -= 3, usedDays += 3
   → LeaveApprovedEvent → tạo bản ghi WorkDay (LEAVE) cho từng ngày nghỉ
+  → LeaveApprovedEvent → tạo bản ghi WorkDay (LEAVE) cho từng ngày nghỉ
 
+Nếu bị từ chối ở cấp LEADER hoặc MANAGER (status: REJECTED):
+  PUT /api/leaves/{id}/reject + { "reason": "..." }
 Nếu bị từ chối ở cấp LEADER hoặc MANAGER (status: REJECTED):
   PUT /api/leaves/{id}/reject + { "reason": "..." }
   → LeaveBalance.pendingDays -= 3 (hoàn trả số dư)
@@ -2359,8 +2703,11 @@ Hàm `exportToCsv` trong `formatters.ts` thêm BOM `﻿` trước nội dung CSV
 Chức năng 5: Cấu hình hệ thống và tải lại tức thì
 
 FINANCE_ADMIN có thể cập nhật biểu thuế TNCN mà không cần restart ứng dụng. Cấu hình lương theo mô hình maker-checker: Finance tạo một phiên bản DRAFT (kèm ngày hiệu lực), DIRECTOR phê duyệt để PUBLISH:
+FINANCE_ADMIN có thể cập nhật biểu thuế TNCN mà không cần restart ứng dụng. Cấu hình lương theo mô hình maker-checker: Finance tạo một phiên bản DRAFT (kèm ngày hiệu lực), DIRECTOR phê duyệt để PUBLISH:
 
 ```json
+// Bước 1 — Finance tạo bản nháp (DRAFT)
+POST /api/payroll-configs
 // Bước 1 — Finance tạo bản nháp (DRAFT)
 POST /api/payroll-configs
 {
@@ -2381,8 +2728,25 @@ POST /api/payroll-configs
 
 // Bước 2 — Director phê duyệt (DRAFT → PUBLISHED)
 PUT /api/payroll-configs/{id}/publish
+  "effectiveFrom": "2026-07-01",
+  "brackets": [
+    { "from": 0, "to": 5000000, "rate": 0.05 },
+    { "from": 5000000, "to": 10000000, "rate": 0.10 },
+    { "from": 10000000, "to": 18000000, "rate": 0.15 },
+    { "from": 18000000, "to": 32000000, "rate": 0.20 },
+    { "from": 32000000, "to": 52000000, "rate": 0.25 },
+    { "from": 52000000, "to": 80000000, "rate": 0.30 },
+    { "from": 80000000, "to": null, "rate": 0.35 }
+  ],
+  "personalDeduction": 11000000,
+  "dependentDeduction": 4400000
+}
+
+// Bước 2 — Director phê duyệt (DRAFT → PUBLISHED)
+PUT /api/payroll-configs/{id}/publish
 ```
 
+Sau khi phiên bản được PUBLISH, mỗi kỳ lương tự chọn đúng phiên bản cấu hình theo ngày hiệu lực; phiên bản cũ chuyển ARCHIVED nhưng vẫn được giữ lại để truy vết. Việc tính lương tiếp theo dùng biểu thuế mới mà không cần restart Spring Boot, đồng thời không một mình Finance có thể thay đổi tham số tính lương (cần Director duyệt).
 Sau khi phiên bản được PUBLISH, mỗi kỳ lương tự chọn đúng phiên bản cấu hình theo ngày hiệu lực; phiên bản cũ chuyển ARCHIVED nhưng vẫn được giữ lại để truy vết. Việc tính lương tiếp theo dùng biểu thuế mới mà không cần restart Spring Boot, đồng thời không một mình Finance có thể thay đổi tham số tính lương (cần Director duyệt).
 
 ## 4.4 Kiểm thử
@@ -2404,6 +2768,7 @@ Bảng 4.9: Phạm vi và kỹ thuật kiểm thử
 | Unit test | PayrollCalculationEngine | JUnit 5, AssertJ | ✅ |
 | Unit test | LeaveBalance deduction logic | JUnit 5, Mockito | ✅ |
 | Integration test | Auth flow (login → refresh → logout) | Spring Boot Test, MockMvc | ✅ |
+| Integration test | Dựng schema từ `final_schema.sql` | Spring Boot Test | ✅ |
 | Integration test | Dựng schema từ `final_schema.sql` | Spring Boot Test | ✅ |
 | Functional test | Tất cả REST endpoint | Swagger UI + Postman | Thủ công |
 | Functional test | Frontend UI theo từng vai trò | Trình duyệt | Thủ công |
@@ -2435,6 +2800,7 @@ Bảng 4.11: Test cases kiểm thử tính lương
 
 | TC | Mô tả | Kịch bản | Kết quả mong đợi | Kết quả thực tế |
 |:---:|---|---|---|:---:|
+| TC-PAY-01 | Tính lương cơ bản đủ ngày | 22/22 ngày, HS1=A (1.04), HS2=B (1.00), 0 OT | grossSalary = baseSalary × 1.02 + positionCoeff + allowances | ✅ Pass |
 | TC-PAY-01 | Tính lương cơ bản đủ ngày | 22/22 ngày, HS1=A (1.04), HS2=B (1.00), 0 OT | grossSalary = baseSalary × 1.02 + positionCoeff + allowances | ✅ Pass |
 | TC-PAY-02 | Tính lương thiếu ngày | 20/22 ngày | grossSalary × (20/22) | ✅ Pass |
 | TC-PAY-03 | OT ngày thường | 8h OT weekday | otPay = 8 × hourlyRate × 1.5 | ✅ Pass |
@@ -2535,6 +2901,7 @@ docker compose -f compose.yaml up -d
 # Bước 2: Khởi động backend
 ./mvnw spring-boot:run
 # Áp final_schema.sql (DDL đầy đủ V1–V30) rồi chạy script seed dữ liệu mặc định
+# Áp final_schema.sql (DDL đầy đủ V1–V30) rồi chạy script seed dữ liệu mặc định
 # Kiểm tra: http://localhost:8084/face-z/actuator/health → {"status":"UP"}
 
 # Bước 3: Khởi động frontend
@@ -2546,6 +2913,7 @@ npm run dev
 # Username: admin | Password: admin123 | Role: SYSTEM_ADMIN
 ```
 
+`DataInitializerConfig` chạy một lần khi database rỗng, tạo tài khoản `admin` với vai trò SYSTEM_ADMIN (tài khoản đặc biệt, không gắn hồ sơ nhân viên). Dữ liệu cấu hình lương mặc định — biểu thuế TNCN bảy bậc, tỷ lệ bảo hiểm, bậc lương và phụ cấp — được nạp vào các bảng `payroll_config` (đã PUBLISH) bằng script `insert_payroll_configs.py` từ các tệp JSON trong `config/payroll/`.
 `DataInitializerConfig` chạy một lần khi database rỗng, tạo tài khoản `admin` với vai trò SYSTEM_ADMIN (tài khoản đặc biệt, không gắn hồ sơ nhân viên). Dữ liệu cấu hình lương mặc định — biểu thuế TNCN bảy bậc, tỷ lệ bảo hiểm, bậc lương và phụ cấp — được nạp vào các bảng `payroll_config` (đã PUBLISH) bằng script `insert_payroll_configs.py` từ các tệp JSON trong `config/payroll/`.
 
 ### 4.5.3 Kết quả vận hành
@@ -2627,6 +2995,8 @@ Chốt kỳ chấm công          ở trạng thái nháp          Xem báo cáo
 [sinh bảng công]           Trình duyệt                Đánh dấu đã trả
                            (nháp → chờ duyệt)         (đã duyệt → đã trả)
 
+[Không tính lương]    [Không tự duyệt cấu hình]   [Không tính lương]
+[Không phê duyệt]     [Không chốt kỳ]             [Không chốt kỳ]
 [Không tính lương]    [Không tự duyệt cấu hình]   [Không tính lương]
 [Không phê duyệt]     [Không chốt kỳ]             [Không chốt kỳ]
 ```
@@ -2740,6 +3110,7 @@ Tính lương không chỉ là phép nhân đơn giản. Pháp luật lao độn
 1. Công thức lương cơ bản (Nghị định 74/2024/NĐ-CP và thỏa ước lao động):
 
 Lương không chỉ tỷ lệ với ngày công — còn phụ thuộc vào hai hệ số đánh giá (HS1 hiệu suất do cấp trên chấm, HS2 chuyên cần suy từ chấm công), phụ cấp chức vụ, và hệ số bậc lương. Công thức phải phản ánh đúng thỏa ước lao động mà doanh nghiệp ký với nhân viên.
+Lương không chỉ tỷ lệ với ngày công — còn phụ thuộc vào hai hệ số đánh giá (HS1 hiệu suất do cấp trên chấm, HS2 chuyên cần suy từ chấm công), phụ cấp chức vụ, và hệ số bậc lương. Công thức phải phản ánh đúng thỏa ước lao động mà doanh nghiệp ký với nhân viên.
 
 2. Tăng ca với nhiều mức lương (Bộ Luật Lao Động 2019, Điều 98):
 
@@ -2807,6 +3178,7 @@ Lấy trường hợp nhân viên Senior Developer với các thông số:
 - Phụ cấp chức vụ: 2,000,000 VND
 - Tháng 6/2026: 22 ngày làm việc, thực tế 21 ngày
 - HS1 = A (1.04) do cấp trên chấm; không vi phạm chấm công và không nghỉ trong tháng → HS2 = A (1.04)
+- HS1 = A (1.04) do cấp trên chấm; không vi phạm chấm công và không nghỉ trong tháng → HS2 = A (1.04)
 - OT: 10h weekday, 5h weekend, không đêm
 - 1 người phụ thuộc
 
@@ -2814,6 +3186,7 @@ Bảng 5.3: Kiểm chứng tính lương mẫu
 
 | Thành phần | Công thức | Kết quả |
 |---|---|---|
+| HStb | (HS1 1.04 + HS2 1.04) / 2 | 1.04 |
 | HStb | (HS1 1.04 + HS2 1.04) / 2 | 1.04 |
 | baseGross (full month) | (40,000,000 × 1.04 + 2,000,000) | 43,600,000 |
 | baseGross (prorate 21/22) | 43,600,000 × (21/22) | 41,618,182 |
@@ -2844,6 +3217,7 @@ Bảng 5.3: Kiểm chứng tính lương mẫu
 
 Kết quả được kiểm chứng bằng cách tính tay theo đúng quy định pháp luật — không có sai số.
 
+Lợi ích của cấu hình động qua các bảng config hiệu lực-theo-ngày: Khi Chính phủ điều chỉnh lương tối thiểu vùng (ảnh hưởng trần bảo hiểm) hoặc sửa đổi biểu thuế TNCN, FINANCE_ADMIN chỉ cần tạo một phiên bản cấu hình mới (DRAFT) với giá trị và ngày hiệu lực cập nhật; sau khi DIRECTOR phê duyệt (PUBLISH), hệ thống tự chọn đúng phiên bản theo ngày hiệu lực của từng kỳ lương mà không cần sửa code hay restart. Các phiên bản đã PUBLISH là bất biến, giữ lại lịch sử để truy vết.
 Lợi ích của cấu hình động qua các bảng config hiệu lực-theo-ngày: Khi Chính phủ điều chỉnh lương tối thiểu vùng (ảnh hưởng trần bảo hiểm) hoặc sửa đổi biểu thuế TNCN, FINANCE_ADMIN chỉ cần tạo một phiên bản cấu hình mới (DRAFT) với giá trị và ngày hiệu lực cập nhật; sau khi DIRECTOR phê duyệt (PUBLISH), hệ thống tự chọn đúng phiên bản theo ngày hiệu lực của từng kỳ lương mà không cần sửa code hay restart. Các phiên bản đã PUBLISH là bất biến, giữ lại lịch sử để truy vết.
 
 ## 5.4 Cơ chế quản lý số dư nghỉ phép chống race condition
@@ -2970,6 +3344,7 @@ Bảng 6.2: Đánh giá mức độ hoàn thành mục tiêu đề tài
 | MT-4 | Mô hình phân tách nhiệm vụ (SoD) 7 vai trò | ✅ Hoàn thành — Server-side enforced |
 
 Về mặt kỹ thuật, hệ thống bao gồm hơn 80 REST endpoint phủ đầy đủ mười domain nghiệp vụ, 31 script SQL migration có phiên bản quản lý toàn bộ lịch sử schema (hợp nhất trong `final_schema.sql`), và đạt tỷ lệ 45/45 test case pass (bao gồm unit, integration và functional). Về hiệu suất, thời gian phản hồi API trung bình dưới 100ms và thời gian tính lương hàng loạt cho 100 nhân viên dưới 3 giây. Hệ thống vận hành ổn định, không phát sinh lỗi runtime trong suốt quá trình kiểm thử.
+Về mặt kỹ thuật, hệ thống bao gồm hơn 80 REST endpoint phủ đầy đủ mười domain nghiệp vụ, 31 script SQL migration có phiên bản quản lý toàn bộ lịch sử schema (hợp nhất trong `final_schema.sql`), và đạt tỷ lệ 45/45 test case pass (bao gồm unit, integration và functional). Về hiệu suất, thời gian phản hồi API trung bình dưới 100ms và thời gian tính lương hàng loạt cho 100 nhân viên dưới 3 giây. Hệ thống vận hành ổn định, không phát sinh lỗi runtime trong suốt quá trình kiểm thử.
 
 Hạn chế còn tồn tại:
 
@@ -2983,6 +3358,7 @@ Bảng 6.3: Các hạn chế còn tồn tại và hướng khắc phục
 | GAP-B | Security DEBUG logging bật trong base config | Trung bình | Chuyển về `application-dev.yml` |
 | GAP-C | Profile picture lưu local disk, không tương thích scale | Trung bình | Migrate sang MinIO/S3 |
 | GAP-D | `PayrollJobStore` in-memory, mất state khi restart | Trung bình | Lưu vào bảng `payroll_job` trong DB |
+| GAP-E | Tài liệu hợp đồng PDF đã lưu MinIO, nhưng chưa quét virus/giới hạn loại tệp khi upload | Trung bình | Thêm kiểm tra MIME type và quét file ở tầng `StorageService` |
 | GAP-E | Tài liệu hợp đồng PDF đã lưu MinIO, nhưng chưa quét virus/giới hạn loại tệp khi upload | Trung bình | Thêm kiểm tra MIME type và quét file ở tầng `StorageService` |
 | GAP-F | Không có API versioning (`/api/v1/`) | Thấp | Thêm version prefix cho tất cả route |
 | GAP-G | Phiếu lương chỉ trả JSON, không có PDF | Thấp | Tích hợp iText/Apache PDFBox |
@@ -3011,7 +3387,9 @@ Bài học 2 — Tách biệt concern ngay từ thiết kế:
 `PayrollCalculationEngine` là pure computation component không có database access — quyết định thiết kế này được thực hiện từ đầu, không phải refactor. Kết quả: viết unit test đơn giản, không cần mock, không cần Spring context. Ngược lại, nếu logic tính lương nằm trong `PayrollService` trộn với database calls, unit testing gần như không thể. Bài học: Pure functions và separation of concerns là kỹ thuật, không phải "best practice" trên lý thuyết — chúng có tác động thực sự đến khả năng test.
 
 Bài học 3 — Kiểm soát schema bằng script có phiên bản từ ngày đầu:
+Bài học 3 — Kiểm soát schema bằng script có phiên bản từ ngày đầu:
 
+Dùng `ddl-auto: none` và quản lý schema bằng các script SQL có đánh số phiên bản ngay từ migration đầu tiên, thay vì dựa vào `ddl-auto: create`/`update` của Hibernate. Điều này buộc phải nghĩ cẩn thận về mỗi thay đổi schema: có backward-compatible không? Có cần migration dữ liệu không? Mỗi script vừa là nguồn schema vừa là nhật ký thay đổi, và được hợp nhất thành `final_schema.sql` để dựng lại từ đầu. Bài học: Database schema migration không phải "việc của sau" — kiểm soát schema từ ngày đầu tiên tốt hơn nhiều so với retroactively.
 Dùng `ddl-auto: none` và quản lý schema bằng các script SQL có đánh số phiên bản ngay từ migration đầu tiên, thay vì dựa vào `ddl-auto: create`/`update` của Hibernate. Điều này buộc phải nghĩ cẩn thận về mỗi thay đổi schema: có backward-compatible không? Có cần migration dữ liệu không? Mỗi script vừa là nguồn schema vừa là nhật ký thay đổi, và được hợp nhất thành `final_schema.sql` để dựng lại từ đầu. Bài học: Database schema migration không phải "việc của sau" — kiểm soát schema từ ngày đầu tiên tốt hơn nhiều so với retroactively.
 
 Bài học 4 — Event-driven không đồng nghĩa với phức tạp:
@@ -3076,6 +3454,7 @@ Tài liệu kỹ thuật — Backend:
 
 [6] Spring Security Team, *Spring Security Reference Documentation 6.4.x*, Broadcom/VMware Tanzu, 2024. [Online]. Available: https://docs.spring.io/spring-security/reference/ (visited on 15/05/2026).
 
+[7] PostgreSQL Global Development Group, *PostgreSQL 15 Documentation — DDL, Data Types, Indexes*, 2024. [Online]. Available: https://www.postgresql.org/docs/15/ (visited on 15/05/2026).
 [7] PostgreSQL Global Development Group, *PostgreSQL 15 Documentation — DDL, Data Types, Indexes*, 2024. [Online]. Available: https://www.postgresql.org/docs/15/ (visited on 15/05/2026).
 
 [8] PostgreSQL Global Development Group, *PostgreSQL 15 Documentation*, The PostgreSQL Global Development Group, 2023. [Online]. Available: https://www.postgresql.org/docs/15/ (visited on 15/05/2026).
