@@ -49,7 +49,7 @@ export function AccountManagerContent() {
         if (!resetTarget) return;
         try {
             await resetAccountPassword(resetTarget.employeeId);
-            showToast(`Đã reset mật khẩu ${resetTarget.username} về mặc định (Pass@1234)`);
+            showToast(`Đã reset mật khẩu ${resetTarget.username} về mật khẩu mặc định của hệ thống`);
             setResetTarget(null);
         } catch (err: any) {
             showToast(err?.body?.message || 'Reset thất bại', 'error');
@@ -128,7 +128,7 @@ export function AccountManagerContent() {
             </div>
 
             <ConfirmDialog open={!!resetTarget} title="Reset mật khẩu"
-                message={`Đặt lại mật khẩu của "${resetTarget?.username}" về mặc định (Pass@1234)?`}
+                message={`Đặt lại mật khẩu của "${resetTarget?.username}" về mật khẩu mặc định của hệ thống? Người dùng sẽ cần đổi lại sau khi đăng nhập.`}
                 onConfirm={doReset} onCancel={() => setResetTarget(null)} />
         </div>
     );

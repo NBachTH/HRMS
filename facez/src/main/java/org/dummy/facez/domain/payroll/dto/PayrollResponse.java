@@ -28,6 +28,10 @@ public class PayrollResponse {
     private int actualWorkingDays;
     private int standardWorkingDays;
     private long otPay;
+    private double otWeekdayHours;
+    private double otWeekendHours;
+    private double otHolidayHours;
+    private double otNightHours;
     private long bonus;
     private long baseGross;
     private long totalGross;
@@ -54,6 +58,8 @@ public class PayrollResponse {
 
     private String status;
     private String notes;
+    private boolean locked;
+    private String payrollRunId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

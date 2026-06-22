@@ -5,8 +5,8 @@ import { getMyPayrolls } from '@/app/services/PayrollService';
 import type { Payroll } from '@/app/commons/types';
 
 const MONTHS = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December',
+    'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
+    'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12',
 ];
 
 const STATUS_STYLES: Record<string, string> = {
@@ -18,6 +18,19 @@ const STATUS_STYLES: Record<string, string> = {
 function fmt(value: number | null | undefined) {
     if (value == null) return '—';
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+}
+
+/** "Giờ OT: ngày thường 4h · cuối tuần 3h · lễ 0h (đêm 2h)" — empty if no OT. */
+function otHoursLine(p: Payroll): string {
+    const wd = p.otWeekdayHours ?? 0, we = p.otWeekendHours ?? 0, ho = p.otHolidayHours ?? 0, ni = p.otNightHours ?? 0;
+    if (wd + we + ho <= 0) return '';
+    const parts: string[] = [];
+    if (wd > 0) parts.push(`ngày thường ${wd}h`);
+    if (we > 0) parts.push(`cuối tuần ${we}h`);
+    if (ho > 0) parts.push(`lễ ${ho}h`);
+    let s = 'Giờ OT: ' + parts.join(' · ');
+    if (ni > 0) s += ` (trong đó đêm ${ni}h)`;
+    return s;
 }
 
 function Row({ label, value, bold, red }: { label: string; value: string; bold?: boolean; red?: boolean }) {
@@ -43,7 +56,7 @@ function PayslipDetail({ payroll, onClose }: { payroll: Payroll; onClose: () => 
                         <h3 className="text-base font-bold text-gray-900">
                             {payroll.employeeName} — {MONTHS[payroll.payrollMonth - 1]} {payroll.payrollYear}
                         </h3>
-                        <p className="text-xs text-gray-400 mt-0.5">Pay Slip Detail</p>
+                        <p className="text-xs text-gray-400 mt-0.5">Chi tiết phiếu lương</p>
                     </div>
                     <span className={`px-2 py-1 text-xs rounded-full ${STATUS_STYLES[payroll.status] || 'bg-gray-100 text-gray-600'}`}>
                         {payroll.status}
@@ -51,54 +64,61 @@ function PayslipDetail({ payroll, onClose }: { payroll: Payroll; onClose: () => 
                 </div>
 
                 <div className="px-6 py-4 space-y-1">
-                    {/* Attendance */}
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mt-1 mb-1">Attendance</p>
-                    <Row label="Actual working days (NCtt)" value={String(payroll.actualWorkingDays ?? '—')} />
-                    <Row label="Standard working days (Nt)" value={String(payroll.standardWorkingDays ?? '—')} />
+                    {/* Ngày công */}
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mt-1 mb-1">Ngày công</p>
+                    <Row label="Ngày công thực tế (NCtt)" value={String(payroll.actualWorkingDays ?? '—')} />
+                    <Row label="Ngày công chuẩn (Nt)" value={String(payroll.standardWorkingDays ?? '—')} />
 
                     <Divider />
 
-                    {/* Earnings */}
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mt-2 mb-1">Earnings</p>
-                    <Row label="Performance salary (Lhq)" value={fmt(payroll.performanceSalary)} />
-                    <Row label="Position coefficient (Li)" value={fmt(payroll.positionCoefficient)} />
-                    <Row label="Living allowance (HT2)" value={fmt(payroll.livingAllowance)} />
-                    <Row label="Language allowance (HT1)" value={fmt(payroll.languageAllowance)} />
-                    <Row label="ODC allowance (HT3)" value={fmt(payroll.odcAllowance)} />
-                    <Row label="KPI1 score" value={payroll.kpi1Score?.toFixed(2) ?? '—'} />
-                    <Row label="KPI2 score" value={payroll.kpi2Score?.toFixed(2) ?? '—'} />
-                    <Row label="KPI average (KPItb)" value={payroll.kpiAverage?.toFixed(2) ?? '—'} />
-                    <Row label="OT pay" value={fmt(payroll.otPay)} />
-                    <Row label="Bonus" value={fmt(payroll.bonus)} />
+                    {/* Thu nhập */}
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mt-2 mb-1">Thu nhập</p>
+                    <Row label="Lương cơ bản (Lhq)" value={fmt(payroll.performanceSalary)} />
+                    <Row label="Phụ cấp chức vụ (Li)" value={fmt(payroll.positionCoefficient)} />
+                    <Row label="Phụ cấp sinh hoạt (HT2)" value={fmt(payroll.livingAllowance)} />
+                    {(payroll.languageAllowance ?? 0) > 0 && (
+                        <Row label="Phụ cấp tiếng Nhật (HT1)" value={fmt(payroll.languageAllowance)} />
+                    )}
+                    {(payroll.odcAllowance ?? 0) > 0 && (
+                        <Row label="Phụ cấp ODC" value={fmt(payroll.odcAllowance)} />
+                    )}
+                    <Row label="HS1 (hiệu quả)" value={payroll.kpi1Score?.toFixed(2) ?? '—'} />
+                    <Row label="HS2 (chuyên cần)" value={payroll.kpi2Score?.toFixed(2) ?? '—'} />
+                    <Row label="HS trung bình" value={payroll.kpiAverage?.toFixed(2) ?? '—'} />
+                    <Row label="Lương tăng ca (OT)" value={fmt(payroll.otPay)} />
+                    {otHoursLine(payroll) && (
+                        <div className="text-xs text-gray-400 pl-1 pb-1">{otHoursLine(payroll)}</div>
+                    )}
+                    {(payroll.bonus ?? 0) > 0 && <Row label="Thưởng" value={fmt(payroll.bonus)} />}
 
                     <Divider />
-                    <Row label="Base gross" value={fmt(payroll.baseGross)} />
-                    <Row label="Total gross" value={fmt(payroll.totalGross)} bold />
-
-                    <Divider />
-
-                    {/* Deductions */}
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mt-2 mb-1">Deductions</p>
-                    <Row label="Insurance base (LCB)" value={fmt(payroll.insuranceBase)} />
-                    <Row label="Social insurance — BHXH 8%" value={fmt(payroll.bhxhEmployee)} red />
-                    <Row label="Health insurance — BHYT 1.5%" value={fmt(payroll.bhytEmployee)} red />
-                    <Row label="Unemployment ins. — BHTN 1%" value={fmt(payroll.bhtnEmployee)} red />
-                    <Row label="Dependents" value={String(payroll.dependentCount ?? 0)} />
-                    <Row label="Taxable income" value={fmt(payroll.taxableIncome)} />
-                    <Row label="Personal income tax (PIT)" value={fmt(payroll.pit)} red />
+                    <Row label="Lương gross cơ bản" value={fmt(payroll.baseGross)} />
+                    <Row label="Tổng thu nhập (gross)" value={fmt(payroll.totalGross)} bold />
 
                     <Divider />
 
-                    {/* Net */}
+                    {/* Khấu trừ */}
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mt-2 mb-1">Khấu trừ</p>
+                    <Row label="Lương đóng bảo hiểm (LCB)" value={fmt(payroll.insuranceBase)} />
+                    <Row label="BHXH (8%)" value={fmt(payroll.bhxhEmployee)} red />
+                    <Row label="BHYT (1.5%)" value={fmt(payroll.bhytEmployee)} red />
+                    <Row label="BHTN (1%)" value={fmt(payroll.bhtnEmployee)} red />
+                    <Row label="Số người phụ thuộc" value={String(payroll.dependentCount ?? 0)} />
+                    <Row label="Thu nhập tính thuế" value={fmt(payroll.taxableIncome)} />
+                    <Row label="Thuế TNCN" value={fmt(payroll.pit)} red />
+
+                    <Divider />
+
+                    {/* Thực nhận */}
                     <div className="flex justify-between items-center py-2">
-                        <span className="text-sm font-bold text-gray-700">Net Salary</span>
+                        <span className="text-sm font-bold text-gray-700">Lương thực nhận</span>
                         <span className="text-xl font-bold text-blue-700">{fmt(payroll.netSalary)}</span>
                     </div>
 
                     {payroll.notes && (
                         <>
                             <Divider />
-                            <p className="text-xs text-gray-500">Note: {payroll.notes}</p>
+                            <p className="text-xs text-gray-500">Ghi chú: {payroll.notes}</p>
                         </>
                     )}
                 </div>
@@ -106,7 +126,7 @@ function PayslipDetail({ payroll, onClose }: { payroll: Payroll; onClose: () => 
                 <div className="px-6 py-4 border-t border-gray-100 flex justify-end">
                     <button onClick={onClose}
                         className="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50">
-                        Close
+                        Đóng
                     </button>
                 </div>
             </div>
@@ -151,29 +171,29 @@ export function PayslipContent() {
     return (
         <div className="p-8">
             <div className="mb-6">
-                <h1 className="text-3xl font-bold text-blue-900 mb-2">My Payslips</h1>
-                <p className="text-sm text-gray-500">Personal / Payslips</p>
+                <h1 className="text-3xl font-bold text-blue-900 mb-2">Phiếu lương của tôi</h1>
+                <p className="text-sm text-gray-500">Cá nhân / Phiếu lương</p>
             </div>
 
             <div className="bg-white rounded-lg shadow-sm p-4 mb-6 flex items-end gap-4">
                 <div>
-                    <label className="block text-xs text-gray-500 mb-1">Year</label>
+                    <label className="block text-xs text-gray-500 mb-1">Năm</label>
                     <select value={filterYear} onChange={e => { setFilterYear(Number(e.target.value)); setPage(0); }}
                         className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
                         {years.map(y => <option key={y} value={y}>{y}</option>)}
                     </select>
                 </div>
-                <p className="text-sm text-gray-500 pb-2">Showing payslips for {filterYear}</p>
+                <p className="text-sm text-gray-500 pb-2">Phiếu lương năm {filterYear}</p>
             </div>
 
             {loading ? (
-                <div className="text-center text-gray-500 py-12">Loading...</div>
+                <div className="text-center text-gray-500 py-12">Đang tải…</div>
             ) : error ? (
                 <div className="text-center text-red-500 py-12">{error}</div>
             ) : payrolls.length === 0 ? (
                 <div className="text-center py-16">
-                    <p className="text-gray-400 text-lg mb-2">No payslips found</p>
-                    <p className="text-gray-400 text-sm">Payslips will appear here once HR processes payroll.</p>
+                    <p className="text-gray-400 text-lg mb-2">Chưa có phiếu lương</p>
+                    <p className="text-gray-400 text-sm">Phiếu lương sẽ xuất hiện sau khi kỳ lương được duyệt.</p>
                 </div>
             ) : (
                 <>
@@ -182,7 +202,7 @@ export function PayslipContent() {
                         <table className="w-full">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    {['Kỳ lương', 'Ngày công', 'KPI', 'Trạng thái', ''].map(h =>
+                                    {['Kỳ lương', 'Ngày công', 'HS tb', 'Trạng thái', ''].map(h =>
                                         <th key={h} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>)}
                                 </tr>
                             </thead>
@@ -211,10 +231,10 @@ export function PayslipContent() {
                     {totalPages > 1 && (
                         <div className="mt-6 flex justify-center gap-2 text-sm">
                             <button disabled={page === 0} onClick={() => setPage(p => p - 1)}
-                                className="px-3 py-1 border border-gray-300 rounded disabled:opacity-40 hover:bg-gray-50">Previous</button>
-                            <span className="px-3 py-1 text-gray-600">Page {page + 1} of {totalPages}</span>
+                                className="px-3 py-1 border border-gray-300 rounded disabled:opacity-40 hover:bg-gray-50">Trước</button>
+                            <span className="px-3 py-1 text-gray-600">Trang {page + 1} / {totalPages}</span>
                             <button disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}
-                                className="px-3 py-1 border border-gray-300 rounded disabled:opacity-40 hover:bg-gray-50">Next</button>
+                                className="px-3 py-1 border border-gray-300 rounded disabled:opacity-40 hover:bg-gray-50">Sau</button>
                         </div>
                     )}
                 </>

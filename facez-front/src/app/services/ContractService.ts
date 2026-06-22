@@ -54,6 +54,14 @@ export async function updateContract(id: string, data: Partial<ContractRequest>)
     return apiClient<Contract>(`/api/contracts/${id}`, { method: 'PUT', body: JSON.stringify(data) });
 }
 
+export async function approveContract(id: string) {
+    return apiClient<Contract>(`/api/contracts/${id}/approve`, { method: 'PATCH' });
+}
+
+export async function rejectContract(id: string) {
+    return apiClient<Contract>(`/api/contracts/${id}/reject`, { method: 'PATCH' });
+}
+
 export async function deleteContract(id: string) {
     return apiClient<void>(`/api/contracts/${id}`, { method: 'DELETE' });
 }

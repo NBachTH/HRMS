@@ -130,6 +130,16 @@ public class PeriodCloseService {
         return periodCloseRepository.existsByCloseYearAndCloseMonth(year, month);
     }
 
+    /** Re-aggregate the monthly timesheets for a closed period (e.g. after fixing WorkDays). */
+    @Transactional
+    public void rebuildTimesheets(int year, int month) {
+        if (!periodCloseRepository.existsByCloseYearAndCloseMonth(year, month)) {
+            throw new BadRequestException(
+                    "Kỳ công " + month + "/" + year + " chưa được chốt — không thể tính lại bảng công.");
+        }
+        timesheetService.buildForPeriod(year, month);
+    }
+
     public List<UnexplainedAbsenceDto> checkForUnexplainedAbsences(int year, int month) {
         LocalDate from = LocalDate.of(year, month, 1);
         LocalDate to   = YearMonth.of(year, month).atEndOfMonth();

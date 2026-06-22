@@ -16,12 +16,22 @@ public interface PayrollRepository extends JpaRepository<Payroll, String> {
 
     Page<Payroll> findByEmployeeInfo_EmployeeId(String employeeId, Pageable pageable);
 
+    /** Employee self-service: only finalized payslips (no DRAFT/PENDING_APPROVAL/REJECTED). */
+    Page<Payroll> findByEmployeeInfo_EmployeeIdAndStatusIn(
+            String employeeId, java.util.Collection<PayrollStatus> statuses, Pageable pageable);
+
     Page<Payroll> findByPayrollYearAndPayrollMonth(int year, int month, Pageable pageable);
 
     Page<Payroll> findByStatus(PayrollStatus status, Pageable pageable);
 
     Optional<Payroll> findByEmployeeInfo_EmployeeIdAndPayrollYearAndPayrollMonth(
             String employeeId, int year, int month);
+
+    /** Lines belonging to a payroll run (eager employee for response mapping). */
+    @Query("SELECT p FROM Payroll p JOIN FETCH p.employeeInfo WHERE p.payrollRunId = :runId")
+    List<Payroll> findByPayrollRunId(@Param("runId") String runId);
+
+    void deleteByPayrollYearAndPayrollMonth(int year, int month);
 
     /** Phase 7.6: Find payslip by employee, period, and status (APPROVED or PAID) */
     Optional<Payroll> findByEmployeeInfo_EmployeeIdAndPayrollYearAndPayrollMonthAndStatusIn(

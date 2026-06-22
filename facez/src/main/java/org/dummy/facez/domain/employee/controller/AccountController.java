@@ -37,6 +37,6 @@ public class AccountController {
     @PatchMapping("/{employeeId}/reset-password")
     public ResponseEntity<ApiResponse<Void>> resetPassword(@PathVariable String employeeId) {
         accountService.resetPassword(employeeId);
-        return ResponseEntity.ok(ApiResponse.ok(null, "Password reset to the default (Pass@1234)."));
+        return ResponseEntity.ok(ApiResponse.ok(null, "Password reset to the system default."));
     }
 }

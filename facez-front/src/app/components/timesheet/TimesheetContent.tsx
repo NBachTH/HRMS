@@ -52,7 +52,7 @@ export function TimesheetContent() {
             TotalPaid: num(t.totalPaidDays),
             Absent: num(t.unexplainedAbsenceDays),
             LateEarlyHours: num(t.lateEarlyTotalHours),
-            KPI2: num(t.kpi2Index),
+            HS2: num(t.kpi2Index),
         })));
     };
 
@@ -99,7 +99,7 @@ export function TimesheetContent() {
                                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Unpaid</th>
                                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total Paid</th>
                                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Absent</th>
-                                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">KPI2</th>
+                                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">HS2</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">

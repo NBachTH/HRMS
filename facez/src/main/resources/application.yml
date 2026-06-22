@@ -15,9 +15,9 @@ spring:
       max-file-size: 15MB
       max-request-size: 15MB
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5434/HRMS}
-    username: ${DB_USERNAME:hrmsuser}
-    password: ${DB_PASSWORD:hrmspassword}
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/postgres}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
   data:
     redis:

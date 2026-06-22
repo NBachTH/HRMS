@@ -1,11 +1,20 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { getLeaves, deleteLeave } from '@/app/services/LeaveService';
+import { getLeaves, deleteLeave, submitLeave } from '@/app/services/LeaveService';
 import { LeaveDetailModal } from '@/app/components/leave/LeaveDetailModal';
+import { useToast } from '@/app/commons/contexts/ToastContext';
 import type { LeaveRequest } from '@/app/commons/types';
 
-export function LeaveTable({ refreshKey, from, to }: { refreshKey?: number; from?: string; to?: string }) {
+interface LeaveTableProps {
+    refreshKey?: number;
+    from?: string;
+    to?: string;
+    onEdit?: (lr: LeaveRequest) => void;
+}
+
+export function LeaveTable({ refreshKey, from, to, onEdit }: LeaveTableProps) {
+    const { showToast } = useToast();
     const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -38,6 +47,16 @@ export function LeaveTable({ refreshKey, from, to }: { refreshKey?: number; from
             fetchData();
         } catch (err: any) {
             setError(err?.body?.message || 'Failed to delete');
+        }
+    };
+
+    const handleSubmit = async (id: string) => {
+        try {
+            await submitLeave(id);
+            showToast('Đã gửi đơn xin nghỉ');
+            fetchData();
+        } catch (err: any) {
+            showToast(err?.body?.message || 'Gửi đơn thất bại', 'error');
         }
     };
 
@@ -96,13 +115,25 @@ export function LeaveTable({ refreshKey, from, to }: { refreshKey?: number; from
                                 <td className="px-6 py-4 text-sm text-gray-500">{lr.startTime ? new Date(lr.startTime).toLocaleDateString() : '—'}</td>
                                 <td className="px-6 py-4 text-sm text-gray-500">{lr.endTime ? new Date(lr.endTime).toLocaleDateString() : '—'}</td>
                                 <td className="px-6 py-4 text-sm">{getStatusBadge(lr.status)}</td>
-                                <td className="px-6 py-4 text-sm">
+                                <td className="px-6 py-4 text-sm whitespace-nowrap">
                                     {lr.status === 'DRAFT' && (
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); handleDelete(lr.leaveRequestId); }}
-                                            className="text-red-500 hover:text-red-700 text-xs">
-                                            Cancel
-                                        </button>
+                                        <div className="flex items-center gap-3">
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); onEdit?.(lr); }}
+                                                className="text-blue-600 hover:text-blue-800 text-xs">
+                                                Edit
+                                            </button>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); handleSubmit(lr.leaveRequestId); }}
+                                                className="text-green-600 hover:text-green-800 text-xs">
+                                                Submit
+                                            </button>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); handleDelete(lr.leaveRequestId); }}
+                                                className="text-red-500 hover:text-red-700 text-xs">
+                                                Cancel
+                                            </button>
+                                        </div>
                                     )}
                                 </td>
                             </tr>

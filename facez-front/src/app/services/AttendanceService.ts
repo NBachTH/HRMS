@@ -45,6 +45,14 @@ export async function remindAbsentees(year: number, month: number) {
     });
 }
 
+/** HR: re-aggregate the monthly timesheets of an already-closed period. */
+export async function rebuildTimesheets(year: number, month: number) {
+    return apiClient<void>('/api/attendances/close-period/rebuild-timesheets', {
+        method: 'POST',
+        body: JSON.stringify({ year, month }),
+    });
+}
+
 export async function getAttendanceById(id: string) {
     return apiClient<Attendance>(`/api/attendances/${id}`);
 }

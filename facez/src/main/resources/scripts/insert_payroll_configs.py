@@ -20,8 +20,8 @@ from datetime import datetime
 BASE = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "config", "payroll"))
 
 conn = psycopg2.connect(
-    host="localhost", port=5434,
-    dbname="HRMS", user="hrmsuser", password="hrmspassword",
+    host="localhost", port=5432,
+    dbname="postgres", user="postgres", password="postgres",
 )
 conn.autocommit = False
 cur = conn.cursor()
@@ -178,8 +178,8 @@ finally:
 
 # ── Verify ────────────────────────────────────────────────────────────────────
 conn2 = psycopg2.connect(
-    host="localhost", port=5434,
-    dbname="HRMS", user="hrmsuser", password="hrmspassword",
+    host="localhost", port=5432,
+    dbname="postgres", user="postgres", password="postgres",
 )
 cur2 = conn2.cursor()
 print("\nRow counts:")

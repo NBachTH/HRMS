@@ -21,6 +21,7 @@ import psycopg2
 import random
 from psycopg2.extras import execute_values
 from datetime import date, datetime, timedelta
+import uuid
 from calendar import monthrange
 
 SEED = 42
@@ -256,7 +257,7 @@ try:
     run("""
         TRUNCATE TABLE
             timesheet, work_day,
-            payroll, ot_request, ot_plan_employee, ot_plan, leave_request,
+            kpi1_rating, payroll_run, payroll, ot_request, ot_plan_employee, ot_plan, leave_request,
             check_in_log, attendance,
             contract, device,
             user_account, employee_info, department
@@ -750,6 +751,26 @@ try:
         GROUP BY w.employee_id, EXTRACT(YEAR FROM w.work_date), EXTRACT(MONTH FROM w.work_date)
     """)
     print("  timesheet generated.")
+
+    # 9. kpi1_rating (HS1) — every active employee gets a monthly performance rating for each
+    #    covered month. Required so Finance can create a payroll run without hitting the
+    #    "missing HS1" gate that the app now enforces before batch calculation.
+    print("Inserting kpi1_rating (HS1) …")
+    HS1_CYCLE = ["A", "B", "B", "B", "C"]  # mostly B, some A/C — realistic spread
+    kpi_rows = [
+        (str(uuid.uuid4()), eid, yr, mo, HS1_CYCLE[(i + mo) % len(HS1_CYCLE)],
+         None, None, datetime.now(), "seed", datetime.now(), "seed")
+        for i, eid in enumerate(ACTIVE_IDS)
+        for (yr, mo) in MONTHS
+    ]
+    bulk(
+        """INSERT INTO kpi1_rating
+            (id, employee_id, kpi_year, kpi_month, rating, evaluator_id, note,
+             created_at, created_by, updated_at, updated_by)
+           VALUES %s""",
+        kpi_rows,
+    )
+    print(f"  kpi1_rating: {len(kpi_rows)} rows ({len(ACTIVE_IDS)} employees × {len(MONTHS)} months).")
 
     conn.commit()
     print("\nAll data committed.")

@@ -4,7 +4,7 @@ import type { TaxDependent, TaxDependentRequest } from '../commons/types';
 const BASE = '/api/tax-dependents';
 
 export async function getByEmployee(employeeId: string) {
-    return apiClient<TaxDependent[]>(`${BASE}?employeeId=${employeeId}`);
+    return apiClient<TaxDependent[]>(`${BASE}/employee/${employeeId}`);
 }
 
 export async function createDependent(body: TaxDependentRequest) {

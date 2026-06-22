@@ -1,8 +1,8 @@
-// Payroll Service — matches backend /api/payrolls/* endpoints
+// Payroll Service — read-only /api/payrolls/* (the calculate/approve/pay workflow lives in
+// PayrollRunService now). Kept: period/employee/my listings, the payslip, and finance reports.
 import { apiClient } from '../commons/utils/ApiCallUtil';
 import type {
-    Payroll, PayrollCalculateRequest, PayrollBatchCalculateRequest,
-    PayrollJobResponse, PageResponse, Payslip,
+    Payroll, PageResponse, Payslip,
     LabourCostResponse, InsuranceRemittanceResponse, PitSummaryResponse,
 } from '../commons/types';
 
@@ -28,47 +28,6 @@ export async function getPayrollsByEmployee(employeeId: string, page = 0, size =
 
 export async function getPayrollById(id: string) {
     return apiClient<Payroll>(`/api/payrolls/${id}`);
-}
-
-export async function calculatePayroll(data: PayrollCalculateRequest) {
-    return apiClient<Payroll>('/api/payrolls/calculate', {
-        method: 'POST',
-        body: JSON.stringify(data),
-    });
-}
-
-export async function batchCalculatePayroll(data: PayrollBatchCalculateRequest) {
-    return apiClient<PayrollJobResponse>('/api/payrolls/batch-calculate', {
-        method: 'POST',
-        body: JSON.stringify(data),
-    });
-}
-
-export async function pollPayrollJob(jobId: string) {
-    return apiClient<PayrollJobResponse>(`/api/payrolls/jobs/${jobId}`);
-}
-
-export async function approvePayroll(id: string) {
-    return apiClient<Payroll>(`/api/payrolls/${id}/approve`, { method: 'PATCH' });
-}
-
-export async function submitPayroll(id: string) {
-    return apiClient<Payroll>(`/api/payrolls/${id}/submit`, { method: 'PATCH' });
-}
-
-export async function rejectPayroll(id: string, reason: string) {
-    return apiClient<Payroll>(`/api/payrolls/${id}/reject`, {
-        method: 'PATCH',
-        body: JSON.stringify({ reason }),
-    });
-}
-
-export async function markPaidPayroll(id: string) {
-    return apiClient<Payroll>(`/api/payrolls/${id}/mark-paid`, { method: 'PATCH' });
-}
-
-export async function deletePayroll(id: string) {
-    return apiClient<null>(`/api/payrolls/${id}`, { method: 'DELETE' });
 }
 
 export async function getMyPayslip(year: number, month: number) {

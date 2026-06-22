@@ -58,8 +58,6 @@ public class Contract extends AuditableEntity {
     @Column(name = "current_contract")
     private boolean current = true;
 
-    private byte[] attachment;
-
     /** MinIO object key of the uploaded contract document (PDF). */
     @Column(length = 300)
     private String documentKey;

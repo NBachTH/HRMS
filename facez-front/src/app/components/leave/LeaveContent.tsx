@@ -2,9 +2,11 @@
 import React, { useState } from 'react'
 import { LeaveTable } from "@/app/components/leave/LeaveTable";
 import { LeaveFormModal } from "@/app/components/leave/LeaveFormModal";
+import type { LeaveRequest } from '@/app/commons/types';
 
 export function LeaveContent() {
     const [showCreate, setShowCreate] = useState(false);
+    const [editing, setEditing] = useState<LeaveRequest | null>(null);
     const [refreshKey, setRefreshKey] = useState(0);
     const [from, setFrom] = useState('');
     const [to, setTo] = useState('');
@@ -39,12 +41,13 @@ export function LeaveContent() {
                         )}
                     </div>
                 </div>
-                <LeaveTable refreshKey={refreshKey} from={from} to={to} />
+                <LeaveTable refreshKey={refreshKey} from={from} to={to} onEdit={setEditing} />
             </div>
 
             <LeaveFormModal
-                isOpen={showCreate}
-                onClose={() => setShowCreate(false)}
+                isOpen={showCreate || !!editing}
+                editing={editing}
+                onClose={() => { setShowCreate(false); setEditing(null); }}
                 onSuccess={() => setRefreshKey(k => k + 1)}
             />
         </div>

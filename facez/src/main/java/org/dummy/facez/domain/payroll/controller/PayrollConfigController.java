@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import org.dummy.facez.common.response.ApiResponse;
 import org.dummy.facez.domain.payroll.dto.*;
 import org.dummy.facez.domain.payroll.service.PayrollConfigAdminService;
+import org.dummy.facez.domain.payroll.service.PayrollConfigService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -28,9 +29,19 @@ public class PayrollConfigController {
     private static final String PUBLISH = "hasAuthority('DIRECTOR')";
 
     private final PayrollConfigAdminService service;
+    private final PayrollConfigService configService;
 
-    public PayrollConfigController(PayrollConfigAdminService service) {
+    public PayrollConfigController(PayrollConfigAdminService service, PayrollConfigService configService) {
         this.service = service;
+        this.configService = configService;
+    }
+
+    /** Which PUBLISHED config version each type resolves to for a payroll period (Finance visibility). */
+    @GetMapping("/effective")
+    @PreAuthorize(READ)
+    public ResponseEntity<ApiResponse<List<EffectiveConfigResponse>>> effective(
+            @RequestParam int year, @RequestParam int month) {
+        return ResponseEntity.ok(ApiResponse.ok(configService.effectiveConfigs(year, month)));
     }
 
     // ── SALARY GRADE ───────────────────────────────────────────────────────────
@@ -52,6 +63,25 @@ public class PayrollConfigController {
             @Valid @RequestBody SalaryGradeConfigRequest req) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok(service.createSalaryGrade(req), "Draft created."));
+    }
+
+    @PutMapping("/salary-grade/{id}")
+    @PreAuthorize(WRITE)
+    public ResponseEntity<ApiResponse<SalaryGradeConfigResponse>> updateSalaryGrade(
+            @PathVariable String id, @Valid @RequestBody SalaryGradeConfigRequest req) {
+        return ResponseEntity.ok(ApiResponse.ok(service.updateSalaryGrade(id, req), "Draft updated."));
+    }
+
+    @PatchMapping("/salary-grade/{id}/submit")
+    @PreAuthorize(WRITE)
+    public ResponseEntity<ApiResponse<SalaryGradeConfigResponse>> submitSalaryGrade(@PathVariable String id) {
+        return ResponseEntity.ok(ApiResponse.ok(service.submitSalaryGrade(id), "Submitted for approval."));
+    }
+
+    @PatchMapping("/salary-grade/{id}/reject")
+    @PreAuthorize(PUBLISH)
+    public ResponseEntity<ApiResponse<SalaryGradeConfigResponse>> rejectSalaryGrade(@PathVariable String id) {
+        return ResponseEntity.ok(ApiResponse.ok(service.rejectSalaryGrade(id), "Returned to draft."));
     }
 
     @PatchMapping("/salary-grade/{id}/publish")
@@ -85,6 +115,25 @@ public class PayrollConfigController {
     public ResponseEntity<ApiResponse<PitConfigResponse>> createPit(@Valid @RequestBody PitConfigRequest req) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok(service.createPit(req), "Draft created."));
+    }
+
+    @PutMapping("/pit/{id}")
+    @PreAuthorize(WRITE)
+    public ResponseEntity<ApiResponse<PitConfigResponse>> updatePit(
+            @PathVariable String id, @Valid @RequestBody PitConfigRequest req) {
+        return ResponseEntity.ok(ApiResponse.ok(service.updatePit(id, req), "Draft updated."));
+    }
+
+    @PatchMapping("/pit/{id}/submit")
+    @PreAuthorize(WRITE)
+    public ResponseEntity<ApiResponse<PitConfigResponse>> submitPit(@PathVariable String id) {
+        return ResponseEntity.ok(ApiResponse.ok(service.submitPit(id), "Submitted for approval."));
+    }
+
+    @PatchMapping("/pit/{id}/reject")
+    @PreAuthorize(PUBLISH)
+    public ResponseEntity<ApiResponse<PitConfigResponse>> rejectPit(@PathVariable String id) {
+        return ResponseEntity.ok(ApiResponse.ok(service.rejectPit(id), "Returned to draft."));
     }
 
     @PatchMapping("/pit/{id}/publish")
@@ -121,6 +170,25 @@ public class PayrollConfigController {
                 .body(ApiResponse.ok(service.createInsurance(req), "Draft created."));
     }
 
+    @PutMapping("/insurance/{id}")
+    @PreAuthorize(WRITE)
+    public ResponseEntity<ApiResponse<InsuranceConfigResponse>> updateInsurance(
+            @PathVariable String id, @Valid @RequestBody InsuranceConfigRequest req) {
+        return ResponseEntity.ok(ApiResponse.ok(service.updateInsurance(id, req), "Draft updated."));
+    }
+
+    @PatchMapping("/insurance/{id}/submit")
+    @PreAuthorize(WRITE)
+    public ResponseEntity<ApiResponse<InsuranceConfigResponse>> submitInsurance(@PathVariable String id) {
+        return ResponseEntity.ok(ApiResponse.ok(service.submitInsurance(id), "Submitted for approval."));
+    }
+
+    @PatchMapping("/insurance/{id}/reject")
+    @PreAuthorize(PUBLISH)
+    public ResponseEntity<ApiResponse<InsuranceConfigResponse>> rejectInsurance(@PathVariable String id) {
+        return ResponseEntity.ok(ApiResponse.ok(service.rejectInsurance(id), "Returned to draft."));
+    }
+
     @PatchMapping("/insurance/{id}/publish")
     @PreAuthorize(PUBLISH)
     public ResponseEntity<ApiResponse<InsuranceConfigResponse>> publishInsurance(@PathVariable String id) {
@@ -153,6 +221,25 @@ public class PayrollConfigController {
             @Valid @RequestBody AllowanceConfigRequest req) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok(service.createAllowance(req), "Draft created."));
+    }
+
+    @PutMapping("/allowance/{id}")
+    @PreAuthorize(WRITE)
+    public ResponseEntity<ApiResponse<AllowanceConfigResponse>> updateAllowance(
+            @PathVariable String id, @Valid @RequestBody AllowanceConfigRequest req) {
+        return ResponseEntity.ok(ApiResponse.ok(service.updateAllowance(id, req), "Draft updated."));
+    }
+
+    @PatchMapping("/allowance/{id}/submit")
+    @PreAuthorize(WRITE)
+    public ResponseEntity<ApiResponse<AllowanceConfigResponse>> submitAllowance(@PathVariable String id) {
+        return ResponseEntity.ok(ApiResponse.ok(service.submitAllowance(id), "Submitted for approval."));
+    }
+
+    @PatchMapping("/allowance/{id}/reject")
+    @PreAuthorize(PUBLISH)
+    public ResponseEntity<ApiResponse<AllowanceConfigResponse>> rejectAllowance(@PathVariable String id) {
+        return ResponseEntity.ok(ApiResponse.ok(service.rejectAllowance(id), "Returned to draft."));
     }
 
     @PatchMapping("/allowance/{id}/publish")

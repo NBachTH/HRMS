@@ -88,6 +88,34 @@ public class PayrollConfigAdminService {
     }
 
     @Transactional
+    public SalaryGradeConfigResponse updateSalaryGrade(String id, SalaryGradeConfigRequest req) {
+        SalaryGradeConfig existing = salaryRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("SalaryGradeConfig", "id", id));
+        editGuard(existing.getStatus());
+        salaryRepo.delete(existing);
+        salaryRepo.flush();
+        return createSalaryGrade(req);
+    }
+
+    @Transactional
+    public SalaryGradeConfigResponse submitSalaryGrade(String id) {
+        SalaryGradeConfig cfg = salaryRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("SalaryGradeConfig", "id", id));
+        submitGuard(cfg.getStatus());
+        cfg.setStatus(ConfigStatus.PENDING_APPROVAL);
+        return toSalaryResponse(salaryRepo.save(cfg));
+    }
+
+    @Transactional
+    public SalaryGradeConfigResponse rejectSalaryGrade(String id) {
+        SalaryGradeConfig cfg = salaryRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("SalaryGradeConfig", "id", id));
+        rejectGuard(cfg.getStatus());
+        cfg.setStatus(ConfigStatus.DRAFT);
+        return toSalaryResponse(salaryRepo.save(cfg));
+    }
+
+    @Transactional
     public SalaryGradeConfigResponse publishSalaryGrade(String id) {
         SalaryGradeConfig cfg = salaryRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("SalaryGradeConfig", "id", id));
@@ -150,6 +178,34 @@ public class PayrollConfigAdminService {
                     .rate(b.getRate()).quickDeduction(b.getQuickDeduction() != null ? b.getQuickDeduction() : 0L)
                     .build());
         });
+        return toPitResponse(pitRepo.save(cfg));
+    }
+
+    @Transactional
+    public PitConfigResponse updatePit(String id, PitConfigRequest req) {
+        PitConfig existing = pitRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("PitConfig", "id", id));
+        editGuard(existing.getStatus());
+        pitRepo.delete(existing);
+        pitRepo.flush();
+        return createPit(req);
+    }
+
+    @Transactional
+    public PitConfigResponse submitPit(String id) {
+        PitConfig cfg = pitRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("PitConfig", "id", id));
+        submitGuard(cfg.getStatus());
+        cfg.setStatus(ConfigStatus.PENDING_APPROVAL);
+        return toPitResponse(pitRepo.save(cfg));
+    }
+
+    @Transactional
+    public PitConfigResponse rejectPit(String id) {
+        PitConfig cfg = pitRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("PitConfig", "id", id));
+        rejectGuard(cfg.getStatus());
+        cfg.setStatus(ConfigStatus.DRAFT);
         return toPitResponse(pitRepo.save(cfg));
     }
 
@@ -218,6 +274,34 @@ public class PayrollConfigAdminService {
             cfg.getEligibleContractTypes().add(InsuranceEligibleContractType.builder()
                     .id(uid()).config(cfg).contractType(ct).build());
         }
+        return toInsuranceResponse(insuranceRepo.save(cfg));
+    }
+
+    @Transactional
+    public InsuranceConfigResponse updateInsurance(String id, InsuranceConfigRequest req) {
+        InsuranceConfig existing = insuranceRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("InsuranceConfig", "id", id));
+        editGuard(existing.getStatus());
+        insuranceRepo.delete(existing);
+        insuranceRepo.flush();
+        return createInsurance(req);
+    }
+
+    @Transactional
+    public InsuranceConfigResponse submitInsurance(String id) {
+        InsuranceConfig cfg = insuranceRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("InsuranceConfig", "id", id));
+        submitGuard(cfg.getStatus());
+        cfg.setStatus(ConfigStatus.PENDING_APPROVAL);
+        return toInsuranceResponse(insuranceRepo.save(cfg));
+    }
+
+    @Transactional
+    public InsuranceConfigResponse rejectInsurance(String id) {
+        InsuranceConfig cfg = insuranceRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("InsuranceConfig", "id", id));
+        rejectGuard(cfg.getStatus());
+        cfg.setStatus(ConfigStatus.DRAFT);
         return toInsuranceResponse(insuranceRepo.save(cfg));
     }
 
@@ -297,6 +381,34 @@ public class PayrollConfigAdminService {
     }
 
     @Transactional
+    public AllowanceConfigResponse updateAllowance(String id, AllowanceConfigRequest req) {
+        AllowanceConfig existing = allowanceRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("AllowanceConfig", "id", id));
+        editGuard(existing.getStatus());
+        allowanceRepo.delete(existing);
+        allowanceRepo.flush();
+        return createAllowance(req);
+    }
+
+    @Transactional
+    public AllowanceConfigResponse submitAllowance(String id) {
+        AllowanceConfig cfg = allowanceRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("AllowanceConfig", "id", id));
+        submitGuard(cfg.getStatus());
+        cfg.setStatus(ConfigStatus.PENDING_APPROVAL);
+        return toAllowanceResponse(allowanceRepo.save(cfg));
+    }
+
+    @Transactional
+    public AllowanceConfigResponse rejectAllowance(String id) {
+        AllowanceConfig cfg = allowanceRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("AllowanceConfig", "id", id));
+        rejectGuard(cfg.getStatus());
+        cfg.setStatus(ConfigStatus.DRAFT);
+        return toAllowanceResponse(allowanceRepo.save(cfg));
+    }
+
+    @Transactional
     public AllowanceConfigResponse publishAllowance(String id) {
         AllowanceConfig cfg = allowanceRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("AllowanceConfig", "id", id));
@@ -358,9 +470,31 @@ public class PayrollConfigAdminService {
         if (current == ConfigStatus.PUBLISHED) {
             throw new BadRequestException("This config version is already published.");
         }
+        if (current != ConfigStatus.PENDING_APPROVAL) {
+            throw new BadRequestException(
+                    "Chỉ duyệt được bản cấu hình đã được trình (PENDING_APPROVAL). Finance hãy Submit trước.");
+        }
         if (clashingPublishedExists) {
             throw new BadRequestException(
                     "Another PUBLISHED version already has this effective date. Archive it first or change the date.");
+        }
+    }
+
+    private void submitGuard(ConfigStatus current) {
+        if (current != ConfigStatus.DRAFT) {
+            throw new BadRequestException("Chỉ trình duyệt (Submit) được bản DRAFT.");
+        }
+    }
+
+    private void rejectGuard(ConfigStatus current) {
+        if (current != ConfigStatus.PENDING_APPROVAL) {
+            throw new BadRequestException("Chỉ trả lại được bản đang chờ duyệt (PENDING_APPROVAL).");
+        }
+    }
+
+    private void editGuard(ConfigStatus current) {
+        if (current != ConfigStatus.DRAFT) {
+            throw new BadRequestException("Chỉ sửa được bản DRAFT.");
         }
     }
 

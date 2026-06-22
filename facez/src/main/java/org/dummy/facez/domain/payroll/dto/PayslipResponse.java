@@ -22,6 +22,10 @@ public class PayslipResponse {
     private int actualWorkingDays;
     private int standardWorkingDays;
     private long otPay;
+    private double otWeekdayHours;
+    private double otWeekendHours;
+    private double otHolidayHours;
+    private double otNightHours;
     private long bonus;
     private long totalGross;
     private long insuranceBase;

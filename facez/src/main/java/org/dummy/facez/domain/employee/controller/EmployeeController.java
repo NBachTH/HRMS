@@ -42,7 +42,7 @@ public class EmployeeController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAuthority('HR_ADMIN') or hasAuthority('MANAGER') or hasAuthority('LEADER')")
+    @PreAuthorize("hasAuthority('HR_ADMIN') or hasAuthority('MANAGER') or hasAuthority('LEADER') or hasAuthority('FINANCE_ADMIN') or hasAuthority('DIRECTOR')")
     public ResponseEntity<ApiResponse<PageResponse<EmployeeResponse>>> getAll(
             @RequestParam(required = false) String departmentId,
             @PageableDefault(size = 20, sort = "employeeId", direction = Sort.Direction.ASC) Pageable pageable) {
@@ -51,7 +51,7 @@ public class EmployeeController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('HR_ADMIN') or hasAuthority('MANAGER') or hasAuthority('LEADER')")
+    @PreAuthorize("hasAuthority('HR_ADMIN') or hasAuthority('MANAGER') or hasAuthority('LEADER') or hasAuthority('FINANCE_ADMIN') or hasAuthority('DIRECTOR')")
     public ResponseEntity<ApiResponse<EmployeeResponse>> getById(@PathVariable String id) {
         EmployeeResponse response = employeeService.getEmployeeById(id);
         return ResponseEntity.ok(ApiResponse.ok(response));

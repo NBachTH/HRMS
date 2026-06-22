@@ -24,12 +24,14 @@
 -- ────────────────────────────────────────────────────────────────────────────
 DROP VIEW  IF EXISTS ot_monthly_summary        CASCADE;
 
+DROP TABLE IF EXISTS kpi1_rating               CASCADE;
 DROP TABLE IF EXISTS attendance_adjustment     CASCADE;
 DROP TABLE IF EXISTS timesheet                 CASCADE;
 DROP TABLE IF EXISTS work_day                  CASCADE;
 DROP TABLE IF EXISTS notification              CASCADE;
 DROP TABLE IF EXISTS api_key                   CASCADE;
 DROP TABLE IF EXISTS tax_dependent             CASCADE;
+DROP TABLE IF EXISTS payroll_run               CASCADE;
 DROP TABLE IF EXISTS payroll                   CASCADE;
 DROP TABLE IF EXISTS ot_request                CASCADE;
 DROP TABLE IF EXISTS ot_plan_employee          CASCADE;
@@ -431,6 +433,8 @@ CREATE TABLE payroll
     status                       VARCHAR(20)      NOT NULL DEFAULT 'DRAFT',
     rejection_reason             VARCHAR(500),
     notes                        VARCHAR(500),
+    payroll_run_id               VARCHAR(64),
+    locked                       BOOLEAN          NOT NULL DEFAULT false,
     created_at                   TIMESTAMP WITHOUT TIME ZONE,
     created_by                   VARCHAR(100),
     updated_at                   TIMESTAMP WITHOUT TIME ZONE,
@@ -439,6 +443,28 @@ CREATE TABLE payroll
     CONSTRAINT uk_payroll_employee_period UNIQUE (employee_id, payroll_year, payroll_month),
     CONSTRAINT fk_payroll_employee FOREIGN KEY (employee_id)
         REFERENCES employee_info (employee_id) ON DELETE NO ACTION
+);
+CREATE INDEX idx_payroll_run_id ON payroll (payroll_run_id);
+
+-- Persistent payroll period (run)
+CREATE TABLE payroll_run
+(
+    id               VARCHAR(64) NOT NULL,
+    run_year         INTEGER     NOT NULL,
+    run_month        INTEGER     NOT NULL,
+    status           VARCHAR(20) NOT NULL,
+    employee_count   INTEGER     NOT NULL DEFAULT 0,
+    total_gross      BIGINT      NOT NULL DEFAULT 0,
+    total_net        BIGINT      NOT NULL DEFAULT 0,
+    submitted_by     VARCHAR(100),
+    approved_by      VARCHAR(100),
+    rejection_reason VARCHAR(500),
+    created_at       TIMESTAMP WITHOUT TIME ZONE,
+    created_by       VARCHAR(100),
+    updated_at       TIMESTAMP WITHOUT TIME ZONE,
+    updated_by       VARCHAR(100),
+    CONSTRAINT payroll_run_pkey PRIMARY KEY (id),
+    CONSTRAINT uk_payroll_run_period UNIQUE (run_year, run_month)
 );
 
 -- ────────────────────────────────────────────────────────────────────────────
@@ -595,6 +621,27 @@ CREATE TABLE attendance_adjustment
 );
 CREATE INDEX idx_attadj_employee ON attendance_adjustment (employee_id);
 CREATE INDEX idx_attadj_status   ON attendance_adjustment (status);
+
+-- 4.7 KPI1 monthly performance rating (entered by an employee's direct superior)
+CREATE TABLE kpi1_rating
+(
+    id           VARCHAR(64) NOT NULL,
+    employee_id  VARCHAR(64) NOT NULL,
+    kpi_year     INTEGER     NOT NULL,
+    kpi_month    INTEGER     NOT NULL,
+    rating       VARCHAR(2)  NOT NULL,
+    evaluator_id VARCHAR(64),
+    note         VARCHAR(300),
+    created_at   TIMESTAMP WITHOUT TIME ZONE,
+    created_by   VARCHAR(100),
+    updated_at   TIMESTAMP WITHOUT TIME ZONE,
+    updated_by   VARCHAR(100),
+    CONSTRAINT kpi1_rating_pkey PRIMARY KEY (id),
+    CONSTRAINT uk_kpi1_employee_period UNIQUE (employee_id, kpi_year, kpi_month),
+    CONSTRAINT fk_kpi1_employee FOREIGN KEY (employee_id)
+        REFERENCES employee_info (employee_id) ON DELETE CASCADE
+);
+CREATE INDEX idx_kpi1_period ON kpi1_rating (kpi_year, kpi_month);
 
 -- ────────────────────────────────────────────────────────────────────────────
 -- 5. DEFERRED CROSS-FOREIGN KEYS (department ↔ employee_info)
