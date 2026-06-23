@@ -17,7 +17,6 @@ Quản lý nhân sự trong doanh nghiệp công nghệ Việt Nam hiện nay v�
 Xuất phát từ thực tế đó, đồ án xây dựng hệ thống quản lý nhân sự tích hợp chấm công nhận diện khuôn mặt mang tên FaceZ HRMS, nhằm số hóa toàn bộ vòng đời quản lý nhân viên trong một nền tảng tập trung, duy nhất. Hướng tiếp cận là xây dựng ứng dụng web theo kiến trúc client–server, với backend Spring Boot 4.0.0-M3 (Java 21) và frontend Next.js 15 (TypeScript, React 19). Trọng tâm kỹ thuật của đồ án nằm ở ba điểm: (1) pipeline chấm công tự động kết nối thiết bị nhận diện khuôn mặt với bản ghi chấm công qua cơ chế Spring Application Events; (2) công thức tính lương tuân thủ đầy đủ quy định pháp luật Việt Nam (biểu thuế TNCN 7 bậc theo Thông tư 111/2013/TT-BTC, trần đóng bảo hiểm 46,8 triệu VND, KPI song phần); và (3) mô hình phân tách nhiệm vụ 7 vai trò nhằm khôi phục kiểm soát tài chính nội bộ mà quy trình giấy tờ truyền thống thực hiện qua chữ ký vật lý.
 
 Sản phẩm cuối cùng là một hệ thống hoàn chỉnh, bao gồm backend RESTful API với schema quản lý bằng 31 script SQL migration có phiên bản, và frontend đa vai trò với giao diện phù hợp từng nhóm người dùng. FaceZ HRMS bao phủ đầy đủ các nghiệp vụ cốt lõi: quản lý nhân viên và phòng ban, vòng đời hợp đồng, chấm công tự động và chốt kỳ, phê duyệt nghỉ phép/tăng ca đa cấp, tính lương và báo cáo tài chính. Hệ thống là nền tảng để tiếp tục mở rộng theo hướng tích hợp giải pháp nhận diện khuôn mặt thực tế và triển khai thương mại trong tương lai.
-Sản phẩm cuối cùng là một hệ thống hoàn chỉnh, bao gồm backend RESTful API với schema quản lý bằng 31 script SQL migration có phiên bản, và frontend đa vai trò với giao diện phù hợp từng nhóm người dùng. FaceZ HRMS bao phủ đầy đủ các nghiệp vụ cốt lõi: quản lý nhân viên và phòng ban, vòng đời hợp đồng, chấm công tự động và chốt kỳ, phê duyệt nghỉ phép/tăng ca đa cấp, tính lương và báo cáo tài chính. Hệ thống là nền tảng để tiếp tục mở rộng theo hướng tích hợp giải pháp nhận diện khuôn mặt thực tế và triển khai thương mại trong tương lai.
 
 # CHƯƠNG 1. GIỚI THIỆU ĐỀ TÀI
 
@@ -43,7 +42,7 @@ Nhóm phần mềm nội địa (MISA HRM, Base HR, ACheckin) có ưu thế về
 
 Nhóm phần mềm quốc tế (BambooHR, Workday, SAP SuccessFactors) có hệ sinh thái tính năng phong phú và kiến trúc kỹ thuật tốt, nhưng không được thiết kế cho hệ thống pháp luật lao động và thuế của Việt Nam. Biểu thuế TNCN, tỷ lệ BHXH/BHYT/BHTN và trần đóng theo quy định Việt Nam không được hỗ trợ out-of-the-box. Chi phí bản quyền của các sản phẩm này, dao động từ 6 đến 25 USD/người dùng/tháng, cũng vượt khả năng đầu tư của đa số doanh nghiệp công nghệ trong nước có quy mô dưới 500 nhân viên.
 
-Nhóm tự phát triển nội bộ là lựa chọn của nhiều doanh nghiệp công nghệ có đội ngũ kỹ thuật. Tuy nhiên, kinh nghiệm thực tế cho thấy hầu hết các hệ thống tự phát triển này rơi vào bẫy kỹ thuật: thiết kế tốt về giao diện nhưng bỏ qua vấn đề kiểm soát nội bộ (một nhân viên HR có thể làm tất cả mọi việc), thiếu cơ chế migration schema có kiểm soát (dùng `ddl-auto: update` hay tương đương), và không có audit trail đủ chi tiết để điều tra khi xảy ra tranh chấp.
+Nhóm tự phát triển nội bộ là lựa chọn của nhiều doanh nghiệp công nghệ có đội ngũ kỹ thuật. Tuy nhiên, kinh nghiệm thực tế cho thấy hầu hết các hệ thống tự phát triển này rơi vào bẫy kỹ thuật: thiết kế tốt về giao diện nhưng bỏ qua vấn đề kiểm soát nội bộ (một nhân viên nhân sự có thể làm tất cả mọi việc), thiếu cơ chế quản lý thay đổi lược đồ có kiểm soát (để framework tự cập nhật lược đồ), và không có vết kiểm toán đủ chi tiết để điều tra khi xảy ra tranh chấp.
 
 Khoảng trống thị trường nằm ở chỗ: chưa có một giải pháp mã nguồn mở, tích hợp thiết bị chấm công nhận diện khuôn mặt, tuân thủ đầy đủ pháp luật lao động và thuế Việt Nam, có kiến trúc phân tách nhiệm vụ đúng chuẩn, và cho phép doanh nghiệp tự triển khai với chi phí hạ tầng hợp lý.
 
@@ -66,7 +65,6 @@ Mục tiêu 4 — Tuân thủ pháp luật Việt Nam: Triển khai công thức
 Phạm vi thị trường: Đồ án hướng riêng tới các doanh nghiệp công nghệ tại Việt Nam, với quy mô nhân sự từ 20 đến 500 người. Các đặc thù pháp luật, ngôn ngữ giao diện và quy trình nghiệp vụ đều được thiết kế cho thị trường trong nước.
 
 Phạm vi tính năng: Hệ thống tập trung vào tám nhóm nghiệp vụ cốt lõi. Thứ nhất, quản lý nhân viên bao gồm thông tin cá nhân và pháp lý (CMND/CCCD, mã số thuế, số BHXH), tài khoản ngân hàng, ảnh đại diện và người phụ thuộc thuế. Thứ hai, quản lý tổ chức gồm phòng ban và phân công quản lý. Thứ ba, quản lý hợp đồng lao động theo vòng đời đầy đủ kèm cảnh báo hết hạn và đính kèm tài liệu hợp đồng PDF (lưu trên MinIO). Thứ tư, chấm công tích hợp thiết bị nhận diện khuôn mặt qua API key xác thực, xử lý tự động và chốt kỳ hằng tháng. Thứ năm, nghỉ phép và tăng ca với chín loại nghỉ phép theo Bộ Luật Lao Động, số dư theo dõi thời gian thực, phê duyệt hai cấp (LEADER → MANAGER, MANAGER là cấp duyệt cuối) và giới hạn OT theo pháp luật. Thứ sáu, tính lương cá nhân và hàng loạt, phê duyệt qua luồng Finance → Director, kèm ba loại báo cáo tài chính (chi phí lao động, nộp bảo hiểm, tổng hợp thuế TNCN). Thứ bảy, hệ thống thông báo in-app cho các sự kiện nghiệp vụ. Thứ tám, cấu hình quản lý phiên bản các thông số tính lương gồm bậc lương, phụ cấp, thuế và bảo hiểm.
-Phạm vi tính năng: Hệ thống tập trung vào tám nhóm nghiệp vụ cốt lõi. Thứ nhất, quản lý nhân viên bao gồm thông tin cá nhân và pháp lý (CMND/CCCD, mã số thuế, số BHXH), tài khoản ngân hàng, ảnh đại diện và người phụ thuộc thuế. Thứ hai, quản lý tổ chức gồm phòng ban và phân công quản lý. Thứ ba, quản lý hợp đồng lao động theo vòng đời đầy đủ kèm cảnh báo hết hạn và đính kèm tài liệu hợp đồng PDF (lưu trên MinIO). Thứ tư, chấm công tích hợp thiết bị nhận diện khuôn mặt qua API key xác thực, xử lý tự động và chốt kỳ hằng tháng. Thứ năm, nghỉ phép và tăng ca với chín loại nghỉ phép theo Bộ Luật Lao Động, số dư theo dõi thời gian thực, phê duyệt hai cấp (LEADER → MANAGER, MANAGER là cấp duyệt cuối) và giới hạn OT theo pháp luật. Thứ sáu, tính lương cá nhân và hàng loạt, phê duyệt qua luồng Finance → Director, kèm ba loại báo cáo tài chính (chi phí lao động, nộp bảo hiểm, tổng hợp thuế TNCN). Thứ bảy, hệ thống thông báo in-app cho các sự kiện nghiệp vụ. Thứ tám, cấu hình quản lý phiên bản các thông số tính lương gồm bậc lương, phụ cấp, thuế và bảo hiểm.
 
 Ngoài phạm vi: Hệ thống không bao gồm tích hợp phần mềm kế toán (MISA, Fast), xuất báo cáo theo mẫu biểu của Bộ Tài chính, quản lý tuyển dụng và đào tạo, phiếu lương dạng PDF có thể in, và tích hợp ngân hàng để thanh toán lương tự động. Đây là các hướng phát triển tiếp theo được xác định trong Chương 6.
 
@@ -75,14 +73,11 @@ Ngoài phạm vi: Hệ thống không bao gồm tích hợp phần mềm kế to
 Đồ án đi theo hướng xây dựng một ứng dụng web theo mô hình client–server, trong đó frontend và backend tách biệt hoàn toàn và giao tiếp qua REST API. Quyết định này xuất phát từ hai lý do: (1) tách biệt concern — backend thuần nghiệp vụ, frontend thuần giao diện; và (2) cho phép tương lai tích hợp ứng dụng di động hoặc ứng dụng bên thứ ba mà không phải thay đổi backend.
 
 Về backend, đồ án chọn Spring Boot 4.0.0-M3 trên Java 21 vì hệ sinh thái trưởng thành phù hợp với nghiệp vụ doanh nghiệp và hỗ trợ xử lý đồng thời tốt cho tác vụ tính lương hàng loạt. Về frontend, Next.js 15 và React 19 được chọn để cân bằng giữa hiệu suất tải trang và độ an toàn kiểu dữ liệu. Về dữ liệu, PostgreSQL 15 đáp ứng các nhu cầu lưu trữ linh hoạt và truy vấn tổng hợp của bài toán, kết hợp với Redis 7 cho các tác vụ bộ nhớ đệm và bảo mật phiên, và MinIO (lưu trữ đối tượng tương thích S3) cho tài liệu hợp đồng PDF. Lý do lựa chọn chi tiết của từng công nghệ, cùng các phương án thay thế được cân nhắc, được phân tích trong Chương 3.
-Về backend, đồ án chọn Spring Boot 4.0.0-M3 trên Java 21 vì hệ sinh thái trưởng thành phù hợp với nghiệp vụ doanh nghiệp và hỗ trợ xử lý đồng thời tốt cho tác vụ tính lương hàng loạt. Về frontend, Next.js 15 và React 19 được chọn để cân bằng giữa hiệu suất tải trang và độ an toàn kiểu dữ liệu. Về dữ liệu, PostgreSQL 15 đáp ứng các nhu cầu lưu trữ linh hoạt và truy vấn tổng hợp của bài toán, kết hợp với Redis 7 cho các tác vụ bộ nhớ đệm và bảo mật phiên, và MinIO (lưu trữ đối tượng tương thích S3) cho tài liệu hợp đồng PDF. Lý do lựa chọn chi tiết của từng công nghệ, cùng các phương án thay thế được cân nhắc, được phân tích trong Chương 3.
 
 Về bảo mật, hệ thống áp dụng cơ chế xác thực dựa trên JWT cho người dùng và khóa API cho thiết bị chấm công, với các chi tiết thiết kế được trình bày trong mục 3.4.
 
 Sản phẩm của đồ án là hệ thống FaceZ HRMS — nền tảng quản lý nhân sự hoàn chỉnh với backend RESTful API (schema quản lý bằng 31 script SQL migration có phiên bản, tài liệu Swagger đầy đủ) và frontend đa vai trò. Bốn đóng góp kỹ thuật chính, được trình bày chi tiết trong Chương 5, gồm: (1) kiến trúc phân tách nhiệm vụ 7 vai trò; (2) pipeline chấm công tự động qua Spring Application Events; (3) công thức tính lương tuân thủ đầy đủ pháp luật Việt Nam; và (4) cơ chế trừ hai giai đoạn số dư nghỉ phép chống race condition.
-Sản phẩm của đồ án là hệ thống FaceZ HRMS — nền tảng quản lý nhân sự hoàn chỉnh với backend RESTful API (schema quản lý bằng 31 script SQL migration có phiên bản, tài liệu Swagger đầy đủ) và frontend đa vai trò. Bốn đóng góp kỹ thuật chính, được trình bày chi tiết trong Chương 5, gồm: (1) kiến trúc phân tách nhiệm vụ 7 vai trò; (2) pipeline chấm công tự động qua Spring Application Events; (3) công thức tính lương tuân thủ đầy đủ pháp luật Việt Nam; và (4) cơ chế trừ hai giai đoạn số dư nghỉ phép chống race condition.
 
-Hệ thống được thiết kế để triển khai bằng Docker Compose với cấu hình dịch vụ tối giản (backend + PostgreSQL + Redis + MinIO), phù hợp với hạ tầng VPS tiêu chuẩn mà các doanh nghiệp quy mô vừa đang sử dụng.
 Hệ thống được thiết kế để triển khai bằng Docker Compose với cấu hình dịch vụ tối giản (backend + PostgreSQL + Redis + MinIO), phù hợp với hạ tầng VPS tiêu chuẩn mà các doanh nghiệp quy mô vừa đang sử dụng.
 
 ## 1.4 Bố cục đồ án
@@ -93,9 +88,9 @@ Chương 2 trình bày quá trình khảo sát hiện trạng, phân tích yêu 
 
 Chương 3 phân tích nền tảng lý thuyết và công nghệ được sử dụng. Với mỗi công nghệ — trải từ framework backend, cơ sở dữ liệu và bộ nhớ đệm, cơ chế xác thực, đến framework frontend và hạ tầng container hóa — chương làm rõ bài toán cụ thể mà công nghệ đó giải quyết, liệt kê các lựa chọn thay thế phổ biến và lý giải sự lựa chọn cuối cùng trong ngữ cảnh của đồ án.
 
-Chương 4 trình bày kết quả thiết kế và xây dựng hệ thống. Phần thiết kế kiến trúc mô tả kiến trúc phân tầng tổng thể và biểu đồ phụ thuộc gói. Phần thiết kế chi tiết bao gồm thiết kế giao diện theo từng vai trò, biểu đồ lớp cho ba service cốt lõi (PayrollCalculationEngine, LeaveService, AttendanceService), sơ đồ tuần tự cho hai luồng nghiệp vụ quan trọng, và biểu đồ thực thể liên kết đầy đủ. Phần xây dựng ứng dụng thống kê quy mô mã nguồn và minh họa giao diện các chức năng chính. Phần kiểm thử trình bày phương pháp và kết quả kiểm thử ba phân hệ quan trọng nhất. Chương khép lại bằng mô tả cấu hình triển khai thực tế.
+Chương 4 trình bày kết quả thiết kế và xây dựng hệ thống. Phần thiết kế kiến trúc mô tả kiến trúc phân tầng tổng thể và biểu đồ phụ thuộc mô-đun. Phần thiết kế chi tiết bao gồm thiết kế giao diện theo từng vai trò, biểu đồ lớp cho các miền nghiệp vụ cốt lõi (tính lương, nghỉ phép, chấm công), sơ đồ tuần tự cho hai luồng nghiệp vụ quan trọng, và biểu đồ thực thể liên kết đầy đủ. Phần xây dựng ứng dụng thống kê quy mô hệ thống và minh họa giao diện các chức năng chính. Phần kiểm thử trình bày phương pháp và kết quả kiểm thử ba phân hệ quan trọng nhất. Chương khép lại bằng mô tả cấu hình triển khai thực tế.
 
-Chương 5 đi sâu vào bốn đóng góp kỹ thuật chính của đồ án, mỗi đóng góp được trình bày theo cấu trúc ba phần: bài toán đặt ra, giải pháp cụ thể và kết quả đạt được. Bốn nội dung lần lượt là: kiến trúc phân tách nhiệm vụ khôi phục kiểm soát tài chính nội bộ; pipeline chấm công tự động qua Spring Events; công thức tính lương tuân thủ đầy đủ pháp luật Việt Nam; và cơ chế trừ hai giai đoạn số dư nghỉ phép chống race condition.
+Chương 5 đi sâu vào bốn đóng góp kỹ thuật chính của đồ án, mỗi đóng góp được trình bày theo cấu trúc ba phần: bài toán đặt ra, giải pháp cụ thể và kết quả đạt được. Bốn nội dung lần lượt là: kiến trúc phân tách nhiệm vụ khôi phục kiểm soát tài chính nội bộ; quy trình chấm công tự động theo hướng sự kiện; công thức tính lương tuân thủ đầy đủ pháp luật Việt Nam; và cơ chế trừ hai giai đoạn số dư nghỉ phép chống tranh chấp đồng thời.
 
 Chương 6 tổng kết kết quả đạt được, đối sánh với các giải pháp tương tự trên thị trường, chỉ ra các hạn chế kỹ thuật còn tồn tại và bài học rút ra từ quá trình phát triển. Phần cuối vạch ra các hướng phát triển ngắn hạn (payslip PDF, rollover nghỉ phép năm, xác nhận OT trước ca làm) và dài hạn (tích hợp mô hình AI nhận diện khuôn mặt, ứng dụng di động, kết nối ngân hàng).
 
@@ -113,11 +108,9 @@ Chương này xác lập nền tảng yêu cầu cho FaceZ HRMS từ ba góc đ�
 
 Nhân viên (Employee): Đây là nhóm người dùng đông nhất. Nhu cầu chính là tra cứu thông tin cá nhân, theo dõi chấm công của bản thân, đăng ký nghỉ phép hoặc tăng ca, và xem phiếu lương. Nhóm này không cần giao diện phức tạp nhưng đòi hỏi thông tin rõ ràng, cập nhật real-time (số ngày nghỉ còn lại, lịch sử check-in trong tháng) và luồng thao tác đơn giản nhất có thể.
 
-Cấp quản lý trực tiếp (Leader, Manager): Nhóm này chịu trách nhiệm phê duyệt các yêu cầu từ nhân viên trong nhóm của mình. Nhu cầu chính là dashboard hiển thị các yêu cầu chờ xử lý, xem tổng quan tình trạng nhân sự của bộ phận, và xử lý phê duyệt/từ chối nhanh chóng có ghi chú lý do. Leader thực hiện phê duyệt cấp 1, Manager thực hiện phê duyệt cấp cuối. Riêng đơn bổ sung chấm công của nhân viên do Leader/Manager cùng phòng ban duyệt.
-Cấp quản lý trực tiếp (Leader, Manager): Nhóm này chịu trách nhiệm phê duyệt các yêu cầu từ nhân viên trong nhóm của mình. Nhu cầu chính là dashboard hiển thị các yêu cầu chờ xử lý, xem tổng quan tình trạng nhân sự của bộ phận, và xử lý phê duyệt/từ chối nhanh chóng có ghi chú lý do. Leader thực hiện phê duyệt cấp 1, Manager thực hiện phê duyệt cấp cuối. Riêng đơn bổ sung chấm công của nhân viên do Leader/Manager cùng phòng ban duyệt.
+Cấp quản lý trực tiếp (Trưởng nhóm, Quản lý): nhóm này chịu trách nhiệm phê duyệt các yêu cầu từ nhân viên trong nhóm của mình. Nhu cầu chính là bảng điều khiển hiển thị các yêu cầu chờ xử lý, xem tổng quan tình trạng nhân sự của bộ phận, và phê duyệt hoặc từ chối nhanh chóng có ghi chú lý do. Trưởng nhóm phê duyệt cấp một, quản lý phê duyệt cấp cuối. Riêng đơn bổ sung chấm công của nhân viên do trưởng nhóm hoặc quản lý cùng phòng ban duyệt.
 
-Bộ phận Nhân sự — HR Admin: Đây là nhóm người dùng có quyền rộng nhất trên phân hệ dữ liệu nhân viên. Nhu cầu gồm: quản lý toàn bộ vòng đời nhân viên (tuyển dụng, điều chỉnh hợp đồng, nghỉ việc), giám sát tổng thể chấm công của toàn công ty, chốt kỳ chấm công cuối tháng (qua đó sinh bảng công tổng hợp Timesheet) trước khi bàn giao cho Kế toán, và quản lý số dư nghỉ phép. HR không tham gia luồng phê duyệt nghỉ phép/tăng ca và không sửa trực tiếp bản ghi chấm công — mọi điều chỉnh chấm công đi qua đơn bổ sung của nhân viên.
-Bộ phận Nhân sự — HR Admin: Đây là nhóm người dùng có quyền rộng nhất trên phân hệ dữ liệu nhân viên. Nhu cầu gồm: quản lý toàn bộ vòng đời nhân viên (tuyển dụng, điều chỉnh hợp đồng, nghỉ việc), giám sát tổng thể chấm công của toàn công ty, chốt kỳ chấm công cuối tháng (qua đó sinh bảng công tổng hợp Timesheet) trước khi bàn giao cho Kế toán, và quản lý số dư nghỉ phép. HR không tham gia luồng phê duyệt nghỉ phép/tăng ca và không sửa trực tiếp bản ghi chấm công — mọi điều chỉnh chấm công đi qua đơn bổ sung của nhân viên.
+Bộ phận Nhân sự: đây là nhóm người dùng có quyền rộng nhất trên dữ liệu nhân viên. Nhu cầu gồm quản lý toàn bộ vòng đời nhân viên (tuyển dụng, điều chỉnh hợp đồng, nghỉ việc), giám sát tổng thể chấm công của toàn công ty, chốt kỳ chấm công cuối tháng (qua đó sinh bảng công tổng hợp) trước khi bàn giao cho kế toán, và quản lý số dư nghỉ phép. Bộ phận nhân sự không tham gia luồng phê duyệt nghỉ phép/tăng ca và không sửa trực tiếp bản ghi chấm công — mọi điều chỉnh đều đi qua đơn bổ sung của nhân viên.
 
 Bộ phận Kế toán/Tài chính — Finance Admin: Nhóm này tiếp nhận dữ liệu đầu vào đã được HR chuẩn bị và thực hiện tính toán tài chính. Nhu cầu gồm: tính lương cá nhân và hàng loạt với đầy đủ tham số (KPI, phụ cấp, thưởng), quản lý cấu hình thông số tính lương (bảng lương, biểu thuế, tỷ lệ bảo hiểm), trình bảng lương lên Ban Giám đốc phê duyệt, và xuất các báo cáo tài chính định kỳ (chi phí lao động, nộp BHXH, PIT summary).
 
@@ -144,14 +137,12 @@ Bảng 2.1: So sánh FaceZ HRMS với các giải pháp hiện có
 | Tiêu chí so sánh | MISA HRM | Base HR | BambooHR | Excel | FaceZ HRMS |
 |---|---|---|---|---|---|
 | Tính lương đúng luật VN (TNCN 7 bậc, BHXH) | Có | Cơ bản | Không | Thủ công | Có, đầy đủ |
-| Tích hợp thiết bị chấm công qua REST API | Không | Một phần | Không | Không | Có (API key SHA-256) |
+| Tích hợp thiết bị chấm công qua giao diện dịch vụ | Không | Một phần | Không | Không | Có (xác thực bằng khóa API) |
 | Phân tách nhiệm vụ HR / Finance / Director | Không | Không | Không | Không | Có (7 vai trò) |
-| Phê duyệt đa cấp tùy chỉnh | Cứng nhắc | Cơ bản | Có | Không | Có (LEADER → MANAGER) |
-| Phê duyệt đa cấp tùy chỉnh | Cứng nhắc | Cơ bản | Có | Không | Có (LEADER → MANAGER) |
-| Lịch sử hợp đồng đầy đủ | Một phần | Không | Có | Không | Có (history model) |
-| Audit trail tự động | Một phần | Một phần | Có | Không | Có (createdBy/updatedBy) |
-| Migration schema có kiểm soát | N/A | N/A | N/A | N/A | Có (31 script SQL migration có phiên bản) |
-| Migration schema có kiểm soát | N/A | N/A | N/A | N/A | Có (31 script SQL migration có phiên bản) |
+| Phê duyệt đa cấp tùy chỉnh | Cứng nhắc | Cơ bản | Có | Không | Có (trưởng nhóm → quản lý) |
+| Lịch sử hợp đồng đầy đủ | Một phần | Không | Có | Không | Có (mô hình lịch sử) |
+| Ghi vết kiểm toán tự động | Một phần | Một phần | Có | Không | Có (người tạo/người sửa) |
+| Quản lý lược đồ có kiểm soát | N/A | N/A | N/A | N/A | Có (31 phiên bản lược đồ) |
 | Giới hạn OT theo Bộ Luật Lao Động 2019 | Không | Không | Không | Thủ công | Có (40h/tháng, 200h/năm) |
 | Chi phí triển khai | Thuê bao SaaS | Thuê bao SaaS | Thuê bao SaaS | ~0 | Tự triển khai |
 | Khả năng tùy biến | Thấp | Trung bình | Cao | Cao | Cao (mã nguồn mở) |
@@ -160,7 +151,7 @@ Qua phân tích, khoảng trống rõ ràng nhất là: chưa có giải pháp n
 
 ### 2.1.3 Xác định các phân hệ cốt lõi
 
-Từ phân tích nhu cầu người dùng và khoảng trống thị trường, đồ án xác định sáu phân hệ cốt lõi cần phát triển. Thứ nhất, phân hệ Quản lý nhân viên và Tổ chức quản lý đầy đủ thông tin cá nhân, pháp lý và nghề nghiệp của nhân viên, cùng cấu trúc phòng ban, phân công quản lý, ảnh đại diện và người phụ thuộc thuế. Thứ hai, phân hệ Chấm công và Quản lý thời gian tích hợp thiết bị nhận diện khuôn mặt qua API key, xử lý tự động sự kiện check-in/check-out, tính toán giờ công và giờ đến muộn, chốt kỳ hằng tháng và quản lý ngày lễ công. Thứ ba, phân hệ Nghỉ phép và Tăng ca hỗ trợ chín loại nghỉ phép, theo dõi số dư thời gian thực với cơ chế trừ hai giai đoạn, phê duyệt đa cấp, giới hạn giờ OT theo pháp luật và phân loại ca đêm. Thứ tư, phân hệ Hợp đồng lao động quản lý vòng đời hợp đồng với lịch sử đầy đủ, cảnh báo hết hạn trước 30 ngày và liên kết với dữ liệu tính lương. Thứ năm, phân hệ Tính lương và Phê duyệt thực hiện tính lương cá nhân và hàng loạt với công thức đầy đủ (hệ số bậc lương, KPI, OT, BHXH/BHYT/BHTN, thuế TNCN bảy bậc), luồng phê duyệt Finance → Director và ba báo cáo tài chính định kỳ. Thứ sáu, phân hệ Cấu hình hệ thống và Thông báo quản lý phiên bản thông số tính lương (SALARY_GRADE, ALLOWANCE, PIT, INSURANCE, WORK_SCHEDULE) và phát thông báo in-app cho các sự kiện nghiệp vụ.
+Từ phân tích nhu cầu người dùng và khoảng trống thị trường, đồ án xác định sáu phân hệ cốt lõi cần phát triển. Thứ nhất, phân hệ Quản lý nhân viên và Tổ chức quản lý đầy đủ thông tin cá nhân, pháp lý và nghề nghiệp của nhân viên, cùng cấu trúc phòng ban, phân công quản lý, ảnh đại diện và người phụ thuộc thuế. Thứ hai, phân hệ Chấm công và Quản lý thời gian tích hợp thiết bị nhận diện khuôn mặt qua API key, xử lý tự động sự kiện check-in/check-out, tính toán giờ công và giờ đến muộn, chốt kỳ hằng tháng và quản lý ngày lễ công. Thứ ba, phân hệ Nghỉ phép và Tăng ca hỗ trợ chín loại nghỉ phép, theo dõi số dư thời gian thực với cơ chế trừ hai giai đoạn, phê duyệt đa cấp, giới hạn giờ OT theo pháp luật và phân loại ca đêm. Thứ tư, phân hệ Hợp đồng lao động quản lý vòng đời hợp đồng với lịch sử đầy đủ, cảnh báo hết hạn trước 30 ngày và liên kết với dữ liệu tính lương. Thứ năm, phân hệ Tính lương và Phê duyệt thực hiện tính lương cá nhân và hàng loạt với công thức đầy đủ (hệ số bậc lương, KPI, OT, BHXH/BHYT/BHTN, thuế TNCN bảy bậc), luồng phê duyệt Finance → Director và ba báo cáo tài chính định kỳ. Thứ sáu, phân hệ Cấu hình hệ thống và Thông báo quản lý phiên bản các nhóm thông số tính lương (bậc lương, phụ cấp, thuế thu nhập cá nhân, bảo hiểm, lịch làm việc) và phát thông báo trong ứng dụng cho các sự kiện nghiệp vụ.
 
 ## 2.2 Tổng quan chức năng
 
@@ -168,30 +159,30 @@ Hệ thống phục vụ bảy tác nhân người dùng và một tác nhân th
 
 ### 2.2.1 Biểu đồ use case tổng quát
 
-Hệ thống có bảy tác nhân người dùng: EMPLOYEE, LEADER, MANAGER, HR_ADMIN, FINANCE_ADMIN, DIRECTOR, SYSTEM_ADMIN, với mức độ quyền hạn tăng dần. Ngoài ra còn có tác nhân ngoài là thiết bị chấm công (Device). Toàn bộ chức năng được phân thành sáu nhóm use case tổng quan.
+Hệ thống có bảy tác nhân người dùng — nhân viên, trưởng nhóm, quản lý, nhân sự, phụ trách tài chính, giám đốc, quản trị hệ thống — với mức quyền hạn tăng dần. Ngoài ra còn có một tác nhân ngoài là thiết bị chấm công. Toàn bộ chức năng được phân thành sáu nhóm use case tổng quan.
 
 <details>
 <summary>Biểu đồ use case tổng quan</summary>
 
 ```mermaid
 graph TD
-    EMP["EMPLOYEE"] --> UC1["Quản lý nhân viên & Tổ chức"]
+    EMP["Nhân viên"] --> UC1["Quản lý nhân viên & Tổ chức"]
     EMP --> UC2["Chấm công & Quản lý thời gian"]
     EMP --> UC3["Nghỉ phép & Tăng ca"]
 
-    LEADER["LEADER"] --> UC3
-    MANAGER["MANAGER"] --> UC3
+    LEADER["Trưởng nhóm"] --> UC3
+    MANAGER["Quản lý"] --> UC3
 
-    HR["HR_ADMIN"] --> UC1
+    HR["Nhân sự"] --> UC1
     HR --> UC2
     HR --> UC3
     HR --> UC4["Vòng đời hợp đồng"]
 
-    FIN["FINANCE_ADMIN"] --> UC5["Tính lương & Phê duyệt"]
+    FIN["Phụ trách tài chính"] --> UC5["Tính lương & Phê duyệt"]
     FIN --> UC6["Cấu hình hệ thống & Báo cáo"]
 
-    DIR["DIRECTOR"] --> UC5
-    SYS["SYSTEM_ADMIN"] --> UC1
+    DIR["Giám đốc"] --> UC5
+    SYS["Quản trị hệ thống"] --> UC1
     SYS --> UC6
 
     DEV["Thiết bị chấm công"] --> UC2
@@ -204,31 +195,31 @@ Hình 2.1: Biểu đồ use case tổng quan
 
 #### a. Use case Quản lý nhân viên & Tổ chức
 
-Phân hệ này quản lý toàn bộ vòng đời dữ liệu nhân viên. HR_ADMIN và SYSTEM_ADMIN có quyền tạo, cập nhật và vô hiệu hóa tài khoản nhân viên. Mỗi nhân viên được liên kết bắt buộc với một tài khoản đăng nhập và có thể được gán vào một phòng ban.
+Phân hệ này quản lý toàn bộ vòng đời dữ liệu nhân viên. Bộ phận nhân sự và quản trị hệ thống có quyền tạo, cập nhật và vô hiệu hóa tài khoản nhân viên. Mỗi nhân viên được liên kết bắt buộc với một tài khoản đăng nhập và có thể được gán vào một phòng ban.
 
 <details>
 <summary>Use case Quản lý nhân viên & Tổ chức</summary>
 
 ```mermaid
 graph TD
-    HR["HR_ADMIN"] --> A["Tạo nhân viên mới"]
+    HR["Nhân sự"] --> A["Tạo nhân viên mới"]
     HR --> B["Cập nhật thông tin nhân viên"]
     HR --> C["Quản lý người phụ thuộc thuế"]
     HR --> D["Tải lên ảnh đại diện"]
     HR --> E["Vô hiệu hóa nhân viên"]
     HR --> F["Quản lý phòng ban"]
-    EMP["EMPLOYEE"] --> G["Xem thông tin cá nhân"]
+    EMP["Nhân viên"] --> G["Xem thông tin cá nhân"]
     EMP --> H["Đổi mật khẩu"]
-    SYS["SYSTEM_ADMIN"] --> A
+    SYS["Quản trị hệ thống"] --> A
     SYS --> B
     SYS --> F
-    SYS --> I["Quản lý API key thiết bị"]
+    SYS --> I["Quản lý khóa API thiết bị"]
 ```
 </details>
 
 Hình 2.2: Use case Quản lý nhân viên & Tổ chức
 
-Điểm đặc biệt trong nghiệp vụ: mỗi nhân viên khi được tạo luôn đồng thời có một tài khoản đăng nhập tương ứng — hệ thống bảo đảm không tồn tại nhân viên không có tài khoản hay tài khoản không gắn nhân viên. Nhân viên không thể tự đăng ký; tài khoản được tạo bởi HR và mật khẩu ban đầu được truyền đạt ngoài hệ thống. Thiết kế kỹ thuật bảo đảm tính nhất quán của thao tác tạo đồng thời này được trình bày trong mục 4.2.2.
+Điểm đặc biệt trong nghiệp vụ: mỗi nhân viên khi được tạo luôn đồng thời có một tài khoản đăng nhập tương ứng — hệ thống bảo đảm không tồn tại nhân viên không có tài khoản hay tài khoản không gắn nhân viên. Nhân viên không thể tự đăng ký; tài khoản do bộ phận nhân sự tạo và mật khẩu ban đầu được truyền đạt ngoài hệ thống. Thiết kế kỹ thuật bảo đảm tính nhất quán của thao tác tạo đồng thời này được trình bày trong mục 4.2.2.
 
 #### b. Use case Chấm công & Quản lý thời gian
 
@@ -239,32 +230,25 @@ Hình 2.2: Use case Quản lý nhân viên & Tổ chức
 
 ```mermaid
 graph TD
-    DEV["Thiết bị chấm công"] --> A["Gửi sự kiện check-in/out (real-time)"]
-    DEV --> B["Tải lên lô (batch upload)"]
-    A --> C["Xử lý: Attendance → WorkDay (per-day)"]
-    A --> C["Xử lý: Attendance → WorkDay (per-day)"]
+    DEV["Thiết bị chấm công"] --> A["Gửi sự kiện vào/ra (thời gian thực)"]
+    DEV --> B["Tải lên theo lô"]
+    A --> C["Xử lý: bản ghi thô → bản ghi ngày công"]
     B --> C
-    HR["HR_ADMIN"] --> D["Xem danh sách chấm công toàn công ty"]
-    HR --> F["Chốt kỳ: sinh WorkDay/Timesheet, khóa kỳ"]
-    HR --> N["Gửi nhắc nhở NV vắng bổ sung chấm công"]
-    HR --> F["Chốt kỳ: sinh WorkDay/Timesheet, khóa kỳ"]
-    HR --> N["Gửi nhắc nhở NV vắng bổ sung chấm công"]
-    HR --> G["Quản lý ngày lễ công"]
-    EMP["EMPLOYEE"] --> H["Xem lịch chấm công cá nhân"]
+    HR["Nhân sự"] --> D["Xem danh sách chấm công toàn công ty"]
+    HR --> F["Chốt kỳ: sinh ngày công/bảng công, khóa kỳ"]
+    HR --> N["Nhắc nhân viên vắng bổ sung chấm công"]
+    HR --> G["Quản lý ngày lễ"]
+    EMP["Nhân viên"] --> H["Xem lịch chấm công cá nhân"]
     EMP --> I["Nộp đơn bổ sung chấm công"]
-    MGR["LEADER/MANAGER"] --> J["Duyệt đơn bổ sung (cùng phòng ban)"]
-    EMP["EMPLOYEE"] --> H["Xem lịch chấm công cá nhân"]
-    EMP --> I["Nộp đơn bổ sung chấm công"]
-    MGR["LEADER/MANAGER"] --> J["Duyệt đơn bổ sung (cùng phòng ban)"]
-    SYS["SYSTEM_ADMIN"] --> D
+    MGR["Trưởng nhóm/Quản lý"] --> J["Duyệt đơn bổ sung (cùng phòng ban)"]
+    SYS["Quản trị hệ thống"] --> D
     SYS --> F
 ```
 </details>
 
 Hình 2.3: Use case Chấm công & Quản lý thời gian
 
-Mỗi sự kiện check-in/out được tổng hợp vào một bản ghi WorkDay — nguồn-sự-thật theo từng ngày của mỗi nhân viên (xem mục 5.2). HR không sửa trực tiếp bản ghi chấm công; thay vào đó nhân viên nộp đơn bổ sung chấm công và Leader/Manager cùng phòng ban duyệt (khi duyệt sẽ ghi vào Attendance/WorkDay). HR_ADMIN chốt kỳ chấm công là bước gate bắt buộc trước khi Finance tính lương: thao tác chốt kỳ điền nốt các ngày thiếu (ABSENT/HOLIDAY), khóa toàn bộ WorkDay và sinh bảng công tổng hợp tháng (Timesheet) cho từng nhân viên. Một kỳ đã chốt chỉ có thể mở lại qua can thiệp trực tiếp vào cơ sở dữ liệu.
-Mỗi sự kiện check-in/out được tổng hợp vào một bản ghi WorkDay — nguồn-sự-thật theo từng ngày của mỗi nhân viên (xem mục 5.2). HR không sửa trực tiếp bản ghi chấm công; thay vào đó nhân viên nộp đơn bổ sung chấm công và Leader/Manager cùng phòng ban duyệt (khi duyệt sẽ ghi vào Attendance/WorkDay). HR_ADMIN chốt kỳ chấm công là bước gate bắt buộc trước khi Finance tính lương: thao tác chốt kỳ điền nốt các ngày thiếu (ABSENT/HOLIDAY), khóa toàn bộ WorkDay và sinh bảng công tổng hợp tháng (Timesheet) cho từng nhân viên. Một kỳ đã chốt chỉ có thể mở lại qua can thiệp trực tiếp vào cơ sở dữ liệu.
+Mỗi sự kiện vào/ra được tổng hợp vào một bản ghi ngày công — nguồn sự thật theo từng ngày của mỗi nhân viên (xem Mục 5.2). Bộ phận nhân sự không sửa trực tiếp bản ghi chấm công; thay vào đó nhân viên nộp đơn bổ sung và trưởng nhóm hoặc quản lý cùng phòng ban duyệt (khi duyệt sẽ ghi vào bản ghi ngày công). Việc chốt kỳ chấm công là bước kiểm soát bắt buộc trước khi tính lương: thao tác chốt kỳ điền nốt các ngày còn thiếu (vắng mặt, ngày lễ), khóa toàn bộ bản ghi ngày công và sinh bảng công tổng hợp tháng cho từng nhân viên. Một kỳ đã chốt chỉ có thể mở lại qua can thiệp trực tiếp vào cơ sở dữ liệu.
 
 #### c. Use case Nghỉ phép & Tăng ca
 
@@ -275,33 +259,25 @@ Phân hệ này quản lý toàn bộ vòng đời yêu cầu nghỉ phép và t
 
 ```mermaid
 graph TD
-    EMP["EMPLOYEE"] --> A["Nộp yêu cầu nghỉ phép"]
+    EMP["Nhân viên"] --> A["Nộp yêu cầu nghỉ phép"]
     EMP --> B["Nộp yêu cầu tăng ca"]
     EMP --> C["Xem số dư nghỉ phép"]
-    EMP --> D["Hủy/Sửa yêu cầu (khi còn DRAFT)"]
+    EMP --> D["Hủy/sửa yêu cầu (khi còn ở trạng thái nháp)"]
     EMP --> K["Nộp đơn bổ sung chấm công"]
-    EMP --> D["Hủy/Sửa yêu cầu (khi còn DRAFT)"]
-    EMP --> K["Nộp đơn bổ sung chấm công"]
-    LEAD["LEADER"] --> E["Phê duyệt cấp 1 (LEADER_APPROVED)"]
+    LEAD["Trưởng nhóm"] --> E["Phê duyệt cấp một (đã duyệt cấp một)"]
     LEAD --> F["Từ chối (bất kỳ cấp)"]
-    MGR["MANAGER"] --> G["Phê duyệt cấp cuối (APPROVED)"]
-    MGR["MANAGER"] --> G["Phê duyệt cấp cuối (APPROVED)"]
+    MGR["Quản lý"] --> G["Phê duyệt cấp cuối (đã duyệt)"]
     MGR --> F
     MGR --> L["Duyệt đơn bổ sung chấm công (cùng phòng ban)"]
-    HR["HR_ADMIN"] --> J["Khởi tạo số dư nghỉ phép hàng năm"]
-    MGR --> L["Duyệt đơn bổ sung chấm công (cùng phòng ban)"]
-    HR["HR_ADMIN"] --> J["Khởi tạo số dư nghỉ phép hàng năm"]
+    HR["Nhân sự"] --> J["Khởi tạo số dư nghỉ phép hàng năm"]
 ```
 </details>
 
 Hình 2.4: Use case Nghỉ phép & Tăng ca
 
-Hai ràng buộc quan trọng: (1) Yêu cầu nghỉ phép phải qua đúng thứ tự cấp phê duyệt (LEADER rồi MANAGER) — không thể nhảy cóc, và MANAGER là cấp duyệt cuối; (2) Nộp yêu cầu nghỉ phép ngay lập tức trừ vào số dư "đang chờ duyệt", ngăn nhân viên nộp nhiều yêu cầu trùng thời gian vượt quá số ngày còn lại. Yêu cầu chỉ được sửa/hủy khi còn ở trạng thái DRAFT.
+Hai ràng buộc quan trọng: (1) đơn nghỉ phép phải qua đúng thứ tự cấp phê duyệt (trưởng nhóm rồi quản lý) — không thể bỏ cấp, và quản lý là cấp duyệt cuối; (2) khi nộp đơn, số ngày xin nghỉ lập tức bị trừ vào phần "đang chờ duyệt" của số dư, ngăn nhân viên nộp nhiều đơn trùng thời gian vượt quá số ngày còn lại. Đơn chỉ được sửa hoặc hủy khi còn ở trạng thái nháp.
 
-Khác với nghỉ phép, **tăng ca (OT) đi theo quy trình kế hoạch (OT Plan)**: Leader lập kế hoạch OT và gán nhân viên, Manager duyệt kế hoạch; sau đó nhân viên ghi nhận (log) phiên OT thực tế theo kế hoạch. Hệ thống chạy bốn bước kiểm tra (đúng kế hoạch đã duyệt → khớp bản ghi chấm công ngày đó → trong giới hạn pháp luật 40 giờ/tháng & 200 giờ/năm → không trùng phiên OT khác) và **tự động phê duyệt** khi đạt — vì kế hoạch đã được Manager duyệt và chấm công thiết bị là bằng chứng khách quan, không cần thêm vòng duyệt. Mỗi phiên OT được gắn hệ số lương theo ngày thường (×1.5), cuối tuần (×2.0) hoặc ngày lễ (×3.0).
-Hai ràng buộc quan trọng: (1) Yêu cầu nghỉ phép phải qua đúng thứ tự cấp phê duyệt (LEADER rồi MANAGER) — không thể nhảy cóc, và MANAGER là cấp duyệt cuối; (2) Nộp yêu cầu nghỉ phép ngay lập tức trừ vào số dư "đang chờ duyệt", ngăn nhân viên nộp nhiều yêu cầu trùng thời gian vượt quá số ngày còn lại. Yêu cầu chỉ được sửa/hủy khi còn ở trạng thái DRAFT.
-
-Khác với nghỉ phép, **tăng ca (OT) đi theo quy trình kế hoạch (OT Plan)**: Leader lập kế hoạch OT và gán nhân viên, Manager duyệt kế hoạch; sau đó nhân viên ghi nhận (log) phiên OT thực tế theo kế hoạch. Hệ thống chạy bốn bước kiểm tra (đúng kế hoạch đã duyệt → khớp bản ghi chấm công ngày đó → trong giới hạn pháp luật 40 giờ/tháng & 200 giờ/năm → không trùng phiên OT khác) và **tự động phê duyệt** khi đạt — vì kế hoạch đã được Manager duyệt và chấm công thiết bị là bằng chứng khách quan, không cần thêm vòng duyệt. Mỗi phiên OT được gắn hệ số lương theo ngày thường (×1.5), cuối tuần (×2.0) hoặc ngày lễ (×3.0).
+Khác với nghỉ phép, **tăng ca đi theo quy trình kế hoạch**: trưởng nhóm lập kế hoạch tăng ca và phân công nhân viên, quản lý duyệt kế hoạch; sau đó nhân viên ghi nhận phiên tăng ca thực tế theo kế hoạch. Hệ thống chạy bốn bước kiểm tra (đúng kế hoạch đã duyệt → khớp bản ghi chấm công ngày đó → trong giới hạn pháp luật 40 giờ/tháng và 200 giờ/năm → không trùng phiên tăng ca khác) và **tự động phê duyệt** khi đạt — vì kế hoạch đã được quản lý duyệt và dữ liệu chấm công từ thiết bị là bằng chứng khách quan, không cần thêm vòng duyệt. Mỗi phiên tăng ca được gắn hệ số lương theo ngày thường (×1,5), cuối tuần (×2,0) hoặc ngày lễ (×3,0).
 
 #### d. Use case Vòng đời hợp đồng
 
@@ -310,19 +286,19 @@ Khác với nghỉ phép, **tăng ca (OT) đi theo quy trình kế hoạch (OT P
 
 ```mermaid
 graph TD
-    HR["HR_ADMIN"] --> A["Tạo hợp đồng mới cho nhân viên"]
+    HR["Nhân sự"] --> A["Tạo hợp đồng mới cho nhân viên"]
     HR --> B["Cập nhật hợp đồng (tạo bản ghi lịch sử mới)"]
     HR --> C["Xem lịch sử hợp đồng toàn bộ nhân viên"]
     HR --> D["Xem danh sách hợp đồng sắp hết hạn"]
-    EMP["EMPLOYEE"] --> E["Xem hợp đồng hiện tại của bản thân"]
-    SCHED["ContractExpiryScheduler (hàng tháng)"] --> F["Kiểm tra hợp đồng hết hạn trong 30 ngày"]
-    F --> G["Gửi thông báo cho HR_ADMIN"]
+    EMP["Nhân viên"] --> E["Xem hợp đồng hiện tại của bản thân"]
+    SCHED["Tác vụ rà soát định kỳ hằng tháng"] --> F["Kiểm tra hợp đồng hết hạn trong 30 ngày"]
+    F --> G["Gửi thông báo cho bộ phận nhân sự"]
 ```
 </details>
 
 Hình 2.5: Use case Vòng đời hợp đồng
 
-Mô hình lịch sử hợp đồng (history pattern) đảm bảo không có dữ liệu cũ bị ghi đè: mỗi lần cập nhật tạo ra một bản ghi mới với `effectiveFrom = hôm nay`, đồng thời đánh dấu bản ghi cũ `current = false`. Toàn bộ lịch sử điều kiện làm việc của nhân viên được bảo tồn đầy đủ.
+Mô hình lịch sử hợp đồng bảo đảm không dữ liệu cũ nào bị ghi đè: mỗi lần cập nhật tạo ra một bản ghi mới có hiệu lực từ ngày cập nhật, đồng thời đánh dấu bản ghi cũ là đã hết hiệu lực. Toàn bộ lịch sử điều kiện làm việc của nhân viên được bảo tồn đầy đủ.
 
 #### e. Use case Tính lương & Phê duyệt
 
@@ -331,32 +307,22 @@ Mô hình lịch sử hợp đồng (history pattern) đảm bảo không có d�
 
 ```mermaid
 graph TD
-    FIN["FINANCE_ADMIN"] --> A["Tạo kỳ lương (PayrollRun) — tính toàn bộ dòng DRAFT"]
-    FIN --> R1["Tính lại 1 nhân viên (khóa thành ngoại lệ)"]
+    FIN["Phụ trách tài chính"] --> A["Tạo kỳ lương — tính toàn bộ dòng ở trạng thái nháp"]
+    FIN --> R1["Tính lại một nhân viên (khóa thành ngoại lệ)"]
     FIN --> R2["Tính lại cả kỳ (giữ dòng đã khóa)"]
-    FIN --> R3["Loại 1 dòng khỏi kỳ (ngoại lệ per-line)"]
-    FIN --> C["Submit cả kỳ (DRAFT → PENDING_APPROVAL)"]
-    FIN --> D["Đánh dấu đã trả (APPROVED → PAID)"]
-    DIR["DIRECTOR"] --> F["Duyệt cả kỳ (PENDING → APPROVED)"]
-    DIR --> G["Trả lại kỳ có lý do (PENDING → DRAFT)"]
-    FIN["FINANCE_ADMIN"] --> A["Tạo kỳ lương (PayrollRun) — tính toàn bộ dòng DRAFT"]
-    FIN --> R1["Tính lại 1 nhân viên (khóa thành ngoại lệ)"]
-    FIN --> R2["Tính lại cả kỳ (giữ dòng đã khóa)"]
-    FIN --> R3["Loại 1 dòng khỏi kỳ (ngoại lệ per-line)"]
-    FIN --> C["Submit cả kỳ (DRAFT → PENDING_APPROVAL)"]
-    FIN --> D["Đánh dấu đã trả (APPROVED → PAID)"]
-    DIR["DIRECTOR"] --> F["Duyệt cả kỳ (PENDING → APPROVED)"]
-    DIR --> G["Trả lại kỳ có lý do (PENDING → DRAFT)"]
-    EMP["EMPLOYEE"] --> H["Xem phiếu lương cá nhân (khi APPROVED/PAID)"]
-    SCHED["PayrollScheduler (ngày 1 hàng tháng)"] --> A
-    SCHED["PayrollScheduler (ngày 1 hàng tháng)"] --> A
+    FIN --> R3["Loại một dòng khỏi kỳ"]
+    FIN --> C["Trình duyệt cả kỳ (nháp → chờ duyệt)"]
+    FIN --> D["Đánh dấu đã trả (đã duyệt → đã trả)"]
+    DIR["Giám đốc"] --> F["Phê duyệt cả kỳ (chờ duyệt → đã duyệt)"]
+    DIR --> G["Trả lại kỳ kèm lý do (chờ duyệt → nháp)"]
+    EMP["Nhân viên"] --> H["Xem phiếu lương cá nhân (khi đã duyệt/đã trả)"]
+    SCHED["Tác vụ định kỳ đầu tháng"] --> A
 ```
 </details>
 
 Hình 2.6: Use case Tính lương & Phê duyệt
 
-Tính lương được tổ chức theo **kỳ lương bền vững (PayrollRun)**: Finance tạo kỳ cho một tháng, hệ thống tính tất cả dòng lương ở trạng thái DRAFT. Finance có thể tính lại một nhân viên (dòng đó bị khóa, trở thành ngoại lệ và được giữ nguyên khi tính lại cả kỳ) hoặc loại một dòng khỏi kỳ mà không chặn cả lô. Hai gate kiểm soát quan trọng: (1) chỉ tạo kỳ lương sau khi HR đã chốt kỳ chấm công; (2) **không cho Submit cả kỳ nếu còn nhân viên thiếu điểm HS1** — đảm bảo lương không dựa trên dữ liệu chấm công chưa kiểm tra hoặc đánh giá hiệu quả còn thiếu. Sau khi Director duyệt cả kỳ, nhân viên mới thấy phiếu lương.
-Tính lương được tổ chức theo **kỳ lương bền vững (PayrollRun)**: Finance tạo kỳ cho một tháng, hệ thống tính tất cả dòng lương ở trạng thái DRAFT. Finance có thể tính lại một nhân viên (dòng đó bị khóa, trở thành ngoại lệ và được giữ nguyên khi tính lại cả kỳ) hoặc loại một dòng khỏi kỳ mà không chặn cả lô. Hai gate kiểm soát quan trọng: (1) chỉ tạo kỳ lương sau khi HR đã chốt kỳ chấm công; (2) **không cho Submit cả kỳ nếu còn nhân viên thiếu điểm HS1** — đảm bảo lương không dựa trên dữ liệu chấm công chưa kiểm tra hoặc đánh giá hiệu quả còn thiếu. Sau khi Director duyệt cả kỳ, nhân viên mới thấy phiếu lương.
+Tính lương được tổ chức theo **kỳ lương bền vững**: người phụ trách tài chính tạo kỳ cho một tháng, hệ thống tính tất cả dòng lương ở trạng thái nháp. Người phụ trách tài chính có thể tính lại một nhân viên (dòng đó bị khóa, trở thành ngoại lệ và được giữ nguyên khi tính lại cả kỳ) hoặc loại một dòng khỏi kỳ mà không chặn cả lô. Hai cổng kiểm soát quan trọng: (1) chỉ tạo kỳ lương sau khi bộ phận nhân sự đã chốt kỳ chấm công; (2) **không cho trình duyệt cả kỳ nếu còn nhân viên thiếu điểm hệ số thi đua** — bảo đảm lương không dựa trên dữ liệu chấm công chưa kiểm tra hoặc đánh giá hiệu quả còn thiếu. Sau khi giám đốc duyệt cả kỳ, nhân viên mới thấy phiếu lương.
 
 #### f. Use case Cấu hình hệ thống & Báo cáo
 
@@ -365,30 +331,24 @@ Tính lương được tổ chức theo **kỳ lương bền vững (PayrollRun)
 
 ```mermaid
 graph TD
-    FIN["FINANCE_ADMIN"] --> A["Tạo phiên bản cấu hình bảng lương (DRAFT)"]
-    FIN["FINANCE_ADMIN"] --> A["Tạo phiên bản cấu hình bảng lương (DRAFT)"]
+    FIN["Phụ trách tài chính"] --> A["Tạo phiên bản cấu hình lương (nháp)"]
     FIN --> B["Xem báo cáo chi phí lao động"]
-    FIN --> C["Xuất báo cáo nộp BHXH/BHYT/BHTN"]
-    FIN --> D["Xuất báo cáo PIT summary"]
-    DIR["DIRECTOR"] --> B
-    DIR --> P["Phát hành cấu hình (PUBLISH)"]
-    SYS["SYSTEM_ADMIN"] --> E["Quản lý tài khoản (khóa/mở, reset mật khẩu)"]
-    SYS --> Q["Quản lý thiết bị & API key"]
-    SYS --> R["Xem Checkin Log (view-only)"]
-    DIR --> P["Phát hành cấu hình (PUBLISH)"]
-    SYS["SYSTEM_ADMIN"] --> E["Quản lý tài khoản (khóa/mở, reset mật khẩu)"]
-    SYS --> Q["Quản lý thiết bị & API key"]
-    SYS --> R["Xem Checkin Log (view-only)"]
-    SYS --> F["Xem Actuator (health, metrics, logs)"]
-    ALL["Mọi người dùng"] --> G["Xem thông báo in-app"]
+    FIN --> C["Xuất báo cáo nộp bảo hiểm"]
+    FIN --> D["Xuất báo cáo tổng hợp thuế thu nhập"]
+    DIR["Giám đốc"] --> B
+    DIR --> P["Phát hành cấu hình"]
+    SYS["Quản trị hệ thống"] --> E["Quản lý tài khoản (khóa/mở, đặt lại mật khẩu)"]
+    SYS --> Q["Quản lý thiết bị và khóa API"]
+    SYS --> R["Xem nhật ký chấm công (chỉ đọc)"]
+    SYS --> F["Xem chỉ số vận hành"]
+    ALL["Mọi người dùng"] --> G["Xem thông báo trong ứng dụng"]
     ALL --> H["Đánh dấu thông báo đã đọc"]
 ```
 </details>
 
 Hình 2.7: Use case Cấu hình hệ thống & Báo cáo
 
-Cấu hình tính lương được quản lý theo phiên bản có hiệu lực (effective-dated) trong các bảng riêng (SALARY_GRADE, PIT, INSURANCE, ALLOWANCE), theo mô hình maker-checker: **Finance tạo phiên bản nháp, Director phát hành (publish)**; phiên bản đã phát hành là bất biến và được chọn theo ngày hiệu lực. Việc tách quyền tạo/phát hành cấu hình giúp ngăn một người đơn phương thay đổi tham số tính lương. Quản trị viên hệ thống (SYSTEM_ADMIN) là tài khoản đặc biệt — không phải nhân viên thực và không tính lương — chỉ phụ trách quản lý tài khoản, thiết bị chấm công và xem nhật ký check-in.
-Cấu hình tính lương được quản lý theo phiên bản có hiệu lực (effective-dated) trong các bảng riêng (SALARY_GRADE, PIT, INSURANCE, ALLOWANCE), theo mô hình maker-checker: **Finance tạo phiên bản nháp, Director phát hành (publish)**; phiên bản đã phát hành là bất biến và được chọn theo ngày hiệu lực. Việc tách quyền tạo/phát hành cấu hình giúp ngăn một người đơn phương thay đổi tham số tính lương. Quản trị viên hệ thống (SYSTEM_ADMIN) là tài khoản đặc biệt — không phải nhân viên thực và không tính lương — chỉ phụ trách quản lý tài khoản, thiết bị chấm công và xem nhật ký check-in.
+Cấu hình tính lương được quản lý theo phiên bản có hiệu lực theo ngày trong các nhóm bảng riêng (bậc lương, thuế thu nhập cá nhân, bảo hiểm, phụ cấp), theo mô hình người soạn — người duyệt: **người phụ trách tài chính tạo phiên bản nháp, giám đốc phát hành**; phiên bản đã phát hành là bất biến và được chọn theo ngày hiệu lực. Việc tách quyền soạn và phát hành cấu hình giúp ngăn một người đơn phương thay đổi tham số tính lương. Quản trị hệ thống là tài khoản đặc biệt — không phải nhân viên thực và không tính lương — chỉ phụ trách quản lý tài khoản, thiết bị chấm công và xem nhật ký chấm công.
 
 ### 2.2.3 Quy trình nghiệp vụ
 
@@ -404,23 +364,23 @@ Quy trình này mô tả hành trình từ khi nhân viên đặt khuôn mặt t
 ```mermaid
 sequenceDiagram
     participant D as Thiết bị chấm công
-    participant F as DeviceApiKeyFilter
-    participant CLS as CheckinLogService
-    participant AE as Spring Events
-    participant AS as AttendanceService
+    participant F as Bước xác thực thiết bị
+    participant CLS as Dịch vụ ghi nhận chấm công
+    participant AE as Cơ chế sự kiện nội bộ
+    participant AS as Dịch vụ tổng hợp công
 
-    D->>F: POST /api/checkin-logs {employeeId, logType: IN/OUT}
-    F->>F: Xác thực X-Device-API-Key (SHA-256)
-    F-->>D: 401 nếu key không hợp lệ
-    F->>CLS: Chuyển tiếp request hợp lệ
-    CLS->>CLS: Lưu CheckinLog vào DB
-    CLS->>AE: Publish CheckinProcessedEvent
-    Note over AE: @TransactionalEventListener(AFTER_COMMIT)
-    AE->>AS: onCheckinProcessed(event)
-    alt logType = IN
-        AS->>AS: Tạo Attendance record (idempotent)
-    else logType = OUT
-        AS->>AS: Đóng Attendance, tính workingHour,<br/>lateHour, paidHour, paidDay, violate
+    D->>F: Gửi sự kiện chấm công (kèm khóa API thiết bị)
+    F->>F: Xác thực khóa API thiết bị
+    F-->>D: Từ chối nếu khóa không hợp lệ
+    F->>CLS: Chuyển tiếp yêu cầu hợp lệ
+    CLS->>CLS: Lưu bản ghi chấm công thô
+    CLS->>AE: Phát sự kiện "đã xử lý chấm công"
+    Note over AE: Kích hoạt sau khi giao dịch hoàn tất
+    AE->>AS: Xử lý sự kiện
+    alt Sự kiện vào ca
+        AS->>AS: Tạo bản ghi công trong ngày (không trùng lặp)
+    else Sự kiện ra ca
+        AS->>AS: Đóng bản ghi công, tính giờ làm,<br/>giờ đến muộn, giờ được trả lương, cờ vi phạm
     end
 ```
 </details>
@@ -436,16 +396,13 @@ Pipeline chấm công được thiết kế theo hướng event-driven: bản gh
 
 ```mermaid
 stateDiagram-v2
-    [*] --> DRAFT : Nhân viên lưu nháp
-    DRAFT --> TO_APPROVE : Nhân viên nộp (trừ pendingDays)
-    DRAFT --> [*] : Nhân viên hủy
-    TO_APPROVE --> LEADER_APPROVED : LEADER phê duyệt cấp 1
-    TO_APPROVE --> REJECTED : Từ chối (giải phóng pendingDays)
-    LEADER_APPROVED --> APPROVED : MANAGER phê duyệt cuối (pendingDays → usedDays)
-    LEADER_APPROVED --> REJECTED : Từ chối (giải phóng pendingDays)
-    TO_APPROVE --> REJECTED : Từ chối (giải phóng pendingDays)
-    LEADER_APPROVED --> APPROVED : MANAGER phê duyệt cuối (pendingDays → usedDays)
-    LEADER_APPROVED --> REJECTED : Từ chối (giải phóng pendingDays)
+    [*] --> Nhap : Nhân viên lưu nháp
+    Nhap --> ChoDuyet : Nhân viên nộp (tạm giữ số ngày)
+    Nhap --> [*] : Nhân viên hủy
+    ChoDuyet --> DuyetCapMot : Trưởng nhóm duyệt cấp một
+    ChoDuyet --> BiTuChoi : Từ chối (hoàn trả số ngày)
+    DuyetCapMot --> DaDuyet : Quản lý duyệt cuối (chuyển sang đã dùng)
+    DuyetCapMot --> BiTuChoi : Từ chối (hoàn trả số ngày)
 ```
 </details>
 
@@ -460,42 +417,27 @@ Về mặt nghiệp vụ, khi nhân viên nộp yêu cầu, số ngày nghỉ đ
 
 ```mermaid
 sequenceDiagram
-    participant HR as HR_ADMIN
-    participant FIN as FINANCE_ADMIN
-    participant PRS as PayrollRunService
-    participant PRS as PayrollRunService
-    participant DIR as DIRECTOR
+    participant HR as Nhân sự
+    participant FIN as Phụ trách tài chính
+    participant PRS as Dịch vụ kỳ lương
+    participant DIR as Giám đốc
 
-    HR->>HR: Chốt kỳ chấm công → sinh Timesheet, khóa WorkDay
-    HR->>HR: Chốt kỳ chấm công → sinh Timesheet, khóa WorkDay
-    Note over HR: AttendancePeriodClose record tạo ra
-    FIN->>PRS: POST /api/payroll-runs {year, month}
+    HR->>HR: Chốt kỳ chấm công → sinh bảng công, khóa ngày công
+    Note over HR: Bản ghi chốt kỳ được tạo ra
+    FIN->>PRS: Tạo kỳ lương cho một tháng
     PRS->>PRS: Kiểm tra kỳ đã chốt
-    PRS->>PRS: Tính từng dòng: HS1 (điểm cấp trên), HS2 (chuyên cần),<br/>Nt từ Timesheet, OT, bảo hiểm, thuế TNCN
-    PRS-->>FIN: PayrollRun (DRAFT) + các dòng lương
+    PRS->>PRS: Tính từng dòng: hệ số thi đua, ngày công chuẩn,<br/>tăng ca, bảo hiểm, thuế thu nhập
+    PRS-->>FIN: Kỳ lương (nháp) + các dòng lương
     opt Điều chỉnh
-        FIN->>PRS: recalc 1 dòng (khóa) / loại dòng / tính lại cả kỳ
+        FIN->>PRS: tính lại một dòng (khóa) / loại dòng / tính lại cả kỳ
     end
-    FIN->>PRS: PUT /submit → kiểm tra đủ HS1 → PENDING_APPROVAL
-    alt Director duyệt
-        DIR->>PRS: PUT /approve → APPROVED (dòng lương hiển thị cho NV)
-    else Director trả lại
-        DIR->>PRS: PUT /reject {reason} → DRAFT
-    FIN->>PRS: POST /api/payroll-runs {year, month}
-    PRS->>PRS: Kiểm tra kỳ đã chốt
-    PRS->>PRS: Tính từng dòng: HS1 (điểm cấp trên), HS2 (chuyên cần),<br/>Nt từ Timesheet, OT, bảo hiểm, thuế TNCN
-    PRS-->>FIN: PayrollRun (DRAFT) + các dòng lương
-    opt Điều chỉnh
-        FIN->>PRS: recalc 1 dòng (khóa) / loại dòng / tính lại cả kỳ
+    FIN->>PRS: Trình duyệt → kiểm tra đủ điểm thi đua → chờ duyệt
+    alt Giám đốc duyệt
+        DIR->>PRS: Phê duyệt → đã duyệt (dòng lương hiển thị cho nhân viên)
+    else Giám đốc trả lại
+        DIR->>PRS: Trả lại kèm lý do → nháp
     end
-    FIN->>PRS: PUT /submit → kiểm tra đủ HS1 → PENDING_APPROVAL
-    alt Director duyệt
-        DIR->>PRS: PUT /approve → APPROVED (dòng lương hiển thị cho NV)
-    else Director trả lại
-        DIR->>PRS: PUT /reject {reason} → DRAFT
-    end
-    FIN->>PRS: PUT /mark-paid → PAID
-    FIN->>PRS: PUT /mark-paid → PAID
+    FIN->>PRS: Đánh dấu đã trả
 ```
 </details>
 
@@ -516,7 +458,7 @@ Bảng 2.2: Đặc tả ca sử dụng Chấm công & Chốt kỳ
 | Tên use case | Chấm công và chốt kỳ |
 | Mã use case | UC-ATT-01 |
 | Tác nhân chính | Thiết bị chấm công nhận diện khuôn mặt |
-| Tác nhân phụ | HR_ADMIN (chốt kỳ) |
+| Tác nhân phụ | Nhân sự (chốt kỳ) |
 | Mô tả | Thiết bị gửi sự kiện check-in/check-out; hệ thống tự động tạo và cập nhật bản ghi chấm công; cuối tháng HR chốt kỳ để cho phép tính lương |
 | Điều kiện tiên quyết | Thiết bị đã được đăng ký với API key hợp lệ; nhân viên tồn tại trong hệ thống |
 | Luồng chính | 1. Thiết bị gửi sự kiện check-in (logType=IN) kèm khóa API xác thực của thiết bị |
@@ -524,7 +466,7 @@ Bảng 2.2: Đặc tả ca sử dụng Chấm công & Chốt kỳ
 | | 3. Hệ thống lưu bản ghi chấm công thô và phát sự kiện xử lý nội bộ |
 | | 4. Sau khi lưu thành công, hệ thống tạo bản ghi chấm công mới cho ngày (đảm bảo không trùng lặp) |
 | | 5. Cuối ngày: thiết bị gửi sự kiện check-out; hệ thống đóng bản ghi, tính giờ công, giờ đến muộn, giờ được trả lương và ngày công, đánh dấu vi phạm nếu đến muộn |
-| | 6. Cuối tháng: HR_ADMIN thực hiện chốt kỳ ở chế độ thử (không ép buộc) |
+| | 6. Cuối tháng: bộ phận nhân sự thực hiện chốt kỳ ở chế độ thử (không ép buộc) |
 | | 7. Hệ thống quét vắng mặt không giải thích, trả về danh sách nếu có |
 | | 8. HR xử lý từng trường hợp bất thường rồi chốt kỳ ở chế độ ép buộc nếu cần |
 | | 9. Bản ghi chốt kỳ được tạo; kỳ chấm công bị khóa |
@@ -533,7 +475,7 @@ Bảng 2.2: Đặc tả ca sử dụng Chấm công & Chốt kỳ
 | | 7a. Không có vắng mặt bất thường: kỳ được chốt ngay lập tức |
 | Luồng ngoại lệ | 2a. API key đã bị vô hiệu hóa: trả 401 |
 | | 6a. Kỳ đã chốt trước đó: trả 400 |
-| Điều kiện kết thúc | `AttendancePeriodClose` record tồn tại; FINANCE_ADMIN có thể bắt đầu tính lương |
+| Điều kiện kết thúc | Bản ghi chốt kỳ tồn tại; người phụ trách tài chính có thể bắt đầu tính lương |
 
 ### 2.3.2 Đặc tả use case Phê duyệt nghỉ phép
 
@@ -543,28 +485,22 @@ Bảng 2.3: Đặc tả ca sử dụng Phê duyệt nghỉ phép
 |---|---|
 | Tên use case | Phê duyệt nghỉ phép đa cấp |
 | Mã use case | UC-LV-01 |
-| Tác nhân chính | EMPLOYEE (nộp), LEADER (cấp 1), MANAGER (cấp cuối) |
-| Mô tả | Nhân viên nộp yêu cầu nghỉ phép; hệ thống kiểm tra số dư và dự trữ ngay; yêu cầu đi qua hai cấp phê duyệt (LEADER rồi MANAGER) |
-| Tác nhân chính | EMPLOYEE (nộp), LEADER (cấp 1), MANAGER (cấp cuối) |
-| Mô tả | Nhân viên nộp yêu cầu nghỉ phép; hệ thống kiểm tra số dư và dự trữ ngay; yêu cầu đi qua hai cấp phê duyệt (LEADER rồi MANAGER) |
-| Điều kiện tiên quyết | Nhân viên đã đăng nhập; `LeaveBalance` đã khởi tạo cho năm hiện tại; ngày kết thúc ≥ ngày bắt đầu |
+| Tác nhân chính | Nhân viên (nộp), trưởng nhóm (cấp một), quản lý (cấp cuối) |
+| Mô tả | Nhân viên nộp yêu cầu nghỉ phép; hệ thống kiểm tra số dư và tạm giữ ngay; yêu cầu đi qua hai cấp phê duyệt (trưởng nhóm rồi quản lý) |
+| Điều kiện tiên quyết | Nhân viên đã đăng nhập; số dư phép đã được khởi tạo cho năm hiện tại; ngày kết thúc không trước ngày bắt đầu |
 | Luồng chính | 1. Nhân viên chọn loại nghỉ phép, ngày bắt đầu, ngày kết thúc, lý do |
-| | 2. Hệ thống kiểm tra `leaveType` không phải PUBLIC_HOLIDAY hoặc COMPENSATORY |
-| | 3. Hệ thống so sánh `requestedDays` với `remainingDays` trong `LeaveBalance` |
-| | 4. Hệ thống trừ `requestedDays` khỏi `remainingDays`, cộng vào `pendingDays`; lưu yêu cầu trạng thái `TO_APPROVE` |
-| | 5. Hệ thống gửi thông báo cho LEADER của nhân viên |
-| | 6. LEADER phê duyệt → `LEADER_APPROVED` |
-| | 7. MANAGER phê duyệt cuối → `APPROVED`; hệ thống chuyển `pendingDays` sang `usedDays` |
-| Luồng thay thế | 6a–7a. LEADER hoặc MANAGER từ chối: `REJECTED`; `pendingDays` hoàn trả về `remainingDays` |
-| | 4a. Nhân viên hủy/sửa khi còn `DRAFT`: `pendingDays` hoàn trả (chỉ sửa/hủy được ở DRAFT) |
-| | 6. LEADER phê duyệt → `LEADER_APPROVED` |
-| | 7. MANAGER phê duyệt cuối → `APPROVED`; hệ thống chuyển `pendingDays` sang `usedDays` |
-| Luồng thay thế | 6a–7a. LEADER hoặc MANAGER từ chối: `REJECTED`; `pendingDays` hoàn trả về `remainingDays` |
-| | 4a. Nhân viên hủy/sửa khi còn `DRAFT`: `pendingDays` hoàn trả (chỉ sửa/hủy được ở DRAFT) |
-| Luồng ngoại lệ | 3a. `remainingDays < requestedDays`: trả 400 kèm số ngày còn lại |
-| | 2a. `leaveType = PUBLIC_HOLIDAY` hoặc `COMPENSATORY`: trả 400 |
-| Điều kiện kết thúc | Yêu cầu ở trạng thái `APPROVED` (usedDays tăng) hoặc `REJECTED` (remainingDays được hoàn) |
-| Yêu cầu đặc biệt | Cơ chế trừ hai giai đoạn phải atomic để tránh race condition khi nhiều yêu cầu nộp đồng thời |
+| | 2. Hệ thống kiểm tra loại phép không phải ngày lễ hay nghỉ bù |
+| | 3. Hệ thống so sánh số ngày xin nghỉ với số dư còn lại |
+| | 4. Hệ thống tạm giữ số ngày xin nghỉ vào phần đang chờ duyệt; lưu yêu cầu ở trạng thái chờ duyệt |
+| | 5. Hệ thống gửi thông báo cho trưởng nhóm của nhân viên |
+| | 6. Trưởng nhóm phê duyệt → đã duyệt cấp một |
+| | 7. Quản lý phê duyệt cuối → đã duyệt; hệ thống chuyển số ngày đang chờ thành đã dùng |
+| Luồng thay thế | 6a–7a. Trưởng nhóm hoặc quản lý từ chối: yêu cầu bị từ chối; số ngày tạm giữ được hoàn trả |
+| | 4a. Nhân viên hủy/sửa khi còn ở trạng thái nháp: số ngày tạm giữ được hoàn trả (chỉ sửa/hủy được khi còn nháp) |
+| Luồng ngoại lệ | 3a. Số dư còn lại nhỏ hơn số ngày xin nghỉ: từ chối, báo số ngày còn lại |
+| | 2a. Loại phép là ngày lễ hoặc nghỉ bù: từ chối |
+| Điều kiện kết thúc | Yêu cầu ở trạng thái đã duyệt (tăng số ngày đã dùng) hoặc bị từ chối (hoàn trả số dư) |
+| Yêu cầu đặc biệt | Cơ chế tạm giữ hai giai đoạn phải nguyên tử để tránh tranh chấp khi nhiều yêu cầu nộp đồng thời |
 
 ### 2.3.3 Đặc tả use case Tính lương
 
@@ -574,30 +510,25 @@ Bảng 2.4: Đặc tả ca sử dụng Tính lương
 |---|---|
 | Tên use case | Tính lương cá nhân |
 | Mã use case | UC-PAY-01 |
-| Tác nhân chính | FINANCE_ADMIN |
-| Mô tả | Finance tính toán lương đầy đủ cho một nhân viên trong một kỳ dựa trên chấm công, hợp đồng và cấu hình hệ thống |
-| Điều kiện tiên quyết | Kỳ chấm công đã chốt (đã sinh Timesheet); nhân viên có hợp đồng `current=true`; cấu hình lương (PayrollConfig) đã PUBLISH và hiệu lực cho đủ 4 nhóm (SALARY_GRADE, ALLOWANCE, PIT, INSURANCE) |
-| | 1. Finance yêu cầu tính lương cho một nhân viên trong kỳ (các khoản thưởng/phụ cấp tùy chọn) |
-| Điều kiện tiên quyết | Kỳ chấm công đã chốt (đã sinh Timesheet); nhân viên có hợp đồng `current=true`; cấu hình lương (PayrollConfig) đã PUBLISH và hiệu lực cho đủ 4 nhóm (SALARY_GRADE, ALLOWANCE, PIT, INSURANCE) |
-| | 1. Finance yêu cầu tính lương cho một nhân viên trong kỳ (các khoản thưởng/phụ cấp tùy chọn) |
+| Tác nhân chính | Phụ trách tài chính |
+| Mô tả | Tính toán lương đầy đủ cho một nhân viên trong một kỳ, dựa trên chấm công, hợp đồng và cấu hình hệ thống |
+| Điều kiện tiên quyết | Kỳ chấm công đã chốt (đã sinh bảng công); nhân viên có hợp đồng đang hiệu lực; cấu hình lương đã ban hành và còn hiệu lực cho đủ bốn nhóm (bậc lương, phụ cấp, thuế thu nhập, bảo hiểm) |
+| Luồng chính | 1. Người phụ trách tài chính yêu cầu tính lương cho một nhân viên trong kỳ (kèm các khoản thưởng/phụ cấp tùy chọn) |
 | | 2. Hệ thống kiểm tra kỳ chấm công đã được chốt; nếu chưa, từ chối yêu cầu |
 | | 3. Hệ thống nạp hợp đồng đang hiệu lực và cấu hình tính lương đang áp dụng |
-| | 4. Tính `HStb = (HS1 + HS2) / 2`: HS1 lấy từ điểm cấp trên chấm (mặc định B nếu chưa có), HS2 suy từ chuyên cần (WorkDay). Với MANAGER, HS1 và HS2 = trung bình của đơn vị quản lý; với DIRECTOR = trung bình toàn công ty |
-| | 5. `baseGross = [(Lhq × HStb) + Li + HTi] × (NCtt / Nt)`, trong đó Nt (ngày công chuẩn) tự suy từ bảng công Timesheet đã chốt, NCtt lấy từ WorkDay |
-| | 3. Hệ thống nạp hợp đồng đang hiệu lực và cấu hình tính lương đang áp dụng |
-| | 4. Tính `HStb = (HS1 + HS2) / 2`: HS1 lấy từ điểm cấp trên chấm (mặc định B nếu chưa có), HS2 suy từ chuyên cần (WorkDay). Với MANAGER, HS1 và HS2 = trung bình của đơn vị quản lý; với DIRECTOR = trung bình toàn công ty |
-| | 5. `baseGross = [(Lhq × HStb) + Li + HTi] × (NCtt / Nt)`, trong đó Nt (ngày công chuẩn) tự suy từ bảng công Timesheet đã chốt, NCtt lấy từ WorkDay |
-| | 6. Cộng OT pay: ×1.5/×2.0/×3.0 × hệ số ca đêm theo tỷ lệ chồng lấp 22:00–06:00 |
-| | 7. Tính `insuranceBase = min(totalGross, 46.800.000 VNĐ)` |
-| | 8. Khấu trừ BHXH 8%, BHYT 1.5%, BHTN 1%; tính thuế TNCN lũy tiến 7 bậc |
-| | 9. Tính chi phí phía chủ: BHXH 17%, BHYT 3%, BHTN 1%, TNLĐ-BNN 0.5% |
-| | 10. Lưu `Payroll` record trạng thái `DRAFT` |
-| Luồng thay thế | 1a. Tính lương hàng loạt: chạy bất đồng bộ, trả về mã công việc để theo dõi tiến độ |
+| | 4. Tính hệ số thi đua trung bình HStb = (HS1 + HS2) / 2: HS1 lấy từ điểm cấp trên chấm (mặc định loại B nếu chưa có), HS2 suy từ mức chuyên cần. Với cấp quản lý, hai hệ số lấy theo trung bình của đơn vị; với giám đốc lấy theo trung bình toàn công ty |
+| | 5. Lương cơ bản kỳ = [(Lhq × HStb) + Li + HTi] × (NCtt / Nt), trong đó số ngày công chuẩn tự suy từ bảng công đã chốt, số ngày công thực tế lấy từ bản ghi ngày công |
+| | 6. Cộng tiền tăng ca theo hệ số ngày thường/cuối tuần/ngày lễ và phụ trội ca đêm theo tỷ lệ thời gian chồng lấp khung 22:00–06:00 |
+| | 7. Tính nền đóng bảo hiểm bằng giá trị nhỏ hơn giữa lương gộp và mức trần theo quy định |
+| | 8. Khấu trừ các khoản bảo hiểm nhân viên đóng; tính thuế thu nhập cá nhân lũy tiến bảy bậc |
+| | 9. Tính chi phí phía người sử dụng lao động (các khoản bảo hiểm chủ đóng và bảo hiểm tai nạn lao động) |
+| | 10. Lưu dòng phiếu lương ở trạng thái nháp |
+| Luồng thay thế | 1a. Tính lương hàng loạt cho toàn bộ nhân viên trong kỳ |
 | Luồng ngoại lệ | 2a. Kỳ chưa chốt: từ chối yêu cầu |
 | | 3a. Không có hợp đồng hiệu lực: từ chối yêu cầu |
-| | Đã tồn tại bảng lương cho nhân viên trong kỳ: từ chối để tránh trùng lặp |
-| Điều kiện kết thúc | `Payroll` record trạng thái `DRAFT` sẵn sàng cho Finance xem xét và trình duyệt |
-| Yêu cầu đặc biệt | `PayrollCalculationEngine` là pure function — không truy cập DB trực tiếp để dễ unit test |
+| | 3b. Đã tồn tại phiếu lương cho nhân viên trong kỳ: từ chối để tránh trùng lặp |
+| Điều kiện kết thúc | Dòng phiếu lương ở trạng thái nháp, sẵn sàng cho người phụ trách tài chính xem xét và trình duyệt |
+| Yêu cầu đặc biệt | Bộ máy tính lương là một thành phần tính toán thuần, không truy cập cơ sở dữ liệu, để dễ kiểm thử đơn vị |
 
 ### 2.3.4 Đặc tả use case Phê duyệt bảng lương
 
@@ -607,21 +538,21 @@ Bảng 2.5: Đặc tả ca sử dụng Phê duyệt bảng lương
 |---|---|
 | Tên use case | Phê duyệt bảng lương |
 | Mã use case | UC-PAY-02 |
-| Tác nhân chính | FINANCE_ADMIN (trình duyệt, đánh dấu đã trả), DIRECTOR (phê duyệt/từ chối) |
-| Mô tả | Finance trình bảng lương lên Director; Director phê duyệt hoặc từ chối; Finance đánh dấu đã chi trả sau phê duyệt |
-| Điều kiện tiên quyết | Bảng lương đang ở trạng thái `DRAFT` |
-| Luồng chính | 1. Finance xem xét chi tiết bảng lương DRAFT; có thể xóa và tính lại nếu cần |
-| | 2. Finance trình bảng lương → `PENDING_APPROVAL`; hệ thống gửi thông báo cho Director |
-| | 3. Director xem tổng quan chi phí lao động và chi tiết từng bảng lương |
-| | 4. Director phê duyệt → `APPROVED`; thông báo cho Finance và nhân viên |
-| | 5. Finance xác nhận đã chi trả lương qua ngân hàng |
-| | 6. Finance đánh dấu đã chi trả → `PAID` (trạng thái cuối) |
-| Luồng thay thế | 4a. Director từ chối kèm lý do → `REJECTED`; Finance nhận thông báo kèm lý do |
-| | 4b. Sau từ chối: Finance xóa bảng lương `REJECTED` và tính lại từ đầu |
-| Luồng ngoại lệ | 4a. HR_ADMIN cố gắng phê duyệt: trả 403 (chỉ DIRECTOR mới có quyền) |
-| | 6a. Finance mark-paid khi trạng thái không phải `APPROVED`: trả 400 |
-| Điều kiện kết thúc | Bảng lương ở trạng thái `PAID` (không thể thay đổi) hoặc `REJECTED` (Finance xử lý lại) |
-| Yêu cầu đặc biệt | `rejectionReason` bắt buộc khi từ chối (VARCHAR 500); lưu trên bản ghi và trả về qua thông báo |
+| Tác nhân chính | Phụ trách tài chính (trình duyệt, đánh dấu đã trả), giám đốc (phê duyệt/từ chối) |
+| Mô tả | Người phụ trách tài chính trình bảng lương lên giám đốc; giám đốc phê duyệt hoặc từ chối; người phụ trách tài chính đánh dấu đã chi trả sau phê duyệt |
+| Điều kiện tiên quyết | Kỳ lương đang ở trạng thái nháp |
+| Luồng chính | 1. Người phụ trách tài chính xem xét chi tiết kỳ lương ở trạng thái nháp; có thể xóa và tính lại nếu cần |
+| | 2. Trình bảng lương → chờ duyệt; hệ thống gửi thông báo cho giám đốc |
+| | 3. Giám đốc xem tổng quan chi phí lao động và chi tiết từng dòng lương |
+| | 4. Giám đốc phê duyệt → đã duyệt; thông báo cho người phụ trách tài chính và nhân viên |
+| | 5. Người phụ trách tài chính xác nhận đã chi trả lương qua ngân hàng |
+| | 6. Đánh dấu đã chi trả → đã trả (trạng thái cuối) |
+| Luồng thay thế | 4a. Giám đốc từ chối kèm lý do → bị từ chối; người phụ trách tài chính nhận thông báo kèm lý do |
+| | 4b. Sau khi bị từ chối: xóa kỳ lương đó và tính lại từ đầu |
+| Luồng ngoại lệ | 4a. Vai trò khác cố gắng phê duyệt: bị từ chối (chỉ giám đốc mới có quyền) |
+| | 6a. Đánh dấu đã trả khi trạng thái chưa phải đã duyệt: từ chối thao tác |
+| Điều kiện kết thúc | Kỳ lương ở trạng thái đã trả (không thể thay đổi) hoặc bị từ chối (xử lý lại) |
+| Yêu cầu đặc biệt | Lý do từ chối là bắt buộc; được lưu trên bản ghi và trả về qua thông báo |
 
 ### 2.3.5 Đặc tả use case Báo cáo tài chính
 
@@ -631,15 +562,15 @@ Bảng 2.6: Đặc tả ca sử dụng Báo cáo tài chính
 |---|---|
 | Tên use case | Xuất báo cáo tài chính |
 | Mã use case | UC-RPT-01 |
-| Tác nhân chính | FINANCE_ADMIN, DIRECTOR |
+| Tác nhân chính | Phụ trách tài chính, giám đốc |
 | Mô tả | Hệ thống tổng hợp dữ liệu lương đã phê duyệt thành ba loại báo cáo phục vụ kế toán và tuân thủ pháp luật |
-| Điều kiện tiên quyết | Tồn tại ít nhất một Payroll ở trạng thái `APPROVED` hoặc `PAID` trong kỳ truy vấn |
-| Luồng chính — Báo cáo Chi phí lao động | Tổng hợp lương gộp, lương thực nhận, tổng bảo hiểm, thuế TNCN, tăng ca và tổng chi phí sử dụng lao động theo từng nhân viên và bộ phận |
-| Luồng chính — Báo cáo nộp BHXH | Tổng hợp mã BHXH, mức lương đóng (sau khi áp trần) và tất cả khoản BHXH/BHYT/BHTN phía người lao động và người sử dụng lao động |
-| Luồng chính — Báo cáo thuế TNCN | Tổng hợp mã số thuế, số người phụ thuộc, thu nhập tính thuế và thuế TNCN theo từng nhân viên |
-| Luồng ngoại lệ | Không có payroll phê duyệt trong kỳ: trả mảng rỗng |
-| Điều kiện kết thúc | Dữ liệu JSON trả về; frontend hỗ trợ xuất CSV UTF-8 BOM |
-| Yêu cầu đặc biệt | Chỉ tính trên Payroll `APPROVED`/`PAID`; Payroll `DRAFT`/`PENDING`/`REJECTED` không được tính vào |
+| Điều kiện tiên quyết | Tồn tại ít nhất một phiếu lương ở trạng thái đã duyệt hoặc đã trả trong kỳ truy vấn |
+| Luồng chính — Báo cáo chi phí lao động | Tổng hợp lương gộp, lương thực nhận, tổng bảo hiểm, thuế thu nhập, tăng ca và tổng chi phí sử dụng lao động theo từng nhân viên và bộ phận |
+| Luồng chính — Báo cáo nộp bảo hiểm | Tổng hợp mã bảo hiểm xã hội, mức lương đóng (sau khi áp trần) và tất cả khoản bảo hiểm phía người lao động và người sử dụng lao động |
+| Luồng chính — Báo cáo thuế thu nhập | Tổng hợp mã số thuế, số người phụ thuộc, thu nhập tính thuế và thuế thu nhập theo từng nhân viên |
+| Luồng ngoại lệ | Không có phiếu lương được phê duyệt trong kỳ: trả về kết quả rỗng |
+| Điều kiện kết thúc | Dữ liệu được trả về và hỗ trợ xuất ra tệp bảng tính với bảng mã Unicode |
+| Yêu cầu đặc biệt | Chỉ tính trên phiếu lương đã duyệt hoặc đã trả; các phiếu còn ở trạng thái nháp, chờ duyệt hoặc bị từ chối không được tính vào |
 
 ## 2.4 Yêu cầu phi chức năng
 
@@ -649,27 +580,25 @@ Bảng 2.7: Các yêu cầu phi chức năng
 
 | # | Nhóm | Yêu cầu | Ưu tiên | Cách đáp ứng |
 |---|---|---|---|---|
-| PF-01 | Hiệu năng | Thời gian phản hồi API < 500ms cho 95% request trong điều kiện bình thường (≤ 50 người dùng đồng thời) | Cao | HikariCP connection pool; Redis cache cho JWT validation; index đúng trên các cột thường xuyên truy vấn |
-| PF-02 | Hiệu năng | Tính lương hàng loạt cho 200 nhân viên hoàn thành trong < 60 giây | Trung bình | `@Async` với thread pool cấu hình; `PayrollCalculationEngine` là pure computation không có I/O blocking |
-| PF-03 | Hiệu năng | Xử lý sự kiện check-in real-time < 500ms end-to-end | Cao | DeviceApiKeyFilter nhẹ; AttendanceService xử lý sau AFTER_COMMIT không block response |
-| RC-01 | Độ tin cậy | Schema database quản lý bằng script SQL có phiên bản; `ddl-auto: none`, không dùng `ddl-auto: update` | Cao | 31 file migration (V1–V30), hợp nhất trong `final_schema.sql` |
-| RC-01 | Độ tin cậy | Schema database quản lý bằng script SQL có phiên bản; `ddl-auto: none`, không dùng `ddl-auto: update` | Cao | 31 file migration (V1–V30), hợp nhất trong `final_schema.sql` |
-| RC-02 | Độ tin cậy | Toàn bộ thay đổi dữ liệu nghiệp vụ có audit trail | Cao | `AuditableEntity` mapped superclass; Spring Data JPA auditing |
-| RC-03 | Độ tin cậy | Bản ghi chấm công không bị mất khi kết nối thiết bị gián đoạn | Cao | `CheckinLog` lưu trước; `AttendanceSchedule` backfill lúc nửa đêm |
-| RC-04 | Độ tin cậy | Xóa mềm trên tất cả entity; không xóa vật lý dữ liệu lịch sử | Trung bình | Trường `deleteFlag` và `deletedAt` trên mọi entity |
-| SC-01 | Bảo mật | Xác thực JWT: Access Token 5 phút, Refresh Token 14 ngày trong HttpOnly cookie | Cao | `JwtService` với Redis blacklist cho JTI; token rotation mỗi lần refresh |
-| SC-02 | Bảo mật | Chống brute-force đăng nhập: tối đa 10 lần/15 phút mỗi IP | Cao | `LoginRateLimiter` dùng Redis counter, phân biệt theo `X-Forwarded-For` |
-| SC-03 | Bảo mật | Thiết bị chấm công xác thực bằng API key; raw key không lưu | Cao | `DeviceApiKeyFilter` so khớp SHA-256; tạo key mới vô hiệu hóa key cũ |
-| SC-04 | Bảo mật | Phân quyền granular theo vai trò và HTTP method | Cao | `@PreAuthorize` annotation; SecurityConfig với URL-level rules |
-| SC-05 | Bảo mật | Secrets không được hardcode | Cao | Environment variable substitution trong `application.yml` |
-| US-01 | Khả năng sử dụng | Giao diện tự động điều chỉnh menu theo vai trò đăng nhập | Cao | `ProtectedRoute` component và role-aware `Sidebar` trong frontend |
-| US-02 | Khả năng sử dụng | Thông báo lỗi rõ ràng bằng tiếng Việt khi thao tác không hợp lệ | Trung bình | `ApiResponse<T>` với trường `message` từ backend; toast notification ở frontend |
-| US-03 | Khả năng sử dụng | Session tự động gia hạn trong suốt phiên làm việc | Cao | Silent refresh: `apiClient()` bắt 401, tự gọi `/api/auth/refresh`, retry request gốc |
-| MT-01 | Khả năng bảo trì | Mọi thay đổi schema phải qua script migration có số phiên bản | Cao | Convention V{n}__{description}.sql; áp thủ công theo thứ tự |
-| MT-01 | Khả năng bảo trì | Mọi thay đổi schema phải qua script migration có số phiên bản | Cao | Convention V{n}__{description}.sql; áp thủ công theo thứ tự |
-| MT-02 | Khả năng bảo trì | API có tài liệu Swagger tự động cập nhật | Trung bình | SpringDoc OpenAPI; truy cập tại `/swagger-ui.html` |
-| MT-03 | Khả năng bảo trì | Log có cấu trúc JSON ở production; log có màu ở development | Trung bình | `logback-spring.xml` với profile-aware configuration; `RequestLoggingFilter` |
-| MT-04 | Khả năng bảo trì | Health check endpoint công khai để giám sát vận hành | Thấp | Spring Boot Actuator tại `/actuator/health` (public); các endpoint khác yêu cầu SYSTEM_ADMIN |
+| PF-01 | Hiệu năng | Thời gian phản hồi dưới 500ms cho 95% yêu cầu trong điều kiện bình thường (≤ 50 người dùng đồng thời) | Cao | Bể kết nối cơ sở dữ liệu; bộ nhớ đệm cho việc kiểm tra token; lập chỉ mục đúng trên các cột thường truy vấn |
+| PF-02 | Hiệu năng | Tính lương hàng loạt cho 200 nhân viên hoàn thành trong dưới 60 giây | Trung bình | Bộ máy tính lương là thành phần tính toán thuần, không chờ vào/ra |
+| PF-03 | Hiệu năng | Xử lý sự kiện chấm công thời gian thực dưới 500ms toàn trình | Cao | Bước xác thực thiết bị nhẹ; việc tổng hợp công chạy sau khi giao dịch hoàn tất, không chặn phản hồi |
+| RC-01 | Độ tin cậy | Lược đồ cơ sở dữ liệu quản lý bằng các phiên bản có đánh số; ứng dụng không tự sửa lược đồ | Cao | Ba mươi mốt phiên bản lược đồ, hợp nhất thành một tập lệnh khởi tạo |
+| RC-02 | Độ tin cậy | Toàn bộ thay đổi dữ liệu nghiệp vụ đều có vết kiểm toán | Cao | Lớp thực thể cơ sở dùng chung tự động ghi vết người tạo/người sửa |
+| RC-03 | Độ tin cậy | Bản ghi chấm công không bị mất khi kết nối thiết bị gián đoạn | Cao | Lưu bản ghi thô trước; tác vụ định kỳ lúc nửa đêm điền bù dữ liệu thiếu |
+| RC-04 | Độ tin cậy | Xóa mềm trên mọi thực thể; không xóa vật lý dữ liệu lịch sử | Trung bình | Cờ đánh dấu đã xóa kèm thời điểm xóa trên mọi thực thể |
+| SC-01 | Bảo mật | Xác thực bằng token: token truy cập 5 phút, token làm mới 14 ngày trong cookie chỉ truy cập từ máy chủ | Cao | Danh sách thu hồi token trên bộ nhớ đệm; xoay vòng token mỗi lần làm mới |
+| SC-02 | Bảo mật | Chống dò mật khẩu đăng nhập: tối đa 10 lần trong 15 phút cho mỗi địa chỉ IP | Cao | Bộ đếm trên bộ nhớ đệm, phân biệt theo địa chỉ IP của người gọi |
+| SC-03 | Bảo mật | Thiết bị chấm công xác thực bằng khóa API; không lưu khóa gốc | Cao | Chỉ lưu dạng băm của khóa; cấp khóa mới sẽ vô hiệu hóa khóa cũ |
+| SC-04 | Bảo mật | Phân quyền chi tiết theo vai trò và phương thức HTTP | Cao | Kiểm soát quyền ở mức từng thao tác kết hợp luật phân quyền theo đường dẫn |
+| SC-05 | Bảo mật | Không nhúng cứng thông tin bí mật trong mã | Cao | Nạp thông tin bí mật qua biến môi trường |
+| US-01 | Khả năng sử dụng | Giao diện tự điều chỉnh menu theo vai trò đăng nhập | Cao | Lớp bảo vệ theo vai trò và thanh điều hướng thay đổi theo vai trò |
+| US-02 | Khả năng sử dụng | Thông báo lỗi rõ ràng bằng tiếng Việt khi thao tác không hợp lệ | Trung bình | Phản hồi từ máy chủ kèm thông điệp lỗi; hiển thị dưới dạng thông báo nổi |
+| US-03 | Khả năng sử dụng | Phiên làm việc tự động gia hạn trong suốt thời gian sử dụng | Cao | Làm mới ngầm: tự gọi điểm làm mới phiên khi token hết hạn rồi thực hiện lại yêu cầu |
+| MT-01 | Khả năng bảo trì | Mọi thay đổi lược đồ phải qua phiên bản có đánh số | Cao | Quy ước đánh số phiên bản; áp thủ công theo thứ tự |
+| MT-02 | Khả năng bảo trì | Tài liệu giao diện lập trình tự động cập nhật | Trung bình | Sinh tài liệu tự động từ mã nguồn theo chuẩn mở |
+| MT-03 | Khả năng bảo trì | Nhật ký có cấu trúc khi vận hành, có màu khi phát triển | Trung bình | Cấu hình nhật ký thay đổi theo hồ sơ môi trường |
+| MT-04 | Khả năng bảo trì | Điểm cuối kiểm tra sức khỏe công khai để giám sát vận hành | Thấp | Điểm cuối kiểm tra sức khỏe công khai; các điểm cuối khác yêu cầu quyền quản trị hệ thống |
 
 Chương này đã hoàn thành việc xác định yêu cầu hệ thống từ cả góc độ chức năng lẫn phi chức năng. Phân tích cho thấy khoảng trống thị trường rõ ràng: chưa có giải pháp nào đồng thời đáp ứng ba yêu cầu là tính lương đúng pháp luật Việt Nam, tích hợp thiết bị nhận diện khuôn mặt qua REST, và kiến trúc phân tách nhiệm vụ kiểm soát nội bộ. Tập yêu cầu và đặc tả use case đã xây dựng trong chương này trở thành hợp đồng chức năng cho giai đoạn lựa chọn công nghệ được trình bày trong Chương 3.
 
@@ -689,15 +618,11 @@ Bảng 3.1: Tóm tắt các lựa chọn công nghệ
 |---|---|---|---|
 | Backend Runtime | Java 21 + Spring Boot 4.0.0-M3 | Node.js/Express, Python/Django, Go/Gin | Hệ sinh thái doanh nghiệp trưởng thành; Spring Security, JPA, Events sẵn có; Virtual Threads cho I/O-bound workload |
 | Bảo mật | Spring Security + JWT | OAuth2/Keycloak, Session-based | Kiểm soát hoàn toàn luồng xác thực; không phụ thuộc dịch vụ ngoài; JWT phù hợp SPA stateless |
-| Schema Migration | Script SQL có phiên bản (`V{n}__*.sql`) | Liquibase, Hibernate ddl-auto | Convention đơn giản, áp thủ công/CI; `ddl-auto: none` an toàn hơn `ddl-auto: update`/`create`; không phụ thuộc công cụ migration runtime |
-| Schema Migration | Script SQL có phiên bản (`V{n}__*.sql`) | Liquibase, Hibernate ddl-auto | Convention đơn giản, áp thủ công/CI; `ddl-auto: none` an toàn hơn `ddl-auto: update`/`create`; không phụ thuộc công cụ migration runtime |
-| ORM | Spring Data JPA (Hibernate) | JOOQ, MyBatis, JDBC Template | Giảm boilerplate; tích hợp sẵn Spring Auditing và Soft Delete |
-| Cơ sở dữ liệu chính | PostgreSQL 15 | MySQL 8, MongoDB, MariaDB | Bảng cấu hình lương có kiểu, hiệu lực-theo-ngày; partial unique index cho hợp đồng; database view cho truy vấn OT |
-| Cơ sở dữ liệu chính | PostgreSQL 15 | MySQL 8, MongoDB, MariaDB | Bảng cấu hình lương có kiểu, hiệu lực-theo-ngày; partial unique index cho hợp đồng; database view cho truy vấn OT |
-| Cache & Session Store | Redis 7 | Memcached, Hazelcast, in-memory | Persistent TTL cho JWT blacklist; atomic counter cho rate limiting; pub/sub nếu cần mở rộng |
-| Rate Limiting | Redis counter (tự triển khai) | Bucket4j, resilience4j | Đủ đơn giản cho bài toán; không thêm dependency; tương thích multi-instance |
-| Lưu trữ đối tượng | MinIO (S3-compatible) | AWS S3, lưu file hệ thống, BLOB trong DB | Lưu tài liệu hợp đồng PDF (bucket `facez-contracts`); API tương thích S3 nên dễ chuyển sang cloud; tách tệp nhị phân khỏi CSDL |
-| Lưu trữ đối tượng | MinIO (S3-compatible) | AWS S3, lưu file hệ thống, BLOB trong DB | Lưu tài liệu hợp đồng PDF (bucket `facez-contracts`); API tương thích S3 nên dễ chuyển sang cloud; tách tệp nhị phân khỏi CSDL |
+| Quản lý lược đồ | Script SQL có phiên bản | Liquibase, để framework tự cập nhật lược đồ | Quy ước đơn giản, áp thủ công khi triển khai; chế độ ứng dụng không tự sửa lược đồ an toàn hơn để framework tự cập nhật; không phụ thuộc công cụ di trú lúc chạy |
+| ORM | Spring Data JPA (Hibernate) | JOOQ, MyBatis, JDBC Template | Giảm mã lặp; tích hợp sẵn cơ chế ghi vết kiểm toán và xóa mềm |
+| Cơ sở dữ liệu chính | PostgreSQL 15 | MySQL 8, MongoDB, MariaDB | Cột kiểu JSON có thể truy vấn cho cấu hình lương; chỉ mục duy nhất có điều kiện cho hợp đồng; khung nhìn cơ sở dữ liệu cho truy vấn tăng ca |
+| Cache & Session Store | Redis 7 | Memcached, Hazelcast, bộ nhớ trong tiến trình | Thời gian sống tự hết hạn cho danh sách thu hồi token; bộ đếm nguyên tử cho giới hạn tần suất; chia sẻ giữa nhiều tiến trình |
+| Lưu trữ đối tượng | MinIO (tương thích S3) | AWS S3, lưu file hệ thống, lưu nhị phân trong CSDL | Lưu tài liệu hợp đồng PDF; giao diện tương thích S3 nên dễ chuyển sang đám mây; tách tệp nhị phân khỏi cơ sở dữ liệu |
 | Frontend Framework | Next.js 15 (App Router) | Create React App, Vite+React, Vue 3 | SSR cho hiệu suất; App Router cho nested layouts theo role; TypeScript first-class |
 | UI Styling | Tailwind CSS 3 | Bootstrap, MUI, Chakra UI | Utility-first phù hợp dashboard phức tạp; không bị ràng buộc design system bên thứ ba |
 | Charts | Recharts | Chart.js, ApexCharts, D3.js | Tích hợp native với React; declarative API; hỗ trợ ResponsiveContainer tốt |
@@ -716,119 +641,64 @@ Java 21 là phiên bản LTS (Long-Term Support) mới nhất, mang hai cải ti
 
 Spring Boot 4.0.0-M3 được chọn vì hệ sinh thái tích hợp sẵn:
 
-- Spring Security: Cung cấp filter chain có thể cấu hình để thêm `DeviceApiKeyFilter` trước `JwtAuthFilter`, phân quyền granular theo URL pattern và HTTP method, tích hợp `@PreAuthorize` cho method-level security.
-- Spring Data JPA: Giảm boilerplate truy cập database; hỗ trợ `@CreatedBy`, `@LastModifiedBy` qua `AuditingEntityListener`; chạy với `ddl-auto: none` để schema do script SQL có phiên bản kiểm soát.
-- Spring Data JPA: Giảm boilerplate truy cập database; hỗ trợ `@CreatedBy`, `@LastModifiedBy` qua `AuditingEntityListener`; chạy với `ddl-auto: none` để schema do script SQL có phiên bản kiểm soát.
-- Spring Events: Cơ chế publish/subscribe nội bộ với `@TransactionalEventListener(AFTER_COMMIT)` cho phép tách `CheckinLogService` và `AttendanceService` mà không tạo circular dependency và không cần message broker ngoài.
-- Spring Scheduling: `@Scheduled` với cron expression cho `AttendanceSchedule`, `PayrollScheduler`, `ContractExpiryScheduler`.
-- Spring Async: `@Async` cho batch payroll processing — tránh block HTTP thread khi tính lương hàng loạt.
+- Mô-đun bảo mật: cung cấp chuỗi bộ lọc có thể cấu hình để đặt bước xác thực thiết bị (qua khóa API) trước bước xác thực người dùng (qua token), phân quyền chi tiết theo mẫu đường dẫn và phương thức HTTP, đồng thời hỗ trợ kiểm soát quyền ở mức từng phương thức nghiệp vụ.
+- Mô-đun truy cập dữ liệu: giảm mã lặp khi thao tác cơ sở dữ liệu; tự động ghi vết người tạo/người sửa và thời điểm; chạy ở chế độ không để framework tự sửa lược đồ, nhường quyền kiểm soát lược đồ cho các script SQL có phiên bản.
+- Cơ chế sự kiện nội bộ: mô hình phát hành/đăng ký trong tiến trình, kích hoạt sau khi giao dịch hoàn tất, cho phép tách rời nghiệp vụ ghi nhận chấm công khỏi nghiệp vụ tổng hợp công mà không tạo phụ thuộc vòng và không cần hàng đợi tin nhắn bên ngoài.
+- Cơ chế tác vụ định kỳ: lập lịch theo biểu thức thời gian cho việc tổng hợp chấm công và rà soát hợp đồng sắp hết hạn.
+- Cơ chế xử lý bất đồng bộ: phục vụ tính lương hàng loạt mà không chiếm dụng luồng xử lý HTTP.
 
 So sánh với lựa chọn thay thế:
 
-*Node.js/Express* có ưu điểm về tốc độ phát triển nhưng hệ sinh thái doanh nghiệp (security, auditing, migration) kém trưởng thành hơn. TypeScript trên Node.js thiếu các annotation như `@PreAuthorize` hay `@Transactional` khiến code phân quyền và transaction phức tạp hơn nhiều. *Python/Django* có ORM mạnh nhưng performance multi-threading kém do GIL; không có tương đương Spring Events. *Go/Gin* nhanh nhưng thiếu hệ sinh thái ORM và security cho nghiệp vụ phức tạp.
+*Node.js/Express* có ưu điểm về tốc độ phát triển nhưng hệ sinh thái doanh nghiệp (bảo mật, ghi vết kiểm toán, quản lý lược đồ) kém trưởng thành hơn, khiến phần xử lý phân quyền và giao dịch phải viết thủ công nhiều hơn. *Python/Django* có thư viện ánh xạ quan hệ - đối tượng mạnh nhưng hiệu năng đa luồng hạn chế do khóa thông dịch toàn cục, và không có cơ chế sự kiện nội bộ tương đương. *Go/Gin* nhanh nhưng thiếu hệ sinh thái ánh xạ dữ liệu và bảo mật cho nghiệp vụ phức tạp.
 
-Kiến trúc package của backend tuân theo tổ chức theo domain (không phải theo layer), với package root `org.dummy.facez`:
-
-```
-org.dummy.facez/
-├── configs/        — Cấu hình Spring (Security, Redis, JPA Auditing, Data Initializer)
-├── auth/           — Xác thực, JWT, login rate limiting
-├── domain/
-│   ├── employee/   — EmployeeInfo, UserAccount, TaxDependent, Benefit
-│   ├── department/ — Department management
-│   ├── attendance/ — Attendance, CheckinLog, AttendancePeriodClose, Device API keys
-│   ├── leave/      — LeaveRequest, LeaveBalance, PublicHoliday
-│   ├── otrequest/  — OTRequest (cùng approval flow với leave)
-│   ├── contract/   — Contract (history model)
-│   ├── payroll/    — PayrollRun, Payroll, PayrollBatchService, PayrollCalculationEngine, PayrollConfig (maker-checker)
-│   ├── payroll/    — PayrollRun, Payroll, PayrollBatchService, PayrollCalculationEngine, PayrollConfig (maker-checker)
-│   └── notification/ — Notification, Spring Application Events
-└── common/
-    ├── enums/      — Role, RequestStatus, PayrollStatus, LeaveType, v.v.
-    ├── filters/    — JwtAuthFilter, DeviceApiKeyFilter
-    ├── services/   — JwtService, AuditorAwareImpl
-    └── utils/      — Exception handlers, Response wrappers
-```
-
-Tổ chức theo domain (thay vì theo layer `controllers/`, `services/`, `repositories/`) giúp mỗi feature module tự chứa và dễ navigate hơn khi codebase lớn.
+Mã nguồn backend được tổ chức theo **miền nghiệp vụ** thay vì theo tầng kỹ thuật. Mỗi miền — nhân sự, phòng ban, chấm công, nghỉ phép, tăng ca, hợp đồng, tính lương, thông báo — là một mô-đun tự chứa, gom đầy đủ thực thể, dịch vụ và kho dữ liệu liên quan vào một chỗ. Các thành phần dùng chung (kiểu liệt kê vai trò và trạng thái, bộ lọc xác thực, dịch vụ token, bộ xử lý ngoại lệ, lớp bao bọc phản hồi) được tách riêng. Cách tổ chức theo miền giúp mỗi tính năng dễ định vị và bảo trì hơn so với tổ chức theo tầng khi mã nguồn lớn dần.
 
 ### 3.2.2 Spring Security và kiến trúc phân quyền
 
-Bài toán cần giải quyết: Hệ thống có bảy vai trò với quyền hạn chồng lấp phức tạp. Cùng một endpoint `GET /api/employees` có thể được truy cập bởi HR_ADMIN (xem tất cả), MANAGER (xem nhân viên trong phòng ban), và EMPLOYEE (xem chính mình). Thiết bị chấm công xác thực bằng API key thay vì JWT. Cần cơ chế phân quyền đủ linh hoạt để xử lý tất cả trường hợp này.
+Bài toán cần giải quyết: hệ thống có bảy vai trò với quyền hạn chồng lấp phức tạp. Cùng một thao tác xem danh sách nhân viên có thể được truy cập bởi nhân sự (xem tất cả), quản lý (xem nhân viên trong phòng ban) và nhân viên (xem chính mình). Thiết bị chấm công lại xác thực bằng khóa API thay vì token. Cần một cơ chế phân quyền đủ linh hoạt để xử lý mọi trường hợp này.
 
 Kiến trúc bảo mật được triển khai:
 
-Spring Security filter chain trong FaceZ HRMS được cấu hình theo thứ tự ưu tiên:
+Chuỗi bộ lọc bảo mật được sắp đặt theo thứ tự ưu tiên như Hình 3.1: một yêu cầu đi vào sẽ lần lượt qua *bước xác thực thiết bị*, *bước xác thực người dùng*, *luật phân quyền theo đường dẫn*, rồi *kiểm soát quyền ở mức phương thức* trước khi tới mã nghiệp vụ.
 
 ```
-Request
+Yêu cầu HTTP
   │
   ▼
-DeviceApiKeyFilter       ← Xác thực X-Device-API-Key cho /api/checkin-logs/
-  │ (nếu không match endpoint checkin → bỏ qua)
+Xác thực thiết bị        ← kiểm tra khóa API cho luồng gửi dữ liệu chấm công
+  │ (không phải luồng chấm công → bỏ qua bước này)
   ▼
-JwtAuthFilter            ← Xác thực Bearer token cho tất cả endpoint còn lại
-  │ (đọc username từ token, nạp UserDetails, set SecurityContext)
+Xác thực người dùng      ← kiểm tra token cho mọi luồng còn lại
+  │ (đọc danh tính từ token, nạp thông tin tài khoản vào ngữ cảnh bảo mật)
   ▼
-SecurityConfig URL Rules ← Kiểm tra quyền truy cập theo URL pattern + HTTP method
+Luật phân quyền đường dẫn ← kiểm tra quyền theo mẫu đường dẫn và phương thức HTTP
   │
   ▼
-@PreAuthorize            ← Kiểm tra quyền truy cập ở method-level (chi tiết hơn)
+Kiểm soát mức phương thức ← kiểm tra quyền chi tiết hơn cho từng nghiệp vụ
   │
   ▼
-Controller Method
+Mã nghiệp vụ
 ```
 
-`DeviceApiKeyFilter` chạy trước `JwtAuthFilter` vì thiết bị không có JWT — nếu `JwtAuthFilter` chạy trước, thiết bị sẽ bị từ chối ngay. Khi thiết bị gửi request đến `/api/checkin-logs/` với header `X-Device-API-Key` hợp lệ, filter set `DEVICE_CHECKIN` authority vào `SecurityContext` và bỏ qua JWT validation.
+Hình 3.1: Thứ tự các bước trong chuỗi bộ lọc bảo mật
 
-Ở tầng method, `@PreAuthorize` được dùng cho các trường hợp phức tạp hơn URL matching:
+Bước xác thực thiết bị phải đứng trước bước xác thực người dùng vì thiết bị chấm công không sở hữu token — nếu kiểm tra token chạy trước, thiết bị sẽ bị từ chối ngay. Khi thiết bị gửi dữ liệu chấm công kèm khóa API hợp lệ, hệ thống gán cho nó một quyền hạn riêng dành cho thiết bị và bỏ qua bước kiểm tra token.
 
-```java
-// Chỉ FINANCE_ADMIN và SYSTEM_ADMIN mới tính được lương
-@PreAuthorize("hasAnyRole('FINANCE_ADMIN', 'SYSTEM_ADMIN')")
-public PayrollResponse calculate(...) { ... }
+Ở mức phương thức, cơ chế kiểm soát quyền chi tiết xử lý các trường hợp vượt quá khả năng đối sánh theo đường dẫn: chẳng hạn chỉ vai trò phụ trách tài chính (và quản trị hệ thống) mới được phép kích hoạt tính lương, chỉ vai trò giám đốc mới được phê duyệt, còn nhân viên chỉ được xem phiếu lương của chính mình — danh tính người gọi lấy trực tiếp từ token chứ không tin tham số do phía giao diện gửi lên.
 
-// Chỉ DIRECTOR mới phê duyệt được
-@PreAuthorize("hasRole('DIRECTOR')")
-public PayrollResponse approve(String id) { ... }
+### 3.2.3 Truy cập dữ liệu và quản lý lược đồ theo phiên bản
 
-// Employee chỉ xem phiếu lương của chính mình
-@PreAuthorize("hasRole('EMPLOYEE')")
-public PayrollResponse getMySlip(@AuthenticationPrincipal ...) { ... }
-```
+Thư viện truy cập dữ liệu giải quyết đồng thời ba bài toán:
 
-### 3.2.3 Spring Data JPA và quản lý schema theo phiên bản
-### 3.2.3 Spring Data JPA và quản lý schema theo phiên bản
+*Bài toán 1 — Ghi vết kiểm toán (audit trail):* mọi thay đổi dữ liệu nghiệp vụ cần lưu lại ai tạo, ai sửa và vào lúc nào. Đồ án triển khai bằng một lớp thực thể cơ sở dùng chung: mọi thực thể kế thừa lớp này tự động được bổ sung bốn trường — thời điểm tạo, thời điểm sửa, người tạo, người sửa. Danh tính người thao tác được lấy từ ngữ cảnh bảo mật của phiên làm việc, nhờ vậy vết kiểm toán được ghi tự động mà không phải viết tay ở từng nghiệp vụ.
 
-Spring Data JPA giải quyết ba bài toán đồng thời:
+*Bài toán 2 — Xóa mềm (soft delete):* dữ liệu lịch sử không bị xóa vật lý. Mọi thực thể có một cờ đánh dấu đã xóa kèm thời điểm xóa; các truy vấn tự động luôn lọc bỏ những bản ghi đã đánh dấu, nên dữ liệu vẫn còn cho mục đích tra cứu và kiểm toán.
 
-*Bài toán 1 — Audit Trail:* Mọi thay đổi dữ liệu nghiệp vụ cần ghi lại ai đã tạo/sửa và khi nào. Triển khai bằng `AuditableEntity` (mapped superclass):
+*Bài toán 3 — Truy vấn suy diễn:* thư viện tự sinh câu lệnh truy vấn từ chính tên phương thức khai báo trong kho dữ liệu, giảm đáng kể lượng mã truy vấn phải viết thủ công.
 
-```java
-@MappedSuperclass
-@EntityListeners(AuditingEntityListener.class)
-public abstract class AuditableEntity {
-    @CreatedDate   LocalDateTime createdAt;
-    @LastModifiedDate LocalDateTime updatedAt;
-    @CreatedBy     String createdBy;   // username từ SecurityContext
-    @LastModifiedBy String updatedBy;
-}
-```
+Lược đồ cơ sở dữ liệu được quản lý bằng các **script SQL đánh số phiên bản**. Cách đơn giản ban đầu là để framework tự so sánh thực thể với cơ sở dữ liệu rồi tự cập nhật lược đồ, nhưng cách này không xử lý được các thao tác phức tạp như đổi tên cột, tách cột hay di trú dữ liệu, và không cho biết chính xác môi trường vận hành đang ở phiên bản lược đồ nào.
 
-`AuditorAwareImpl` đọc username từ `SecurityContextHolder.getContext().getAuthentication()` và trả về cho Spring Auditing. Mọi entity kế thừa `AuditableEntity` tự động được ghi audit trail mà không cần viết code thủ công.
-
-*Bài toán 2 — Soft Delete:* Dữ liệu lịch sử không được xóa vật lý. Tất cả entity có trường `deleteFlag` (boolean) và `deletedAt` (LocalDateTime). Repository dùng `@Where(clause = "delete_flag = false")` để lọc bản ghi đã xóa khỏi mọi query tự động.
-
-*Bài toán 3 — Derived Queries:* Spring Data JPA tự sinh SQL từ tên phương thức (`findByEmployeeIdAndYearAndMonth`, `findAllByCurrentTrueAndEmployeeId`) giảm đáng kể boilerplate JPQL/SQL.
-
-Quản lý schema database bằng các **script SQL có đánh số phiên bản**. Vấn đề với `ddl-auto: update` (cách tiếp cận đơn giản ban đầu) là: Hibernate tự sinh SQL thay đổi schema dựa trên so sánh entity class với database, nhưng nó không thể tự xử lý các thao tác phức tạp như đổi tên cột, chia cột, hay migration dữ liệu; và không có cách nào biết chính xác môi trường production đang ở schema version nào.
-Quản lý schema database bằng các **script SQL có đánh số phiên bản**. Vấn đề với `ddl-auto: update` (cách tiếp cận đơn giản ban đầu) là: Hibernate tự sinh SQL thay đổi schema dựa trên so sánh entity class với database, nhưng nó không thể tự xử lý các thao tác phức tạp như đổi tên cột, chia cột, hay migration dữ liệu; và không có cách nào biết chính xác môi trường production đang ở schema version nào.
-
-Giải pháp của đồ án: mỗi thay đổi schema là một file SQL có số thứ tự rõ ràng theo convention `V{n}__{description}.sql` (V1 → V30) — vừa là **nguồn sự thật** của schema, vừa là **nhật ký (audit trail)** đầy đủ lịch sử thay đổi. Ứng dụng chạy với `ddl-auto: none` (Hibernate không tự sửa schema); các script được **áp thủ công theo thứ tự** khi triển khai, hoặc dùng bản hợp nhất `final_schema.sql` (gộp toàn bộ V1 → V30 thành một DDL phẳng, có DROP đầu file) để dựng cơ sở dữ liệu từ đầu chỉ bằng một lệnh.
-Giải pháp của đồ án: mỗi thay đổi schema là một file SQL có số thứ tự rõ ràng theo convention `V{n}__{description}.sql` (V1 → V30) — vừa là **nguồn sự thật** của schema, vừa là **nhật ký (audit trail)** đầy đủ lịch sử thay đổi. Ứng dụng chạy với `ddl-auto: none` (Hibernate không tự sửa schema); các script được **áp thủ công theo thứ tự** khi triển khai, hoặc dùng bản hợp nhất `final_schema.sql` (gộp toàn bộ V1 → V30 thành một DDL phẳng, có DROP đầu file) để dựng cơ sở dữ liệu từ đầu chỉ bằng một lệnh.
-
-FaceZ HRMS có 31 file migration (V1–V30) phản ánh toàn bộ lịch sử phát triển schema, từ baseline đến các thay đổi phức tạp như chuyển đổi `VARCHAR → LocalDate` cho contract dates (V12 dùng kỹ thuật cột song song để zero-downtime).
-FaceZ HRMS có 31 file migration (V1–V30) phản ánh toàn bộ lịch sử phát triển schema, từ baseline đến các thay đổi phức tạp như chuyển đổi `VARCHAR → LocalDate` cho contract dates (V12 dùng kỹ thuật cột song song để zero-downtime).
+Giải pháp của đồ án: mỗi thay đổi lược đồ là một tệp SQL có số thứ tự rõ ràng — vừa là **nguồn sự thật** của lược đồ, vừa là **nhật ký** đầy đủ lịch sử thay đổi. Ứng dụng chạy ở chế độ không tự sửa lược đồ; các tệp được **áp thủ công theo đúng thứ tự** khi triển khai, hoặc dùng một bản hợp nhất (gộp toàn bộ lịch sử thành một tập lệnh khởi tạo phẳng) để dựng cơ sở dữ liệu từ đầu chỉ bằng một lệnh. Toàn bộ ba mươi mốt phiên bản lược đồ phản ánh trọn vẹn quá trình tiến hóa của hệ thống, từ bản nền ban đầu đến các thay đổi phức tạp như chuyển kiểu lưu ngày hợp đồng từ chuỗi sang kiểu ngày bằng kỹ thuật cột song song để không gián đoạn vận hành.
 
 ## 3.3 Nhóm dữ liệu
 
@@ -836,43 +706,29 @@ FaceZ HRMS có 31 file migration (V1–V30) phản ánh toàn bộ lịch sử p
 
 Bài toán cần giải quyết: Hệ thống HRMS có ba yêu cầu đặc thù với cơ sở dữ liệu mà không phải mọi RDBMS đều hỗ trợ tốt:
 
-Yêu cầu 1 — Cấu hình linh hoạt dạng JSON: Bảng `system_config` lưu cấu hình tính lương (biểu thuế PIT 7 bậc, bảng lương bậc thang, tỷ lệ bảo hiểm) dưới dạng cấu trúc JSON khác nhau tùy từng loại. Dùng nhiều bảng riêng cho mỗi loại cấu hình sẽ phức tạp khi thêm loại mới; dùng VARCHAR lưu JSON thì không thể query một phần. JSONB của PostgreSQL lưu JSON ở dạng binary có thể query và index — `configData::jsonb -> 'brackets'` trả về mảng bậc thuế trực tiếp từ SQL.
+Yêu cầu 1 — Cấu hình linh hoạt dạng JSON: bảng cấu hình hệ thống lưu các tham số tính lương (biểu thuế thu nhập cá nhân bảy bậc, bảng lương bậc thang, tỷ lệ bảo hiểm) dưới dạng cấu trúc JSON khác nhau tùy từng loại. Dùng nhiều bảng riêng cho mỗi loại sẽ phức tạp khi bổ sung loại mới; lưu JSON dưới dạng chuỗi thuần thì không thể truy vấn từng phần. Kiểu JSON nhị phân của PostgreSQL lưu dữ liệu ở dạng đã phân giải, có thể truy vấn và lập chỉ mục trực tiếp trong câu lệnh SQL, nên rút được riêng mảng bậc thuế mà không phải nạp toàn bộ cấu hình về tầng ứng dụng.
 
-Yêu cầu 2 — Ràng buộc unique có điều kiện: Bảng `contract` dùng history pattern — mỗi nhân viên có nhiều bản ghi contract nhưng chỉ một bản `current = true`. Cần ràng buộc đảm bảo không có hai bản ghi `current = true` cho cùng nhân viên, nhưng không ảnh hưởng đến các bản ghi `current = false`. Partial unique index của PostgreSQL giải quyết chính xác: `CREATE UNIQUE INDEX ... WHERE current = true` — một tính năng không có trong MySQL 8 (MySQL chỉ hỗ trợ functional index từ 8.0.13 nhưng không phải partial index).
+Yêu cầu 2 — Ràng buộc duy nhất có điều kiện: bảng hợp đồng dùng mô hình lịch sử — mỗi nhân viên có nhiều bản ghi hợp đồng nhưng chỉ đúng một bản đang hiệu lực. Cần ràng buộc bảo đảm không tồn tại hai bản "đang hiệu lực" cho cùng một nhân viên, nhưng không hạn chế các bản đã hết hiệu lực. Chỉ mục duy nhất có điều kiện của PostgreSQL giải quyết chính xác yêu cầu này — một khả năng mà MySQL 8 không có.
 
-Yêu cầu 3 — Tối ưu truy vấn tổng hợp: Kiểm tra giới hạn OT hàng tháng/năm của nhân viên cần tổng hợp dữ liệu từ `ot_request` theo nhiều điều kiện. Thay vì viết subquery phức tạp trong mỗi endpoint, PostgreSQL cho phép định nghĩa Database View `ot_monthly_summary` một lần, các query sau đó chỉ cần `SELECT * FROM ot_monthly_summary WHERE employeeId = ?`.
+Yêu cầu 3 — Tối ưu truy vấn tổng hợp: việc kiểm tra hạn mức tăng ca tháng và năm của nhân viên đòi hỏi tổng hợp dữ liệu theo nhiều điều kiện. Thay vì viết truy vấn con phức tạp trong mỗi điểm gọi, hệ thống định nghĩa một khung nhìn cơ sở dữ liệu tổng hợp tăng ca theo tháng một lần, các truy vấn sau chỉ việc đọc từ khung nhìn này.
 
-So sánh với MySQL 8: MySQL 8 hỗ trợ JSONB nhưng hạn chế hơn PostgreSQL về toán tử JSON; không hỗ trợ partial unique index. MongoDB hỗ trợ linh hoạt hơn về schema nhưng thiếu ACID transaction đủ mạnh cho payroll calculation (đọc-tính-ghi phải atomic); join giữa nhiều collection phức tạp hơn SQL join đáng kể.
+So sánh với MySQL 8: MySQL 8 có hỗ trợ kiểu JSON nhưng hạn chế hơn PostgreSQL về toán tử thao tác JSON và không hỗ trợ chỉ mục duy nhất có điều kiện. MongoDB linh hoạt hơn về lược đồ nhưng thiếu giao dịch ACID đủ mạnh cho tính lương — vốn yêu cầu chuỗi đọc–tính–ghi phải nguyên tử — và việc kết nối dữ liệu giữa nhiều tập tài liệu phức tạp hơn phép nối trong SQL.
 
-Cấu hình PostgreSQL trong dự án:
-
-```yaml
-spring:
-  datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/facez}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
-    hikari:
-      maximum-pool-size: 10
-      minimum-idle: 5
-      connection-timeout: 30000
-```
-
-HikariCP connection pool với 10 connection tối đa phù hợp với workload hiện tại (< 100 concurrent users). Khi scale lên, tăng `maximum-pool-size` và thêm read replica là đủ mà không cần thay đổi kiến trúc.
+Về cấu hình, hệ thống dùng một bể kết nối giới hạn ở mười kết nối đồng thời, phù hợp với quy mô hiện tại (dưới 100 người dùng đồng thời). Khi cần mở rộng, chỉ việc nâng kích thước bể kết nối và bổ sung bản sao chỉ-đọc mà không phải thay đổi kiến trúc.
 
 ### 3.3.2 Redis 7
 
 Bài toán cần giải quyết: Hai nghiệp vụ của FaceZ HRMS cần lưu trạng thái chia sẻ nhanh giữa các request mà database quan hệ không phù hợp do overhead I/O:
 
-Bài toán 1 — JWT Token Blacklist: Access Token có TTL 5 phút và không thể revoke theo design của JWT (stateless). Nhưng khi người dùng đăng xuất, cần đảm bảo Access Token cũ không còn dùng được ngay lập tức. Giải pháp: lưu JTI (JWT ID) của token đã bị revoke vào Redis với TTL bằng thời gian sống còn lại của token. Mỗi request, `JwtAuthFilter` kiểm tra JTI trong Redis blacklist — nếu tồn tại, từ chối request dù token signature hợp lệ. Refresh Token (14 ngày) cũng được lưu JTI trong Redis để hỗ trợ token rotation: khi refresh, JTI cũ bị revoke và JTI mới được lưu.
+Bài toán 1 — Thu hồi token đã đăng xuất: token truy cập có thời hạn ngắn (năm phút) và về bản chất phi trạng thái nên không thể thu hồi trực tiếp. Tuy vậy, khi người dùng đăng xuất, token cũ cần mất hiệu lực ngay. Giải pháp là lưu định danh của token đã thu hồi vào Redis với thời gian sống đúng bằng thời gian còn lại của token; mỗi yêu cầu, bước xác thực sẽ tra danh sách thu hồi này và từ chối nếu định danh có mặt, dù chữ ký token vẫn hợp lệ. Token làm mới (thời hạn mười bốn ngày) cũng được lưu định danh trong Redis để hỗ trợ cơ chế xoay vòng: mỗi lần làm mới, định danh cũ bị thu hồi và một định danh mới được cấp.
 
-Bài toán 2 — Login Rate Limiting: Giới hạn 10 lần đăng nhập sai mỗi 15 phút mỗi IP cần counter tự reset sau TTL. Redis `INCR` + `EXPIRE` thực hiện atomic counter với TTL tự động — không cần scheduled cleanup job. `LoginRateLimiter` dùng key `login_attempt:{ip}`, mỗi lần đăng nhập sai gọi `INCR`, nếu key chưa tồn tại gọi thêm `EXPIRE 900` (15 phút).
+Bài toán 2 — Giới hạn tần suất đăng nhập: quy tắc tối đa mười lần đăng nhập sai trong mười lăm phút cho mỗi địa chỉ IP đòi hỏi một bộ đếm tự đặt lại sau khi hết hạn. Redis cung cấp thao tác tăng đếm nguyên tử kèm thời gian sống tự động, nên không cần một tác vụ dọn dẹp định kỳ: mỗi lần đăng nhập sai, bộ đếm gắn với địa chỉ IP tăng thêm một; lần đầu tạo bộ đếm sẽ gắn kèm hạn sống mười lăm phút.
 
-Tại sao không dùng in-memory (HashMap)? Không tương thích multi-instance deployment — nếu có nhiều instance backend, counter trên instance A không chia sẻ với instance B. Redis là distributed store chia sẻ giữa tất cả instances.
+Tại sao không dùng bộ nhớ trong tiến trình? Vì không tương thích khi triển khai nhiều tiến trình — bộ đếm ở tiến trình này không chia sẻ với tiến trình kia. Redis là kho lưu trữ chia sẻ chung cho tất cả các tiến trình.
 
-Tại sao không dùng database? Mỗi API request cần kiểm tra blacklist → thêm một DB read vào hot path. Redis in-memory có latency < 1ms so với PostgreSQL thường 5–20ms. Với hàng trăm request mỗi giây, sự khác biệt này tích lũy đáng kể.
+Tại sao không dùng cơ sở dữ liệu quan hệ? Vì mỗi yêu cầu đều phải kiểm tra danh sách thu hồi, tức thêm một lượt đọc vào đường đi nóng. Redis lưu trong bộ nhớ có độ trễ dưới một mili-giây, so với năm đến hai mươi mili-giây của truy vấn cơ sở dữ liệu thông thường; với hàng trăm yêu cầu mỗi giây, khác biệt này tích lũy đáng kể.
 
-Tại sao không dùng Memcached? Memcached không hỗ trợ TTL per-key tự động sau `EXPIRE`, thiếu Lua scripting cho atomic operations, và không hỗ trợ persistence nếu cần mở rộng sau.
+Tại sao không dùng Memcached? Vì Memcached không hỗ trợ tốt thời gian sống theo từng khóa, thiếu khả năng kịch bản hóa cho các thao tác nguyên tử, và không hỗ trợ lưu bền nếu sau này cần mở rộng.
 
 ## 3.4 Xác thực và Bảo mật
 
@@ -884,57 +740,36 @@ Kiến trúc JWT hai token:
 
 JWT thuần túy (chỉ dùng Access Token) có một vấn đề: nếu token có TTL dài (vài giờ), người dùng phải đăng nhập lại ít — nhưng nếu token bị lộ, kẻ tấn công có nhiều giờ để dùng. Nếu TTL ngắn (5 phút), an toàn hơn nhưng người dùng phải đăng nhập lại mỗi 5 phút.
 
-FaceZ HRMS giải quyết bằng kiến trúc hai token:
+Hệ thống giải quyết bằng kiến trúc hai token với vai trò bổ trợ nhau:
 
-```
-Access Token (5 phút)
-├── Lưu trong: memory của React app (không lưu localStorage — tránh XSS)
-├── Gửi qua: Authorization: Bearer header
-└── Khi hết hạn → tự động silent refresh
+- **Token truy cập** có thời hạn ngắn (năm phút), được giữ trong bộ nhớ của ứng dụng giao diện (không lưu vào kho lưu trữ trình duyệt để tránh bị mã độc đánh cắp), gửi kèm trong tiêu đề ủy quyền của mỗi yêu cầu, và được làm mới ngầm khi hết hạn.
+- **Token làm mới** có thời hạn dài (mười bốn ngày), được giữ trong một cookie chỉ truy cập được từ phía máy chủ (mã JavaScript không đọc được), tự động đính kèm khi gọi điểm làm mới phiên, và có định danh lưu trong Redis để phục vụ thu hồi và xoay vòng.
 
-Refresh Token (14 ngày)
-├── Lưu trong: HttpOnly cookie (không thể đọc bởi JavaScript — tránh XSS)
-├── Gửi qua: cookie tự động kèm theo request đến /api/auth/refresh
-└── JTI được lưu Redis để hỗ trợ revocation và rotation
-```
+Luồng làm mới ngầm: khi tầng gọi dịch vụ phía giao diện nhận về mã từ chối truy cập, trước khi báo lỗi cho người dùng, nó tự gọi điểm làm mới phiên (cookie token làm mới tự động được gửi kèm). Nếu thành công, hệ thống nhận token truy cập mới, lưu vào bộ nhớ và thực hiện lại yêu cầu gốc. Người dùng không hề nhận ra token đã được làm mới — trải nghiệm liền mạch.
 
-Luồng Silent Refresh: Khi `apiClient()` nhận 401/403, trước khi thông báo lỗi cho người dùng, nó gọi `POST /api/auth/refresh` (cookie Refresh Token tự động được gửi). Nếu thành công, nhận Access Token mới, lưu vào memory, retry request gốc với token mới. Người dùng không nhận ra token đã được làm mới — trải nghiệm liền mạch.
+Cơ chế xoay vòng token: mỗi lần làm mới phiên, token làm mới cũ bị thu hồi và một token làm mới mới được cấp. Nhờ vậy, một token làm mới bị đánh cắp chỉ dùng được đúng một lần — khi kẻ tấn công sử dụng nó, token của người dùng hợp lệ cũng bị vô hiệu và họ buộc phải đăng nhập lại, đó là tín hiệu cảnh báo tài khoản có thể đã bị xâm phạm.
 
-Token Rotation: Mỗi lần `/api/auth/refresh` được gọi, Refresh Token cũ bị revoke (JTI xóa khỏi Redis) và một Refresh Token mới được cấp. Điều này đảm bảo Refresh Token bị đánh cắp chỉ có thể dùng một lần — khi kẻ tấn công dùng, token của người dùng hợp lệ cũng bị revoke và họ sẽ phải đăng nhập lại (tín hiệu cảnh báo tài khoản bị xâm phạm).
-
-Payload JWT tối giản:
-
-```json
-{
-  "sub": "username",
-  "jti": "uuid-v4",      // ID duy nhất để blacklist
-  "role": "HR_ADMIN",    // Đọc bởi JwtAuthFilter để set authority
-  "iat": 1718000000,
-  "exp": 1718000300      // 5 phút sau
-}
-```
-
-Payload nhỏ gọn — không lưu thông tin nhạy cảm, chỉ đủ để xác thực và phân quyền.
+Nội dung token được giữ tối giản: chỉ chứa danh tính người dùng, một định danh duy nhất phục vụ thu hồi, vai trò để phân quyền, cùng thời điểm phát hành và hết hạn — không lưu bất kỳ thông tin nhạy cảm nào, chỉ vừa đủ để xác thực và phân quyền.
 
 ### 3.4.2 Rate Limiting
 
-Bài toán cần giải quyết: Endpoint đăng nhập (`POST /api/auth/login`) là mục tiêu của tấn công brute-force — kẻ tấn công thử hàng nghìn mật khẩu tự động cho một tài khoản mục tiêu. Cần cơ chế giới hạn tần suất theo IP mà không ảnh hưởng người dùng hợp lệ.
+Bài toán cần giải quyết: điểm cuối đăng nhập là mục tiêu của tấn công dò mật khẩu — kẻ tấn công thử hàng nghìn mật khẩu tự động cho một tài khoản mục tiêu. Cần cơ chế giới hạn tần suất theo địa chỉ IP mà không ảnh hưởng người dùng hợp lệ.
 
-Thiết kế `LoginRateLimiter`:
+Thiết kế bộ giới hạn tần suất đăng nhập được mô tả ở Hình 3.2: mỗi địa chỉ IP ứng với một bộ đếm trong Redis. Đăng nhập thành công sẽ xóa bộ đếm (đặt lại về không); đăng nhập thất bại sẽ tăng bộ đếm, lần đầu tiên đồng thời gắn hạn sống mười lăm phút. Khi bộ đếm chạm ngưỡng mười, hệ thống trả về mã "quá nhiều yêu cầu" kèm thông tin thời gian phải chờ. Sau mười lăm phút, Redis tự xóa bộ đếm nhờ cơ chế hết hạn.
 
 ```
-Client IP → Redis key: "login_attempt:{ip}"
+Địa chỉ IP → bộ đếm trong Redis
 │
-├── Đăng nhập thành công → DEL key (reset counter)
-├── Đăng nhập thất bại  → INCR key
-│   ├── Lần đầu INCR    → EXPIRE key 900 (15 phút)
-│   └── Counter ≥ 10    → Trả HTTP 429 + Retry-After header
-└── Sau 15 phút         → Redis tự xóa key (EXPIRE)
+├── Đăng nhập thành công → xóa bộ đếm (đặt lại)
+├── Đăng nhập thất bại    → tăng bộ đếm
+│   ├── Lần đầu          → gắn hạn sống 15 phút
+│   └── Đạt ngưỡng 10    → trả mã "quá nhiều yêu cầu" + thời gian chờ
+└── Sau 15 phút          → bộ đếm tự hết hạn
 ```
 
-Triển khai tự xây dựng thay vì dùng Bucket4j vì đơn giản hơn, ít dependency hơn, và đủ cho yêu cầu hiện tại. Bucket4j mạnh hơn (hỗ trợ nhiều thuật toán: token bucket, leaky bucket) nhưng cần cấu hình phức tạp hơn và thêm dependency không cần thiết cho bài toán này.
+Hình 3.2: Luồng giới hạn tần suất đăng nhập theo địa chỉ IP
 
-Nhận diện IP qua `X-Forwarded-For` header (khi đứng sau reverse proxy/load balancer) với fallback về `RemoteAddr`. Điều này đảm bảo rate limiting hoạt động đúng cả trong môi trường có proxy.
+Cơ chế này được tự xây dựng thay vì dùng thư viện chuyên biệt vì đơn giản hơn, ít phụ thuộc hơn và đủ cho yêu cầu hiện tại; các thư viện chuyên biệt mạnh hơn (hỗ trợ nhiều thuật toán như gáo token, gáo rò) nhưng cần cấu hình phức tạp và thêm phụ thuộc không cần thiết. Địa chỉ IP của người gọi được nhận diện qua tiêu đề chuyển tiếp khi hệ thống đứng sau máy chủ ủy nhiệm hoặc bộ cân bằng tải, có dự phòng về địa chỉ kết nối trực tiếp, nhờ vậy việc giới hạn tần suất hoạt động đúng cả khi có lớp trung gian.
 
 ## 3.5 Nhóm giao diện người dùng — Frontend
 
@@ -944,71 +779,23 @@ Bài toán cần giải quyết: Frontend phục vụ 7 vai trò khác nhau vớ
 
 Next.js 15 App Router được chọn vì ba lý do:
 
-*Lý do 1 — Nested Layouts:* App Router cho phép định nghĩa layout lồng nhau. Mỗi nhóm route (`employees/`, `managers/`, `hr/`, `finance/`, `director/`, `system/`) có layout riêng với Sidebar phù hợp vai trò, nhưng chia sẻ cùng Header và authentication wrapper:
+*Lý do 1 — Bố cục lồng nhau:* kiến trúc định tuyến của Next.js cho phép định nghĩa bố cục theo từng cấp. Mỗi nhóm trang ứng với một vai trò (nhân viên, quản lý, nhân sự, tài chính, giám đốc, quản trị hệ thống) có bố cục riêng với thanh điều hướng phù hợp vai trò, nhưng dùng chung phần đầu trang và lớp bao bọc xác thực. Mỗi trang được bọc trong một thành phần bảo vệ, kiểm tra vai trò người dùng và chuyển hướng về trang đăng nhập nếu vai trò không hợp lệ.
 
-```
-app/
-├── layout.tsx           ← Root layout: AuthContext, ToastContext providers
-├── employees/
-│   ├── layout.tsx       ← Không có — dùng root layout
-│   ├── dashboard/page.tsx
-│   └── attendance/page.tsx
-├── hr/
-│   └── employee/page.tsx
-└── finance/
-    └── payroll/page.tsx
-```
+*Lý do 2 — Kết xuất phía máy chủ:* các trang không cần tương tác phía trình duyệt có thể kết xuất tại máy chủ, giảm khối lượng mã gửi về trình duyệt. Tuy nhiên trong hệ thống này, hầu hết trang cần trạng thái phía trình duyệt (cửa sổ nổi, phân trang, thông báo) nên phần lớn là thành phần phía trình duyệt.
 
-Mỗi page được bọc trong `ProtectedRoute` component kiểm tra `role` từ `AuthContext` và redirect về `/login` nếu role không hợp lệ.
+*Lý do 3 — Hỗ trợ TypeScript sẵn có:* Next.js tích hợp TypeScript mặc định với kiểm tra kiểu nghiêm ngặt cho thuộc tính thành phần, tham số đường dẫn và kiểu trả về.
 
-*Lý do 2 — React Server Components:* Các trang không cần client-side interactivity có thể render phía server, giảm JavaScript bundle gửi về client. Tuy nhiên trong FaceZ HRMS, hầu hết trang cần client-side state (modal, pagination, toast) nên phần lớn là Client Components với `"use client"` directive.
+React 19 mang hai cải tiến được dùng trong dự án: khả năng đọc kết quả bất đồng bộ và ngữ cảnh ngay trong hàm kết xuất mà không cần khuôn mẫu phụ trợ; và việc gộp tự động nhiều lần cập nhật trạng thái trong cùng một thao tác bất đồng bộ thành một lần vẽ lại, cải thiện hiệu năng cập nhật giao diện sau mỗi lời gọi dịch vụ.
 
-*Lý do 3 — TypeScript First-Class:* Next.js 15 tích hợp TypeScript mặc định với type checking nghiêm ngặt cho props, route params, và server action return types.
+Quản lý trạng thái dùng cơ chế ngữ cảnh sẵn có của React (không dùng thư viện quản lý trạng thái ngoài như Redux hay Zustand) vì trạng thái cần chia sẻ toàn ứng dụng chỉ gồm hai loại: trạng thái phiên đăng nhập (người dùng, vai trò, token, trạng thái tải, thao tác đăng xuất) và trạng thái thông báo. Trạng thái cục bộ của từng trang — danh sách dữ liệu, đóng/mở cửa sổ nổi, giá trị biểu mẫu — được quản lý ngay tại trang đó, không cần thư viện quản lý trạng thái toàn cục.
 
-React 19 mang hai cải tiến được dùng trong dự án:
-
-- `use()` hook: Đọc Promise và Context trong render function mà không cần `useEffect + useState` boilerplate.
-- Automatic Batching: Nhiều `setState` trong async callbacks được batch thành một re-render — cải thiện hiệu suất update UI sau API call.
-
-Quản lý trạng thái dùng React Context API (không dùng Redux hay Zustand) vì state cần chia sẻ toàn ứng dụng chỉ có hai loại:
-
-```typescript
-// AuthContext — session state
-const { user, role, accessToken, isLoading, logout } = useAuth();
-
-// ToastContext — notification state
-const { showToast } = useToast();
-// Dùng: showToast('Lưu thành công'); showToast('Lỗi', 'error');
-```
-
-State cục bộ của từng trang (danh sách dữ liệu, modal open/close, form values) được quản lý bằng `useState` thuần — không cần global state management library.
-
-Mô hình "three-file split" được áp dụng nhất quán cho mọi feature:
-
-```
-PayrollContent.tsx   ← Owns: refreshKey, modal state, search; renders layout
-PayrollTable.tsx     ← Fetches paginated data; re-fetches when refreshKey changes
-PayrollFormModal.tsx ← Create/edit form inside Modal component
-```
-
-Refresh key pattern: sau mỗi mutation (create/update/delete), `setRefreshKey(k => k + 1)` trigger `PayrollTable` re-fetch mà không cần prop drilling hay global state.
+Mỗi tính năng tuân theo mô hình **tách ba tệp** nhất quán: một thành phần khung giữ trạng thái dùng chung (khóa làm mới, trạng thái cửa sổ nổi, từ khóa tìm kiếm) và dựng bố cục; một thành phần bảng nạp dữ liệu phân trang và tự nạp lại khi khóa làm mới thay đổi; một thành phần biểu mẫu tạo/sửa nằm trong cửa sổ nổi. Sau mỗi thao tác thay đổi dữ liệu, khung chỉ việc tăng khóa làm mới để kích hoạt bảng nạp lại, tránh phải truyền thuộc tính qua nhiều cấp hay dùng trạng thái toàn cục.
 
 ### 3.5.2 TypeScript và Tailwind CSS
 
-TypeScript đảm bảo type safety xuyên suốt frontend codebase. Tất cả DTO từ backend được định nghĩa trong `src/app/commons/types/index.ts` và dùng làm return type của service functions. Khi backend thay đổi response shape, TypeScript compiler báo lỗi ở tất cả điểm sử dụng trước khi runtime.
+TypeScript bảo đảm an toàn kiểu xuyên suốt mã nguồn giao diện. Toàn bộ đối tượng truyền dữ liệu từ backend được khai báo tập trung một nơi và dùng làm kiểu trả về cho các hàm gọi dịch vụ. Khi backend đổi hình dạng phản hồi, trình biên dịch TypeScript báo lỗi tại mọi điểm sử dụng ngay từ lúc dịch, trước khi chạy. Một quy ước đáng chú ý là lớp gọi dịch vụ luôn kiểm tra hình dạng dữ liệu trả về để xử lý nhất quán hai trường hợp — phản hồi là một danh sách thuần hay một trang dữ liệu có phân trang — nhằm chấp nhận được cả hai kiểu mà backend có thể trả.
 
-Một pattern đặc biệt quan trọng được áp dụng để xử lý sự không nhất quán trong response backend:
-
-```typescript
-// Một số endpoint trả T[], một số trả PageResponse<T>
-const items = Array.isArray(res.data)
-  ? res.data
-  : ((res.data as any)?.content ?? []);
-```
-
-Tailwind CSS 3 dùng utility-first approach — không có file CSS tùy chỉnh riêng, toàn bộ styling qua class names. Ưu điểm với dashboard phức tạp nhiều vai trò: không bị ràng buộc bởi design system của bên thứ ba (như Bootstrap grid hay MUI component API), dễ dàng tùy chỉnh từng pixel theo thiết kế mockup.
-
-Palette màu được cấu hình trong `tailwind.config.js` để đảm bảo nhất quán xuyên suốt ứng dụng. Responsive design dùng breakpoint utility (`sm:`, `md:`, `lg:`) của Tailwind — sidebar ẩn trên mobile, hiện trên tablet trở lên.
+Tailwind CSS theo hướng tiện ích — không có tệp định kiểu riêng, toàn bộ định dạng đặt ngay trên thành phần qua các lớp tiện ích. Ưu điểm với bảng điều khiển phức tạp nhiều vai trò là không bị ràng buộc bởi hệ thống thiết kế của bên thứ ba, dễ tùy chỉnh chi tiết theo bản thiết kế. Bảng màu được cấu hình tập trung để bảo đảm nhất quán, còn thiết kế thích ứng dùng các điểm ngắt của Tailwind — thanh điều hướng ẩn trên màn hình điện thoại và hiện từ máy tính bảng trở lên.
 
 ### 3.5.3 Recharts
 
@@ -1016,85 +803,29 @@ Bài toán cần giải quyết: Dashboard của HR_ADMIN và SYSTEM_ADMIN cần
 
 Recharts được chọn vì:
 
-- Declarative React API: Biểu đồ được khai báo như JSX component, không phải imperative D3 code. `<BarChart data={data}><Bar dataKey="value"/></BarChart>` là đủ để render chart cơ bản.
-- `ResponsiveContainer`: Wrapper tự động scale chart theo kích thước container cha — không cần tính toán pixel width thủ công, hoạt động tốt với Tailwind flex/grid layout.
-- Tích hợp native React: Re-render tự động khi data thay đổi, không cần lifecycle hook để update chart imperatively.
+- Cách khai báo theo phong cách React: biểu đồ được mô tả như một thành phần giao diện thay vì viết mã vẽ thủ công ở mức thấp; chỉ cần khai báo loại biểu đồ và trường dữ liệu là đủ để dựng biểu đồ cơ bản.
+- Bộ chứa thích ứng: tự động co giãn biểu đồ theo kích thước khung cha, không phải tính toán chiều rộng thủ công và ăn khớp tốt với bố cục linh hoạt của Tailwind.
+- Tích hợp tự nhiên với React: tự vẽ lại khi dữ liệu thay đổi, không cần can thiệp vòng đời thành phần để cập nhật biểu đồ.
 
-Recharts được dùng cho bốn loại chart trong `DashboardContent`: `BarChart` (so sánh), `AreaChart` (xu hướng với fill), `LineChart` (xu hướng đơn giản), `PieChart` (phân bổ tỷ lệ). Tất cả wrap trong `ResponsiveContainer width="100%" height={300}`.
+Bảng điều khiển dùng bốn loại biểu đồ: biểu đồ cột để so sánh, biểu đồ vùng cho xu hướng có tô nền, biểu đồ đường cho xu hướng đơn giản, và biểu đồ tròn cho phân bổ tỷ lệ — tất cả đặt trong bộ chứa thích ứng để tự co giãn theo khung hiển thị.
 
 ## 3.6 Hạ tầng và Triển khai
 
 ### 3.6.1 Docker và Docker Compose
 
-Bài toán cần giải quyết: FaceZ HRMS cần các dịch vụ infrastructure (PostgreSQL, Redis, MinIO) chạy đồng nhất trên máy phát triển của mọi thành viên team và trên server production. "Works on my machine" là vấn đề cổ điển khi team phát triển có môi trường khác nhau.
-Bài toán cần giải quyết: FaceZ HRMS cần các dịch vụ infrastructure (PostgreSQL, Redis, MinIO) chạy đồng nhất trên máy phát triển của mọi thành viên team và trên server production. "Works on my machine" là vấn đề cổ điển khi team phát triển có môi trường khác nhau.
+Bài toán cần giải quyết: FaceZ HRMS cần các dịch vụ hạ tầng (PostgreSQL, Redis, MinIO) chạy đồng nhất trên máy của mọi thành viên phát triển lẫn trên máy chủ vận hành. "Chạy được trên máy tôi" là vấn đề cổ điển khi mỗi người có môi trường khác nhau.
 
-Docker Compose giải quyết bằng cách định nghĩa toàn bộ stack infrastructure trong một file `compose.yaml`:
+Docker Compose giải quyết bằng cách mô tả toàn bộ ngăn xếp hạ tầng trong một tệp khai báo duy nhất, gồm ba dịch vụ: cơ sở dữ liệu quan hệ, bộ nhớ đệm, và kho lưu trữ đối tượng — mỗi dịch vụ chỉ rõ ảnh chứa, cổng và vùng dữ liệu bền. Chỉ một lệnh là khởi động được toàn bộ; người phát triển không phải cài đặt thủ công từng dịch vụ và không lo xung đột phiên bản.
 
-```yaml
-services:
-  postgres:
-    image: postgres:15
-    environment:
-      POSTGRES_DB: facez
-      POSTGRES_USER: ${DB_USERNAME:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+Tại sao không dùng Kubernetes? Kubernetes phù hợp cho hệ vi dịch vụ quy mô lớn với nhiều nút, tự co giãn và tự phục hồi. FaceZ HRMS là một khối đơn, đơn tiến trình — Kubernetes sẽ làm tăng độ phức tạp vận hành mà không mang lại giá trị tương xứng ở quy mô hiện tại.
 
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-
-  minio:
-    image: minio/minio
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_USER:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD:-minioadmin}
-  minio:
-    image: minio/minio
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_USER:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD:-minioadmin}
-    ports:
-      - "9000:9000"   # S3 API
-      - "9001:9001"   # Console
-    volumes:
-      - minio_data:/data
-      - "9000:9000"   # S3 API
-      - "9001:9001"   # Console
-    volumes:
-      - minio_data:/data
-```
-
-Lệnh `docker compose up -d` khởi động toàn bộ infrastructure. Developer chỉ cần Docker Desktop — không cần cài PostgreSQL hay Redis thủ công, không cần lo về version conflict.
-
-Tại sao không dùng Kubernetes? Kubernetes phù hợp cho microservices scale lớn với nhiều pod, auto-scaling, và self-healing. FaceZ HRMS là monolith đơn instance — Kubernetes sẽ thêm độ phức tạp vận hành (YAML manifests, Helm charts, ingress controllers) mà không mang lại giá trị tương xứng ở quy mô hiện tại.
-
-Chiến lược environment profiles:
-
-| Profile | Kích hoạt bằng | Cấu hình đặc thù |
-|---|---|---|
-| `dev` (mặc định) | Không set `SPRING_PROFILES_ACTIVE` | Debug logging, H2 console (nếu cần) |
-| `staging` | `SPRING_PROFILES_ACTIVE=staging` | INFO logging, external secrets |
-| `prod` | `SPRING_PROFILES_ACTIVE=prod` | JSON structured logging, WARN cho framework logs |
+Chiến lược hồ sơ môi trường: hệ thống tách ba hồ sơ — *phát triển* (mặc định, bật nhật ký gỡ lỗi chi tiết), *thử nghiệm* (nhật ký mức thông tin, quản lý bí mật từ bên ngoài), và *vận hành* (nhật ký dạng cấu trúc, chỉ ghi cảnh báo cho thư viện nền) — kích hoạt qua biến môi trường chọn hồ sơ.
 
 ### 3.6.2 SpringDoc OpenAPI (Swagger)
 
 Bài toán cần giải quyết: REST API với hơn 60 endpoint cần tài liệu luôn đồng bộ với code thực tế. Tài liệu viết tay nhanh chóng lỗi thời khi endpoint thay đổi.
 
-SpringDoc OpenAPI sinh tài liệu Swagger tự động từ annotation Spring MVC (`@RestController`, `@RequestMapping`, `@RequestBody`, `@PathVariable`) và SpringDoc annotation bổ sung (`@Operation`, `@Parameter`). Giao diện Swagger UI tại `/swagger-ui.html` cho phép:
-
-- Xem đầy đủ endpoint với request/response schema
-- Test trực tiếp endpoint với authentication (cấu hình Bearer token scheme)
-- Export OpenAPI spec dạng JSON để dùng với Postman hay code generation
-
-Tài liệu luôn up-to-date vì được sinh tự động khi ứng dụng khởi động — không thể có tình trạng endpoint tồn tại trong code mà không có trong tài liệu.
+Công cụ sinh tài liệu đọc trực tiếp các chú giải mô tả điểm cuối, phương thức, tham số và kiểu dữ liệu ngay trong mã nguồn để tạo ra đặc tả API theo chuẩn OpenAPI. Giao diện tài liệu tương tác cho phép xem đầy đủ điểm cuối kèm cấu trúc yêu cầu/phản hồi, thử trực tiếp điểm cuối có kèm xác thực, và xuất đặc tả để dùng với các công cụ kiểm thử hay sinh mã. Tài liệu luôn cập nhật vì được sinh tự động mỗi lần ứng dụng khởi động — không thể xảy ra cảnh một điểm cuối tồn tại trong mã mà thiếu trong tài liệu.
 
 Chương này đã trình bày cơ sở lý luận cho tám quyết định công nghệ chính. Điểm chung xuyên suốt là ưu tiên giải pháp có hệ sinh thái trưởng thành cho nghiệp vụ doanh nghiệp, hỗ trợ tốt cho giao dịch phức tạp và xử lý đồng thời, đồng thời phù hợp với quy mô phát triển một developer. Bộ công nghệ đã chọn — Spring Boot 4.0.0-M3 với Java 21, PostgreSQL 15, Redis 7, Next.js 15, và Docker Compose — tạo nền tảng kỹ thuật cho quá trình thiết kế và xây dựng được trình bày trong Chương 4.
 
@@ -1123,155 +854,152 @@ Bảng 4.1: So sánh kiến trúc Monolithic và Microservices
 
 Lý do chọn Monolithic cho FaceZ HRMS: Nghiệp vụ HRMS có tính coupling cao giữa các domain — tính lương cần đọc dữ liệu từ attendance, contract, leave, OT cùng lúc trong một transaction. Nếu tách thành microservices, các cross-domain query này sẽ phải thực hiện qua mạng, thêm độ trễ và phức tạp xử lý lỗi mạng. Với quy mô dự án đồ án (một developer, một server), monolithic là lựa chọn tối ưu.
 
-Kiến trúc phân lớp trong Monolithic: Dù là monolith, backend được tổ chức theo kiến trúc phân lớp rõ ràng để đảm bảo tính tách biệt quan tâm (Separation of Concerns):
+Kiến trúc phân lớp trong khối nguyên: dù là khối nguyên, backend được tổ chức theo kiến trúc phân lớp rõ ràng để bảo đảm tách biệt mối quan tâm, như Hình 4.1.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Presentation Layer                        │
-│      @RestController, DTO mapping, @Valid validation         │
+│                    Tầng trình diễn                           │
+│      Tiếp nhận yêu cầu, ánh xạ dữ liệu, kiểm tra hợp lệ      │
 ├─────────────────────────────────────────────────────────────┤
-│                    Business Logic Layer                      │
-│      @Service, domain logic, approval workflows             │
+│                    Tầng nghiệp vụ                            │
+│      Lô-gic nghiệp vụ, các luồng phê duyệt                  │
 ├─────────────────────────────────────────────────────────────┤
-│                    Data Access Layer                         │
-│      @Repository, Spring Data JPA, custom JPQL              │
+│                    Tầng truy cập dữ liệu                     │
+│      Kho dữ liệu, truy vấn quan hệ - đối tượng              │
 ├─────────────────────────────────────────────────────────────┤
-│                    Infrastructure Layer                      │
-│      PostgreSQL 15, Redis 7, File System                    │
+│                    Tầng hạ tầng                              │
+│      PostgreSQL 15, Redis 7, hệ thống tệp                   │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-Quy tắc phụ thuộc một chiều được tuân thủ: Controller chỉ gọi Service, Service gọi Repository và các Service khác, Repository chỉ truy cập database. Không có lớp nào gọi ngược lên lớp trên nó.
+Hình 4.1: Kiến trúc phân lớp của backend
+
+Quy tắc phụ thuộc một chiều được tuân thủ: tầng trình diễn chỉ gọi tầng nghiệp vụ; tầng nghiệp vụ gọi tầng truy cập dữ liệu và các dịch vụ nghiệp vụ khác; tầng truy cập dữ liệu chỉ làm việc với cơ sở dữ liệu. Không tầng nào gọi ngược lên tầng phía trên.
 
 Kiến trúc frontend tách biệt (SPA + SSR): Frontend Next.js 15 là ứng dụng độc lập, giao tiếp với backend qua REST API. Next.js hỗ trợ cả Server-Side Rendering (SSR) cho SEO và tốc độ tải lần đầu, và Client-Side Rendering (CSR) cho tương tác động. FaceZ HRMS chủ yếu dùng CSR vì nội dung phụ thuộc vào trạng thái đăng nhập.
 
 ### 4.1.2 Thiết kế tổng quan
 
-Hình 4.1: Sơ đồ tổng quan hệ thống FaceZ HRMS
+Hình 4.2: Sơ đồ tổng quan hệ thống FaceZ HRMS
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
-│                           CLIENT LAYER                                    │
+│                           TẦNG NGƯỜI DÙNG                                  │
 │                                                                            │
 │   ┌─────────────────────────┐      ┌─────────────────────────────────┐   │
-│   │   Web Browser           │      │   Face-recognition Terminal     │   │
-│   │   Next.js 15 SPA        │      │   (Android/Embedded device)     │   │
-│   │   Port 3000             │      │   X-Device-API-Key header       │   │
+│   │   Trình duyệt web        │      │   Thiết bị chấm công khuôn mặt  │   │
+│   │   Ứng dụng Next.js       │      │   (thiết bị nhúng)              │   │
+│   │   Cổng 3000              │      │   Xác thực bằng khóa API thiết bị│   │
 │   └──────────┬──────────────┘      └──────────────┬──────────────────┘   │
 └──────────────┼───────────────────────────────────-┼──────────────────────┘
-               │ HTTPS + JWT Bearer                  │ HTTPS + API Key
+               │ HTTPS + token người dùng            │ HTTPS + khóa API
                ▼                                     ▼
 ┌──────────────────────────────────────────────────────────────────────────┐
-│                         API GATEWAY (Spring Boot 4.0.0-M3)               │
-│                         Port 8084, context: /face-z                      │
+│                     MÁY CHỦ ỨNG DỤNG (Spring Boot)                        │
+│                     Cổng 8084                                             │
 │                                                                            │
 │   ┌────────────────┐  ┌────────────────┐  ┌────────────────────────────┐ │
-│   │ DeviceApiKey   │  │  JwtAuth       │  │  SecurityConfig URL Rules  │ │
-│   │ Filter         │  │  Filter        │  │  + @PreAuthorize           │ │
+│   │ Lọc khóa       │  │  Lọc token     │  │  Luật phân quyền đường dẫn │ │
+│   │ thiết bị       │  │  người dùng    │  │  + kiểm soát mức phương thức│ │
 │   └────────────────┘  └────────────────┘  └────────────────────────────┘ │
 │                                                                            │
 │   ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌───────────────────────┐ │
-│   │ Auth       │ │ Employee   │ │ Attendance │ │ Leave / OT / Notif.  │ │
-│   │ Controller │ │ Controller │ │ Controller │ │ Controllers           │ │
+│   │ Điều khiển │ │ Điều khiển │ │ Điều khiển │ │ Điều khiển nghỉ phép, │ │
+│   │ xác thực   │ │ nhân sự    │ │ chấm công  │ │ tăng ca, thông báo    │ │
 │   └──────┬─────┘ └──────┬─────┘ └──────┬─────┘ └──────────┬────────────┘ │
 │          │              │              │                    │             │
 │   ┌──────┴──────────────┴──────────────┴────────────────────┴───────────┐ │
-│   │                    Service Layer                                     │ │
-│   │   AuthService  EmployeeService  AttendanceService  PayrollService   │ │
-│   │   ContractService  LeaveService  OTService  NotificationService     │ │
-│   │   PayrollCalculationEngine (pure computation)                       │ │
+│   │                    Tầng dịch vụ nghiệp vụ                            │ │
+│   │  Xác thực · Nhân sự · Chấm công · Tính lương · Hợp đồng              │ │
+│   │  Nghỉ phép · Tăng ca · Thông báo                                    │ │
+│   │  Bộ máy tính lương (tính toán thuần)                               │ │
 │   └──────┬──────────────┬──────────────┬──────────────────────────────-─┘ │
 │          │              │              │                                   │
 │   ┌──────┴─────┐  ┌─────┴──────┐  ┌───┴──────┐                           │
-│   │ Repositories│  │ Redis      │  │ File     │                           │
-│   │ (JPA)      │  │ JwtService │  │ Storage  │                           │
+│   │ Kho dữ liệu│  │ Bộ nhớ đệm │  │ Kho tệp  │                           │
+│   │            │  │ + token    │  │          │                           │
 │   └──────┬─────┘  └─────┬──────┘  └──────────┘                           │
 └──────────┼──────────────┼──────────────────────────────────────────────────┘
            │              │
   ┌────────▼───────┐  ┌───▼────────┐
   │  PostgreSQL 15 │  │  Redis 7   │
-  │  Port 5432     │  │  Port 6379 │
+  │  Cổng 5432     │  │  Cổng 6379 │
   └────────────────┘  └────────────┘
 ```
 
 Thiết kế luồng dữ liệu chính:
 
-Mọi request từ frontend đi qua `apiClient()` — một wrapper duy nhất trong `src/app/commons/utils/ApiCallUtil.tsx`. Wrapper này:
-1. Đính kèm Access Token vào header `Authorization: Bearer`
-2. Khi nhận 401/403, gọi `POST /api/auth/refresh` (cookie tự động đi kèm)
-3. Nếu refresh thành công, lưu Access Token mới vào memory và retry request gốc
-4. Nếu refresh thất bại, gọi `logout()` từ `AuthContext` và redirect về `/login`
+Mọi yêu cầu từ giao diện đều đi qua một lớp gọi dịch vụ tập trung duy nhất. Lớp này: (1) đính kèm token truy cập vào tiêu đề ủy quyền; (2) khi nhận mã từ chối truy cập, tự gọi điểm làm mới phiên (cookie tự động đi kèm); (3) nếu làm mới thành công, lưu token mới vào bộ nhớ và thực hiện lại yêu cầu gốc; (4) nếu làm mới thất bại, đăng xuất người dùng và chuyển hướng về trang đăng nhập. Luồng này bảo đảm người dùng không bao giờ gặp màn hình lỗi đột ngột khi token truy cập hết hạn giữa chừng.
 
-Luồng này đảm bảo người dùng không bao giờ thấy màn hình lỗi đột ngột khi Access Token hết hạn trong quá trình làm việc.
-
-Thiết kế luồng chấm công (Event-Driven):
+Thiết kế luồng chấm công (hướng sự kiện), minh họa ở Hình 4.3:
 
 ```
-Face Terminal
-    │  POST /api/checkin-logs  (X-Device-API-Key)
+Thiết bị chấm công
+    │  gửi bản ghi chấm công (kèm khóa API thiết bị)
     ▼
-CheckinLogService.save()
-    │  Lưu raw CheckinLog vào DB
-    │  applicationEventPublisher.publishEvent(CheckinProcessedEvent)
+Dịch vụ ghi nhận chấm công
+    │  lưu bản ghi thô vào cơ sở dữ liệu
+    │  phát ra một sự kiện "đã xử lý chấm công"
     ▼
-AttendanceService.onCheckinProcessed()     ← @TransactionalEventListener(AFTER_COMMIT)
+Dịch vụ tổng hợp công  ← lắng nghe sự kiện, kích hoạt sau khi giao dịch hoàn tất
     │
-    ├── LogTypes.IN  → findOrCreate Attendance, set checkIn time
-    └── LogTypes.OUT → find open Attendance, set checkOut, compute hours
-                       lateHour, workingHour, paidHour, violate flag
+    ├── bản ghi VÀO  → tạo/tìm bản ghi công trong ngày, đặt giờ vào
+    └── bản ghi RA   → tìm bản ghi công đang mở, đặt giờ ra, tính giờ làm,
+                       giờ đến muộn, giờ được trả lương, cờ vi phạm
 ```
 
-Cơ chế lắng nghe sự kiện sau khi giao dịch commit đảm bảo bản ghi `Attendance` chỉ được tạo/cập nhật sau khi `CheckinLog` đã được lưu thành công vào database, loại bỏ tình trạng dữ liệu không nhất quán do rollback. Chi tiết kiến trúc event-driven và các phương án thay thế được trình bày trong mục 5.2.
+Hình 4.3: Luồng xử lý chấm công hướng sự kiện
 
-Hình 4.2: Sơ đồ triển khai (Deployment Diagram)
+Cơ chế lắng nghe sự kiện sau khi giao dịch hoàn tất bảo đảm bản ghi công chỉ được tạo hoặc cập nhật sau khi bản ghi chấm công thô đã lưu thành công vào cơ sở dữ liệu, loại bỏ tình trạng dữ liệu không nhất quán do giao dịch bị hoàn tác. Chi tiết kiến trúc hướng sự kiện và các phương án thay thế được trình bày ở Mục 5.2.
+
+Hình 4.4: Sơ đồ triển khai
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    Host Machine                          │
+│                    Máy chủ vật lý                        │
 │                                                          │
 │   ┌───────────────────────────────────────────────────┐ │
-│   │             Docker Compose Network                 │ │
+│   │             Mạng nội bộ Docker Compose             │ │
 │   │                                                    │ │
 │   │  ┌──────────────┐  ┌──────────┐  ┌─────────────┐ │ │
-│   │  │ postgres:15  │  │ redis:7  │  │ pgadmin4    │ │ │
+│   │  │ PostgreSQL   │  │ Redis    │  │ Quản trị DB │ │ │
 │   │  │ :5432        │  │ :6379    │  │ :5050       │ │ │
 │   │  └──────────────┘  └──────────┘  └─────────────┘ │ │
 │   └───────────────────────────────────────────────────┘ │
 │                                                          │
 │   ┌────────────────────────────────────────────────────┐ │
-│   │  Spring Boot Application (JVM process)             │ │
-│   │  Port 8084 / context-path: /face-z                 │ │
-│   │  Connects to: postgres:5432, redis:6379            │ │
+│   │  Ứng dụng backend (tiến trình máy ảo Java)         │ │
+│   │  Cổng 8084                                         │ │
+│   │  Kết nối tới: PostgreSQL :5432, Redis :6379        │ │
 │   └────────────────────────────────────────────────────┘ │
 │                                                          │
 │   ┌────────────────────────────────────────────────────┐ │
-│   │  Next.js Application (Node.js process)             │ │
-│   │  Port 3000                                         │ │
-│   │  NEXT_PUBLIC_API_BASE=http://localhost:8084/face-z │ │
+│   │  Ứng dụng giao diện (tiến trình Node.js)           │ │
+│   │  Cổng 3000                                         │ │
+│   │  Trỏ tới máy chủ ứng dụng qua biến môi trường      │ │
 │   └────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────┘
 ```
 
 ### 4.1.3 Thiết kế chi tiết gói
 
-Mục này mô tả quan hệ phụ thuộc giữa các gói (package) trong hai hệ thống con, tuân thủ nguyên tắc một chiều: gói tầng trên chỉ phụ thuộc vào gói tầng dưới; không có phụ thuộc vòng hay phụ thuộc bỏ qua tầng.
+Mục này mô tả quan hệ phụ thuộc giữa các mô-đun trong hai hệ thống con, tuân thủ nguyên tắc một chiều: mô-đun tầng trên chỉ phụ thuộc mô-đun tầng dưới; không có phụ thuộc vòng hay phụ thuộc bắc cầu vượt tầng.
 
-Biểu đồ phụ thuộc gói — Backend (org.dummy.facez):
+Biểu đồ phụ thuộc mô-đun phía backend (Hình 4.5):
 
 ```mermaid
 graph TD
-    COMMON["common\n(enums, filters, services, utils)"]
-    AUTH["auth\n(JWT, AuthService, RateLimiter)"]
-    CONFIGS["configs\n(SecurityConfig, RedisConfig, JpaAuditingConfig)"]
-    EMP["domain/employee\n(EmployeeInfo, UserAccount, Benefit)"]
-    DEPT["domain/department\n(Department)"]
-    CONTRACT["domain/contract\n(Contract, ExpiryScheduler)"]
-    ATTEND["domain/attendance\n(Attendance, CheckinLog, CheckinDevice)"]
-    LEAVE["domain/leave\n(LeaveRequest, LeaveBalance, PublicHoliday)"]
-    OT["domain/otrequest\n(OTRequest)"]
-    NOTIF["domain/notification\n(Notification, EventListener)"]
-    PAYROLL["domain/payroll\n(PayrollRun, Payroll, BatchService, PayrollCalculationEngine, PayrollConfig)"]
-    PAYROLL["domain/payroll\n(PayrollRun, Payroll, BatchService, PayrollCalculationEngine, PayrollConfig)"]
+    COMMON["Dùng chung\n(kiểu liệt kê, bộ lọc, tiện ích)"]
+    AUTH["Xác thực\n(token, đăng nhập, giới hạn tần suất)"]
+    CONFIGS["Cấu hình\n(bảo mật, bộ nhớ đệm, ghi vết kiểm toán)"]
+    EMP["Nhân sự\n(hồ sơ, tài khoản, người phụ thuộc)"]
+    DEPT["Phòng ban"]
+    CONTRACT["Hợp đồng\n(hợp đồng, rà hết hạn)"]
+    ATTEND["Chấm công\n(công, bản ghi chấm công, thiết bị)"]
+    LEAVE["Nghỉ phép\n(đơn nghỉ, số dư phép, ngày lễ)"]
+    OT["Tăng ca\n(đơn tăng ca)"]
+    NOTIF["Thông báo"]
+    PAYROLL["Tính lương\n(kỳ lương, phiếu lương, bộ máy tính lương, cấu hình lương)"]
 
     CONFIGS --> AUTH
     CONFIGS --> COMMON
@@ -1297,18 +1025,20 @@ graph TD
     PAYROLL --> COMMON
 ```
 
-Ba điểm đáng chú ý trong thiết kế gói backend: (i) Gói `common` không phụ thuộc bất kỳ gói nào khác — đây là điều kiện đủ để đảm bảo không có dependency cycle trong toàn hệ thống. (ii) Gói `domain/payroll` có fan-out cao nhất (năm domain phụ thuộc), phản ánh đúng bản chất nghiệp vụ: tính lương cần đọc tổng hợp dữ liệu hợp đồng, chấm công, nghỉ phép, tăng ca và thông tin nhân viên trong cùng một transaction. (iii) Gói `auth` chỉ phụ thuộc `common`, đảm bảo cơ chế xác thực hoàn toàn tách biệt khỏi domain logic — thay đổi chiến lược xác thực không kéo theo thay đổi domain nào.
+Hình 4.5: Biểu đồ phụ thuộc mô-đun phía backend
 
-Biểu đồ phụ thuộc gói — Frontend (src/app):
+Ba điểm đáng chú ý: (i) mô-đun dùng chung không phụ thuộc bất kỳ mô-đun nào khác — điều kiện đủ để bảo đảm toàn hệ thống không có phụ thuộc vòng; (ii) mô-đun tính lương có mức lan tỏa cao nhất (phụ thuộc năm miền), phản ánh đúng bản chất nghiệp vụ: tính lương cần đọc tổng hợp dữ liệu hợp đồng, chấm công, nghỉ phép, tăng ca và thông tin nhân viên trong cùng một giao dịch; (iii) mô-đun xác thực chỉ phụ thuộc mô-đun dùng chung, bảo đảm cơ chế xác thực tách biệt hoàn toàn khỏi lô-gic nghiệp vụ — đổi chiến lược xác thực không kéo theo thay đổi ở bất kỳ miền nào.
+
+Biểu đồ phụ thuộc mô-đun phía giao diện (Hình 4.6):
 
 ```mermaid
 graph TD
-    PAGES["(pages)\nemployees/ managers/ hr/\nfinance/ director/ system/"]
-    SERVICES["services/\n(AuthService, EmployeeService, PayrollService, ...)"]
-    COMPONENTS["components/\n(common/, payroll/, leave/, attendance/)"]
-    CONTEXTS["contexts/\n(AuthContext, ToastContext)"]
-    TYPES["commons/types/\n(index.ts — toàn bộ DTO)"]
-    UTILS["commons/utils/\n(ApiCallUtil, formatters)"]
+    PAGES["Các trang\n(theo sáu nhóm vai trò)"]
+    SERVICES["Lớp gọi dịch vụ"]
+    COMPONENTS["Thành phần giao diện\n(dùng chung, lương, nghỉ phép, chấm công)"]
+    CONTEXTS["Ngữ cảnh dùng chung\n(phiên, thông báo)"]
+    TYPES["Định nghĩa kiểu dữ liệu\n(toàn bộ đối tượng truyền dữ liệu)"]
+    UTILS["Tiện ích\n(gọi dịch vụ, định dạng)"]
 
     PAGES --> SERVICES
     PAGES --> COMPONENTS
@@ -1320,7 +1050,9 @@ graph TD
     UTILS --> CONTEXTS
 ```
 
-Nguyên tắc kiến trúc frontend được thực thi qua cấu trúc gói: (i) tất cả lời gọi API phải đi qua lớp `services/` — không có component nào gọi `apiClient()` trực tiếp; (ii) toàn bộ định nghĩa kiểu dữ liệu tập trung tại `commons/types/index.ts` làm single source of truth cho DTO, tránh khai báo rải rác trong component.
+Hình 4.6: Biểu đồ phụ thuộc mô-đun phía giao diện
+
+Nguyên tắc kiến trúc giao diện được thực thi qua cấu trúc mô-đun: (i) mọi lời gọi API phải đi qua lớp gọi dịch vụ — không thành phần nào gọi thẳng tới lớp truyền thông; (ii) toàn bộ định nghĩa kiểu dữ liệu tập trung một nơi làm nguồn sự thật duy nhất, tránh khai báo rải rác trong từng thành phần.
 
 ## 4.2 Thiết kế chi tiết
 
@@ -1332,22 +1064,22 @@ Cấu trúc layout chung:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  HEADER                                            [user ▼] │
+│  THANH ĐẦU TRANG                                  [người ▼] │
 ├──────────────┬──────────────────────────────────────────────┤
 │              │                                              │
-│   SIDEBAR    │           MAIN CONTENT AREA                 │
-│              │                                              │
-│  ▪ Dashboard │  ┌──────────────────────────────────────┐   │
-│  ▪ Module 1  │  │  Page Title + Action Buttons         │   │
-│  ▪ Module 2  │  ├──────────────────────────────────────┤   │
-│  ▪ Module 3  │  │  Search / Filter Bar                 │   │
+│ THANH ĐIỀU   │           VÙNG NỘI DUNG CHÍNH               │
+│ HƯỚNG        │                                              │
+│  ▪ Tổng quan │  ┌──────────────────────────────────────┐   │
+│  ▪ Mục 1     │  │  Tiêu đề trang + nút thao tác        │   │
+│  ▪ Mục 2     │  ├──────────────────────────────────────┤   │
+│  ▪ Mục 3     │  │  Thanh tìm kiếm / lọc                │   │
 │              │  ├──────────────────────────────────────┤   │
-│  [role badge]│  │  Data Table with Pagination          │   │
+│ [nhãn vai trò]│  │  Bảng dữ liệu có phân trang          │   │
 │              │  └──────────────────────────────────────┘   │
 └──────────────┴──────────────────────────────────────────────┘
 ```
 
-Hình 4.3: Thiết kế trang đăng nhập
+Hình 4.7: Thiết kế trang đăng nhập
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -1369,9 +1101,9 @@ Hình 4.3: Thiết kế trang đăng nhập
 └─────────────────────────────────────────────────────────────┘
 ```
 
-Trang đăng nhập hiển thị thông báo lỗi rõ ràng từ backend (`err?.body?.message`), ví dụ: "Tài khoản đã bị khóa tạm thời do đăng nhập sai quá 10 lần. Vui lòng thử lại sau 15 phút." Điều này cho phép người dùng phân biệt lỗi mật khẩu sai với lỗi tài khoản bị khóa.
+Trang đăng nhập hiển thị thông báo lỗi rõ ràng do backend trả về, ví dụ: "Tài khoản đã bị khóa tạm thời do đăng nhập sai quá 10 lần. Vui lòng thử lại sau 15 phút." Điều này cho phép người dùng phân biệt lỗi mật khẩu sai với lỗi tài khoản bị khóa.
 
-Hình 4.4: Thiết kế Dashboard nhân viên (EMPLOYEE)
+Hình 4.8: Thiết kế bảng điều khiển của nhân viên
 
 ```
 ┌──────────────┬──────────────────────────────────────────────┐
@@ -1393,7 +1125,7 @@ Hình 4.4: Thiết kế Dashboard nhân viên (EMPLOYEE)
 └──────────────┴──────────────────────────────────────────────┘
 ```
 
-Hình 4.5: Thiết kế Dashboard HR Admin (HR_ADMIN)
+Hình 4.9: Thiết kế bảng điều khiển của bộ phận nhân sự
 
 HR Admin dashboard tổng hợp dữ liệu toàn công ty, bao gồm biểu đồ xu hướng chi phí lao động, tỷ lệ nghỉ phép theo phòng ban, trạng thái hợp đồng sắp hết hạn, và hàng đợi phê duyệt.
 
@@ -1420,7 +1152,7 @@ HR Admin dashboard tổng hợp dữ liệu toàn công ty, bao gồm biểu đ�
 └──────────────┴──────────────────────────────────────────────┘
 ```
 
-Hình 4.6: Thiết kế trang Quản lý nhân viên (HR Admin)
+Hình 4.10: Thiết kế trang Quản lý nhân viên (bộ phận nhân sự)
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -1438,7 +1170,7 @@ Hình 4.6: Thiết kế trang Quản lý nhân viên (HR Admin)
 └──────────────────────────────────────────────────────────────┘
 ```
 
-Hình 4.7: Thiết kế trang Quản lý nghỉ phép (Employee)
+Hình 4.11: Thiết kế trang Quản lý nghỉ phép (nhân viên)
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -1455,7 +1187,7 @@ Hình 4.7: Thiết kế trang Quản lý nghỉ phép (Employee)
 └──────────────────────────────────────────────────────────────┘
 ```
 
-Hình 4.8: Thiết kế modal tạo đơn nghỉ phép
+Hình 4.12: Thiết kế cửa sổ tạo đơn nghỉ phép
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -1477,49 +1209,41 @@ Hình 4.8: Thiết kế modal tạo đơn nghỉ phép
 └─────────────────────────────────────────────────────────────┘
 ```
 
-Hình 4.9: Thiết kế trang Phê duyệt yêu cầu (Leader/Manager)
-Hình 4.9: Thiết kế trang Phê duyệt yêu cầu (Leader/Manager)
+Hình 4.13: Thiết kế trang Phê duyệt yêu cầu (trưởng nhóm/quản lý)
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │  Phê duyệt yêu cầu                                          │
 │──────────────────────────────────────────────────────────────│
-│  [Tab: Nghỉ phép]  [Tab: Tăng ca]                           │
+│  [Thẻ: Nghỉ phép]  [Thẻ: Tăng ca]                           │
 │──────────────────────────────────────────────────────────────│
 │  Nhân viên    │ Loại    │ Từ–Đến          │ Trạng thái │ TĐ │
 │───────────────┼─────────┼─────────────────┼────────────┼────│
-│ Nguyễn Văn A │ Phép năm│ 10/06 – 12/06   │ Chờ Leader │✅❌│
-│ Trần Thị B   │ Phép ốm │ 15/06 – 15/06   │ Chờ Leader │✅❌│
+│ Nguyễn Văn A │ Phép năm│ 10/06 – 12/06   │ Chờ duyệt  │✅❌│
+│ Trần Thị B   │ Phép ốm │ 15/06 – 15/06   │ Chờ duyệt  │✅❌│
 └──────────────────────────────────────────────────────────────┘
 ```
 
-Hình 4.10: Thiết kế trang Kỳ lương (Finance Admin)
-Hình 4.10: Thiết kế trang Kỳ lương (Finance Admin)
+Hình 4.14: Thiết kế trang Kỳ lương (phụ trách tài chính)
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│  Kỳ lương 06/2026  (PayrollRun · DRAFT)     [+ Tạo kỳ lương] │
-│  Kỳ lương 06/2026  (PayrollRun · DRAFT)     [+ Tạo kỳ lương] │
+│  Kỳ lương 06/2026  (trạng thái: Nháp)        [+ Tạo kỳ lương]│
 │──────────────────────────────────────────────────────────────│
-│  Trạng thái: DRAFT   [Tính lại cả kỳ] [Trình duyệt]         │
-│  Trạng thái: DRAFT   [Tính lại cả kỳ] [Trình duyệt]         │
+│  Trạng thái: Nháp     [Tính lại cả kỳ] [Trình duyệt]        │
 │──────────────────────────────────────────────────────────────│
-│  Nhân viên     │ Lương gross  │ Lương net    │ Dòng         │
-│  Nhân viên     │ Lương gross  │ Lương net    │ Dòng         │
+│  Nhân viên     │ Lương gộp    │ Thực nhận    │ Dòng         │
 │────────────────┼──────────────┼──────────────┼──────────────│
-│ Nguyễn Văn A  │ 25,000,000 ₫ │ 21,500,000 ₫ │ [Tính lại][⊘]│
-│ Trần Thị B    │ 18,000,000 ₫ │ 15,800,000 ₫ │ 🔒 đã khóa   │
-│ Nguyễn Văn A  │ 25,000,000 ₫ │ 21,500,000 ₫ │ [Tính lại][⊘]│
-│ Trần Thị B    │ 18,000,000 ₫ │ 15,800,000 ₫ │ 🔒 đã khóa   │
+│ Nguyễn Văn A  │ 25.000.000 ₫ │ 21.500.000 ₫ │ [Tính lại][⊘]│
+│ Trần Thị B    │ 18.000.000 ₫ │ 15.800.000 ₫ │ 🔒 đã khóa   │
 │──────────────────────────────────────────────────────────────│
-│  Trình duyệt bị chặn nếu còn NV thiếu điểm HS1               │
-│  Trình duyệt bị chặn nếu còn NV thiếu điểm HS1               │
+│  Trình duyệt bị chặn nếu còn nhân viên thiếu điểm HS1        │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-Toàn bộ một kỳ lương được gói trong một thực thể `PayrollRun` bền vững (DRAFT → PENDING_APPROVAL → APPROVED → PAID). Finance có thể *tính lại một dòng* (khóa dòng đó thành ngoại lệ), *tính lại cả kỳ* (giữ nguyên các dòng đã khóa), hoặc *loại một dòng* khỏi kỳ. Nút "Trình duyệt" bị chặn nếu còn nhân viên chưa được chấm điểm HS1. DIRECTOR phê duyệt hoặc trả lại kỳ (về DRAFT); sau khi thanh toán, Finance đánh dấu PAID.
+Toàn bộ một kỳ lương được gói trong một thực thể kỳ lương bền vững, đi qua chuỗi trạng thái Nháp → Chờ duyệt → Đã duyệt → Đã trả. Người phụ trách tài chính có thể *tính lại một dòng* (khóa dòng đó thành ngoại lệ), *tính lại cả kỳ* (giữ nguyên các dòng đã khóa), hoặc *loại một dòng* khỏi kỳ. Nút trình duyệt bị chặn nếu còn nhân viên chưa được chấm điểm hệ số thi đua. Giám đốc phê duyệt hoặc trả lại kỳ về trạng thái nháp; sau khi chi trả, người phụ trách tài chính đánh dấu đã trả.
 
-Hình 4.11: Thiết kế trang Quản trị tài khoản (SYSTEM_ADMIN)
+Hình 4.15: Thiết kế trang Quản trị tài khoản (quản trị hệ thống)
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -1527,37 +1251,19 @@ Hình 4.11: Thiết kế trang Quản trị tài khoản (SYSTEM_ADMIN)
 │──────────────────────────────────────────────────────────────│
 │  Tài khoản  │ Vai trò       │ NV gắn kết │ Trạng thái │ T.tác │
 │─────────────┼───────────────┼────────────┼────────────┼───────│
-│ admin       │ SYSTEM_ADMIN  │ (không)    │ Hoạt động  │ 🔑 🔒 │
-│ b.tran      │ HR_ADMIN      │ EMP-002    │ Hoạt động  │ 🔑 🔒 │
-│ c.le        │ FINANCE_ADMIN │ EMP-003    │ Bị khóa    │ 🔑 🔓 │
+│ admin       │ Quản trị HT   │ (không)    │ Hoạt động  │ 🔑 🔒 │
+│ b.tran      │ Nhân sự       │ EMP-002    │ Hoạt động  │ 🔑 🔒 │
+│ c.le        │ Tài chính     │ EMP-003    │ Bị khóa    │ 🔑 🔓 │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-`SYSTEM_ADMIN` là một tài khoản đặc biệt, **không phải nhân viên thật**: nó không có hồ sơ nhân sự, không có mục "Cá nhân" trên sidebar, và chỉ thực hiện các tác vụ hệ thống — Quản trị tài khoản (tạo/gán vai trò/khóa/đặt lại mật khẩu), quản lý Thiết bị chấm công, và xem Nhật ký check-in (chỉ đọc). Việc chuyển Thiết bị và Nhật ký check-in từ HR sang SYSTEM_ADMIN tách bạch quản trị kỹ thuật khỏi nghiệp vụ nhân sự, đồng thời để SYSTEM_ADMIN ra khỏi mọi luồng phê duyệt nghiệp vụ và tài chính.
-
-Toàn bộ một kỳ lương được gói trong một thực thể `PayrollRun` bền vững (DRAFT → PENDING_APPROVAL → APPROVED → PAID). Finance có thể *tính lại một dòng* (khóa dòng đó thành ngoại lệ), *tính lại cả kỳ* (giữ nguyên các dòng đã khóa), hoặc *loại một dòng* khỏi kỳ. Nút "Trình duyệt" bị chặn nếu còn nhân viên chưa được chấm điểm HS1. DIRECTOR phê duyệt hoặc trả lại kỳ (về DRAFT); sau khi thanh toán, Finance đánh dấu PAID.
-
-Hình 4.11: Thiết kế trang Quản trị tài khoản (SYSTEM_ADMIN)
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  Quản trị tài khoản                          [+ Tạo tài khoản]│
-│──────────────────────────────────────────────────────────────│
-│  Tài khoản  │ Vai trò       │ NV gắn kết │ Trạng thái │ T.tác │
-│─────────────┼───────────────┼────────────┼────────────┼───────│
-│ admin       │ SYSTEM_ADMIN  │ (không)    │ Hoạt động  │ 🔑 🔒 │
-│ b.tran      │ HR_ADMIN      │ EMP-002    │ Hoạt động  │ 🔑 🔒 │
-│ c.le        │ FINANCE_ADMIN │ EMP-003    │ Bị khóa    │ 🔑 🔓 │
-└──────────────────────────────────────────────────────────────┘
-```
-
-`SYSTEM_ADMIN` là một tài khoản đặc biệt, **không phải nhân viên thật**: nó không có hồ sơ nhân sự, không có mục "Cá nhân" trên sidebar, và chỉ thực hiện các tác vụ hệ thống — Quản trị tài khoản (tạo/gán vai trò/khóa/đặt lại mật khẩu), quản lý Thiết bị chấm công, và xem Nhật ký check-in (chỉ đọc). Việc chuyển Thiết bị và Nhật ký check-in từ HR sang SYSTEM_ADMIN tách bạch quản trị kỹ thuật khỏi nghiệp vụ nhân sự, đồng thời để SYSTEM_ADMIN ra khỏi mọi luồng phê duyệt nghiệp vụ và tài chính.
+Quản trị hệ thống là một tài khoản đặc biệt, **không phải nhân viên thật**: nó không có hồ sơ nhân sự, không có mục "Cá nhân" trên thanh điều hướng, và chỉ thực hiện các tác vụ kỹ thuật — quản trị tài khoản (tạo, gán vai trò, khóa, đặt lại mật khẩu), quản lý thiết bị chấm công, và xem nhật ký chấm công (chỉ đọc). Việc chuyển quản lý thiết bị và nhật ký chấm công từ bộ phận nhân sự sang quản trị hệ thống tách bạch quản trị kỹ thuật khỏi nghiệp vụ nhân sự, đồng thời giữ cho quản trị hệ thống nằm ngoài mọi luồng phê duyệt nghiệp vụ và tài chính.
 
 ### 4.2.2 Thiết kế lớp
 
 Thiết kế domain model backend tập trung vào các entity chính và quan hệ giữa chúng. Dưới đây là sơ đồ lớp rút gọn cho các domain cốt lõi.
 
-Hình 4.11: Sơ đồ lớp domain Employee và Contract
+Hình 4.16: Sơ đồ lớp miền Nhân sự và Hợp đồng
 
 ```mermaid
 classDiagram
@@ -1625,8 +1331,7 @@ classDiagram
     EmployeeInfo "1" --> "1" UserAccount : linkedTo
 ```
 
-Hình 4.12: Sơ đồ lớp domain Attendance (CheckinLog → WorkDay → Timesheet)
-Hình 4.12: Sơ đồ lớp domain Attendance (CheckinLog → WorkDay → Timesheet)
+Hình 4.17: Sơ đồ lớp miền Chấm công (bản ghi chấm công → ngày công → bảng công)
 
 ```mermaid
 classDiagram
@@ -1638,7 +1343,6 @@ classDiagram
         +String deviceId
         +boolean processed
     }
-    class WorkDay {
     class WorkDay {
         +String id
         +String employeeId
@@ -1652,29 +1356,7 @@ classDiagram
         +double paidDay
         +boolean violate
         +boolean locked
-        +boolean locked
         +String note
-    }
-    class Timesheet {
-        +String id
-        +String employeeId
-        +int year
-        +int month
-        +double standardDays
-        +double actualDays
-        +double paidDays
-        +double totalLateHours
-        +int violationDays
-    }
-    class AttendanceAdjustment {
-        +String id
-        +String employeeId
-        +LocalDate workDate
-        +LocalDateTime requestedCheckIn
-        +LocalDateTime requestedCheckOut
-        +String reason
-        +RequestStatus status
-        +String approvedBy
     }
     class Timesheet {
         +String id
@@ -1711,20 +1393,15 @@ classDiagram
         +String apiKeyHash
         +boolean active
         +LocalDateTime createdAt
-        +LocalDateTime createdAt
     }
 
-    CheckinLog "*" --> "1" CheckinDevice : sentFrom
-    CheckinLog ..> WorkDay : triggers via Event
-    WorkDay "*" --> "1" Timesheet : aggregatedInto (on period close)
-    AttendanceAdjustment ..> WorkDay : updates after approval
-    CheckinLog ..> WorkDay : triggers via Event
-    WorkDay "*" --> "1" Timesheet : aggregatedInto (on period close)
-    AttendanceAdjustment ..> WorkDay : updates after approval
+    CheckinLog "*" --> "1" CheckinDevice : gửi từ
+    CheckinLog ..> WorkDay : kích hoạt qua sự kiện
+    WorkDay "*" --> "1" Timesheet : tổng hợp khi chốt kỳ
+    AttendanceAdjustment ..> WorkDay : cập nhật sau phê duyệt
 ```
 
-Hình 4.13: Sơ đồ lớp domain Leave, OT và LeaveBalance
-Hình 4.13: Sơ đồ lớp domain Leave, OT và LeaveBalance
+Hình 4.18: Sơ đồ lớp miền Nghỉ phép, Tăng ca và Số dư phép
 
 ```mermaid
 classDiagram
@@ -1784,41 +1461,14 @@ classDiagram
         +double coefficient
         +RequestStatus status
     }
-    class OTPlan {
-        +String id
-        +String departmentId
-        +LocalDate workDate
-        +String createdByLeader
-        +RequestStatus status
-        +String managerApprovedBy
-    }
-    class OTPlanEmployee {
-        +String id
-        +String otPlanId FK
-        +String employeeId
-    }
-    class OTRequest {
-        +String id
-        +String employeeId
-        +String otPlanId FK
-        +LocalDate workDate
-        +LocalDateTime startTime
-        +LocalDateTime endTime
-        +double otHours
-        +double nightHours
-        +double coefficient
-        +RequestStatus status
-    }
 
-    LeaveRequest "*" --> "1" LeaveBalance : deducts from
-    LeaveRequest "*" --> "0..*" PublicHoliday : excludes
-    OTPlan "1" --> "0..*" OTPlanEmployee : assigns
-    OTPlan "1" --> "0..*" OTRequest : authorizes
-    OTPlan "1" --> "0..*" OTPlanEmployee : assigns
-    OTPlan "1" --> "0..*" OTRequest : authorizes
+    LeaveRequest "*" --> "1" LeaveBalance : trừ vào
+    LeaveRequest "*" --> "0..*" PublicHoliday : loại trừ
+    OTPlan "1" --> "0..*" OTPlanEmployee : phân công
+    OTPlan "1" --> "0..*" OTRequest : cho phép
 ```
 
-Hình 4.14: Sơ đồ lớp domain Payroll
+Hình 4.19: Sơ đồ lớp miền Tính lương
 
 ```mermaid
 classDiagram
@@ -1832,19 +1482,8 @@ classDiagram
         +String rejectionReason
         +LocalDateTime paidAt
     }
-    class PayrollRun {
-        +String id
-        +int year
-        +int month
-        +PayrollRunStatus status
-        +String submittedBy
-        +String approvedBy
-        +String rejectionReason
-        +LocalDateTime paidAt
-    }
     class Payroll {
         +String id
-        +String payrollRunId FK
         +String payrollRunId FK
         +String employeeId
         +int year
@@ -1855,8 +1494,6 @@ classDiagram
         +BigDecimal baseSalary
         +BigDecimal positionAllowance
         +BigDecimal otherAllowances
-        +double hs1Score
-        +double hs2Score
         +double hs1Score
         +double hs2Score
         +BigDecimal otPay
@@ -1872,20 +1509,9 @@ classDiagram
         +BigDecimal totalEmploymentCost
         +PayrollStatus status
         +boolean locked
-        +boolean locked
         +String rejectionReason
         +String approvedBy
     }
-    class Kpi1Rating {
-        +String id
-        +String employeeId
-        +int year
-        +int month
-        +String rating
-        +double coefficient
-        +String ratedBy
-    }
-    class PayrollConfig {
     class Kpi1Rating {
         +String id
         +String employeeId
@@ -1900,161 +1526,92 @@ classDiagram
         +ConfigType configType
         +int version
         +ConfigStatus status
-        +int version
-        +ConfigStatus status
         +LocalDate effectiveFrom
-        +String createdBy
-        +String publishedBy
         +String createdBy
         +String publishedBy
     }
     class PayrollCalculationEngine {
-        +PayrollResponse calculate(input, config)
+        +tính lương(dữ liệu vào, cấu hình)
     }
 
-    PayrollRun "1" --> "0..*" Payroll : contains lines
-    PayrollCalculationEngine ..> PayrollConfig : reads effective config
-    PayrollCalculationEngine ..> Kpi1Rating : reads HS1
-    PayrollCalculationEngine ..> Payroll : produces line
-    PayrollRun "1" --> "0..*" Payroll : contains lines
-    PayrollCalculationEngine ..> PayrollConfig : reads effective config
-    PayrollCalculationEngine ..> Kpi1Rating : reads HS1
-    PayrollCalculationEngine ..> Payroll : produces line
+    PayrollRun "1" --> "0..*" Payroll : chứa các dòng
+    PayrollCalculationEngine ..> PayrollConfig : đọc cấu hình hiệu lực
+    PayrollCalculationEngine ..> Kpi1Rating : đọc hệ số thi đua
+    PayrollCalculationEngine ..> Payroll : sinh ra dòng lương
 ```
 
-`PayrollConfig` đại diện cho bốn nhóm bảng cấu hình có kiểu, hiệu lực-theo-ngày, append-only (`SALARY_GRADE | ALLOWANCE | PIT | INSURANCE`) với vòng đời `DRAFT → PUBLISHED → ARCHIVED`. `PayrollRun` là thực thể kỳ lương bền vững; mỗi dòng `Payroll` trỏ về một `PayrollRun` qua `payrollRunId` và có cờ `locked` đánh dấu dòng đã tính lại thủ công (ngoại lệ không bị "tính lại cả kỳ" ghi đè).
+Thực thể cấu hình lương đại diện cho bốn nhóm bảng cấu hình có kiểu, hiệu lực theo ngày và chỉ thêm mới (bậc lương, phụ cấp, thuế thu nhập cá nhân, bảo hiểm), đi qua vòng đời nháp → đã ban hành → đã lưu trữ. Kỳ lương là thực thể bền vững; mỗi dòng phiếu lương trỏ về một kỳ lương và mang một cờ khóa đánh dấu dòng đã được tính lại thủ công — một ngoại lệ không bị thao tác "tính lại cả kỳ" ghi đè.
 
-`PayrollConfig` đại diện cho bốn nhóm bảng cấu hình có kiểu, hiệu lực-theo-ngày, append-only (`SALARY_GRADE | ALLOWANCE | PIT | INSURANCE`) với vòng đời `DRAFT → PUBLISHED → ARCHIVED`. `PayrollRun` là thực thể kỳ lương bền vững; mỗi dòng `Payroll` trỏ về một `PayrollRun` qua `payrollRunId` và có cờ `locked` đánh dấu dòng đã tính lại thủ công (ngoại lệ không bị "tính lại cả kỳ" ghi đè).
+Về phía giao diện, cây thành phần được tổ chức phân cấp từ trên xuống. Ở gốc là hai ngữ cảnh dùng chung — trạng thái phiên đăng nhập và trạng thái thông báo — bao bọc toàn bộ ứng dụng. Bên dưới là bố cục gốc, rồi tới lớp bảo vệ kiểm tra vai trò và chuyển hướng khi cần. Mỗi trang gồm thanh điều hướng (menu thay đổi theo vai trò), thanh đầu trang (thông tin người dùng, đăng xuất) và vùng nội dung tuân theo mô hình tách ba tệp đã nêu ở Mục 3.5. Ngoài ra, một bộ thành phần dùng chung — cửa sổ nổi, hộp xác nhận, thanh phân trang, trạng thái rỗng, biểu tượng chờ, hộp nhập lý do từ chối — được tái sử dụng xuyên suốt.
 
-Thiết kế frontend component hierarchy:
-
-```
-AuthContext (session state)
-ToastContext (toast notifications)
-  │
-  └── app/layout.tsx (root)
-        │
-        ├── ProtectedRoute (role check + redirect)
-        │     │
-        │     └── Page Layout
-        │           ├── Sidebar (role-aware menu)
-        │           ├── Header (user info + logout)
-        │           └── *Content.tsx (page state owner)
-        │                 ├── *Table.tsx (data + pagination)
-        │                 └── *FormModal.tsx (create/edit)
-        │
-        └── Common Components (src/app/components/common/)
-              ├── Modal
-              ├── ConfirmDialog
-              ├── Pagination
-              ├── EmptyState
-              ├── Spinner
-              └── RejectReasonModal
-```
-
-Thiết kế Service layer frontend:
-
-```
-src/app/services/
-├── AuthService.ts         — login, logout, refresh
-├── EmployeeService.ts     — CRUD nhân viên, profile picture
-├── AttendanceService.ts   — workday, timesheet, period close, checkin logs
-├── AdjustmentService.ts   — đơn bổ sung chấm công
-├── AttendanceService.ts   — workday, timesheet, period close, checkin logs
-├── AdjustmentService.ts   — đơn bổ sung chấm công
-├── LeaveService.ts        — nghỉ phép, số dư, public holidays
-├── OTService.ts           — tăng ca, OT plan, approval
-├── ContractService.ts     — hợp đồng, tài liệu PDF, sắp hết hạn
-├── PayrollService.ts      — dòng lương, tính lại, approve, reports
-├── PayrollRunService.ts   — kỳ lương (tạo/tính lại/loại dòng/submit/mark-paid)
-├── Kpi1Service.ts         — chấm điểm HS1
-├── OTService.ts           — tăng ca, OT plan, approval
-├── ContractService.ts     — hợp đồng, tài liệu PDF, sắp hết hạn
-├── PayrollService.ts      — dòng lương, tính lại, approve, reports
-├── PayrollRunService.ts   — kỳ lương (tạo/tính lại/loại dòng/submit/mark-paid)
-├── Kpi1Service.ts         — chấm điểm HS1
-├── DepartmentService.ts   — phòng ban
-├── NotificationService.ts — thông báo, đánh dấu đã đọc
-├── AccountService.ts      — quản trị tài khoản (SYSTEM_ADMIN)
-└── PayrollConfigService.ts — cấu hình lương hiệu lực-theo-ngày (maker-checker)
-├── AccountService.ts      — quản trị tài khoản (SYSTEM_ADMIN)
-└── PayrollConfigService.ts — cấu hình lương hiệu lực-theo-ngày (maker-checker)
-```
-
-Mỗi service file xuất các hàm bất đồng bộ gọi `apiClient()` và trả về `ApiResponse<T>` hoặc `ApiResponse<PageResponse<T>>`. Điều này đảm bảo tất cả xử lý lỗi tuân theo pattern chuẩn.
+Lớp gọi dịch vụ được tách thành nhiều mô-đun theo từng miền nghiệp vụ: xác thực, nhân sự, chấm công, đơn bổ sung chấm công, nghỉ phép, tăng ca, hợp đồng, phiếu lương, kỳ lương, chấm hệ số thi đua, phòng ban, thông báo, quản trị tài khoản và cấu hình lương. Mỗi mô-đun xuất các hàm bất đồng bộ gọi tới lớp truyền thông tập trung và trả về phản hồi đã được bao bọc theo khuôn dạng thống nhất, nhờ vậy mọi xử lý lỗi đều tuân theo cùng một khuôn mẫu chuẩn.
 
 Để minh họa luồng truyền thông điệp giữa các đối tượng, dưới đây là biểu đồ trình tự cho hai ca sử dụng quan trọng nhất:
 
-Biểu đồ trình tự — Tính lương cá nhân (UC-PAY-01):
+Biểu đồ trình tự — Tính lương một nhân viên (Hình 4.20):
 
 ```mermaid
 sequenceDiagram
-    participant FA as Finance Admin
-    participant FE as Frontend
-    participant PC as PayrollController
-    participant PS as PayrollService
-    participant PCE as PayrollCalculationEngine
-    participant DB as PostgreSQL
+    participant FA as Phụ trách tài chính
+    participant FE as Giao diện
+    participant PC as Tầng điều khiển lương
+    participant PS as Dịch vụ lương
+    participant PCE as Bộ máy tính lương
+    participant DB as Cơ sở dữ liệu
 
-    FA->>FE: Tạo kỳ lương / tính lại 1 dòng (employeeId, year, month)
-    FE->>PC: POST /api/payroll-runs (hoặc PUT /recalc-line)
-    PC->>PS: buildRun() / recalcLine(req)
-    FA->>FE: Tạo kỳ lương / tính lại 1 dòng (employeeId, year, month)
-    FE->>PC: POST /api/payroll-runs (hoặc PUT /recalc-line)
-    PC->>PS: buildRun() / recalcLine(req)
-    PS->>DB: Kiểm tra AttendancePeriodClose (kỳ đã chốt?)
-    DB-->>PS: Đã chốt ✓
-    PS->>DB: Load Contract (current=true), Timesheet (Nt), WorkDay (NCtt),<br/>LeaveRequest APPROVED, OTRequest APPROVED, Kpi1Rating (HS1)
-    PS->>DB: Load PayrollConfig hiệu lực (SALARY_GRADE, ALLOWANCE, PIT, INSURANCE)
-    PS->>DB: Load Contract (current=true), Timesheet (Nt), WorkDay (NCtt),<br/>LeaveRequest APPROVED, OTRequest APPROVED, Kpi1Rating (HS1)
-    PS->>DB: Load PayrollConfig hiệu lực (SALARY_GRADE, ALLOWANCE, PIT, INSURANCE)
-    DB-->>PS: Toàn bộ dữ liệu đầu vào
-    PS->>PCE: calculate(input, config)
-    Note over PCE: Tính baseGross (HS1/HS2), OT pay, gross,<br/>BHXH/BHYT/BHTN, PIT 7 bậc, net
-    Note over PCE: Tính baseGross (HS1/HS2), OT pay, gross,<br/>BHXH/BHYT/BHTN, PIT 7 bậc, net
-    PCE-->>PS: PayrollResponse
-    PS->>DB: UPSERT payroll line (status=DRAFT, payrollRunId)
-    PS->>DB: UPSERT payroll line (status=DRAFT, payrollRunId)
-    DB-->>PS: Payroll ID
-    PS-->>PC: ApiResponse{payroll}
-    PC-->>FE: 201 Created
-    FE-->>FA: Hiển thị dòng lương tạm tính trong kỳ
+    FA->>FE: Tạo kỳ lương / tính lại một dòng (nhân viên, tháng, năm)
+    FE->>PC: gửi yêu cầu tạo kỳ hoặc tính lại dòng
+    PC->>PS: chuyển tiếp yêu cầu
+    PS->>DB: kiểm tra kỳ chấm công đã chốt chưa
+    DB-->>PS: đã chốt ✓
+    PS->>DB: nạp hợp đồng hiệu lực, bảng công, ngày công,<br/>đơn nghỉ và đơn tăng ca đã duyệt, điểm thi đua
+    PS->>DB: nạp cấu hình lương hiệu lực (bậc lương, phụ cấp, thuế, bảo hiểm)
+    DB-->>PS: toàn bộ dữ liệu đầu vào
+    PS->>PCE: tính lương (dữ liệu vào, cấu hình)
+    Note over PCE: Tính lương cơ bản (theo hệ số thi đua), tiền tăng ca,<br/>lương gộp, các khoản bảo hiểm, thuế lũy tiến, thực nhận
+    PCE-->>PS: kết quả phiếu lương
+    PS->>DB: ghi/cập nhật dòng lương (trạng thái nháp, thuộc kỳ lương)
+    DB-->>PS: mã dòng lương
+    PS-->>PC: phản hồi kèm dòng lương
+    PC-->>FE: tạo thành công
     FE-->>FA: Hiển thị dòng lương tạm tính trong kỳ
 ```
 
-Biểu đồ trình tự — Phê duyệt nghỉ phép đa cấp (UC-LEV-02):
+Hình 4.20: Biểu đồ trình tự tính lương một nhân viên
+
+Biểu đồ trình tự — Phê duyệt nghỉ phép đa cấp (Hình 4.21):
 
 ```mermaid
 sequenceDiagram
-    participant EMP as Employee
-    participant LD as Leader
-    participant MG as Manager
-    participant LS as LeaveService
-    participant DB as PostgreSQL
+    participant EMP as Nhân viên
+    participant LD as Trưởng nhóm
+    participant MG as Quản lý
+    participant LS as Dịch vụ nghỉ phép
+    participant DB as Cơ sở dữ liệu
 
-    EMP->>LS: submitLeaveRequest(days, type, dates)
-    LS->>DB: SELECT...FOR UPDATE LeaveBalance (pessimistic lock)
-    DB-->>LS: balance (total, pending, used)
-    LS->>LS: Kiểm tra: total - pending - used >= days
-    LS->>DB: UPDATE LeaveBalance SET pendingDays += days
-    LS->>DB: INSERT LeaveRequest (status=TO_APPROVE)
-    LS-->>EMP: Request tạo thành công
+    EMP->>LS: gửi đơn nghỉ (số ngày, loại phép, khoảng ngày)
+    LS->>DB: đọc số dư phép kèm khóa ghi bi quan
+    DB-->>LS: số dư (tổng, đang chờ, đã dùng)
+    LS->>LS: kiểm tra tổng − đang chờ − đã dùng ≥ số ngày
+    LS->>DB: tăng số ngày đang chờ duyệt
+    LS->>DB: tạo đơn nghỉ ở trạng thái chờ duyệt
+    LS-->>EMP: tạo đơn thành công
 
-    LD->>LS: approve(id) — Leader cấp 1
-    LS->>DB: UPDATE status = LEADER_APPROVED
-    LS-->>LD: OK
+    LD->>LS: phê duyệt cấp một (trưởng nhóm)
+    LS->>DB: chuyển trạng thái sang đã duyệt cấp một
+    LS-->>LD: hoàn tất
 
-    MG->>LS: approve(id) — Manager cấp cuối
-    MG->>LS: approve(id) — Manager cấp cuối
-    LS->>DB: UPDATE status = APPROVED
-    LS->>DB: UPDATE LeaveBalance: pendingDays -= days, usedDays += days
-    LS-->>MG: OK — Đơn nghỉ có hiệu lực
-    LS-->>MG: OK — Đơn nghỉ có hiệu lực
+    MG->>LS: phê duyệt cấp cuối (quản lý)
+    LS->>DB: chuyển trạng thái sang đã duyệt
+    LS->>DB: giảm ngày đang chờ, tăng ngày đã dùng
+    LS-->>MG: hoàn tất — đơn nghỉ có hiệu lực
 ```
+
+Hình 4.21: Biểu đồ trình tự phê duyệt nghỉ phép đa cấp
 
 ### 4.2.3 Thiết kế cơ sở dữ liệu
 
-Hình 4.15: Sơ đồ thực thể quan hệ (Entity Relationship Diagram)
+Hình 4.22: Sơ đồ thực thể quan hệ
 
 ```mermaid
 erDiagram
@@ -2098,7 +1655,6 @@ erDiagram
         varchar position_code
         int salary_step
         varchar document_key
-        varchar document_key
         boolean delete_flag
     }
     TAX_DEPENDENT {
@@ -2110,7 +1666,6 @@ erDiagram
         boolean active
     }
     WORKDAY {
-    WORKDAY {
         varchar id PK
         varchar employee_id FK
         date work_date
@@ -2121,7 +1676,6 @@ erDiagram
         float paid_hour
         float paid_day
         boolean violate
-        boolean locked
         boolean locked
         varchar note
     }
@@ -2181,7 +1735,6 @@ erDiagram
         varchar location
         varchar api_key_hash
         boolean active
-        timestamp created_at
         timestamp created_at
     }
     ATTENDANCE_PERIOD_CLOSE {
@@ -2249,12 +1802,10 @@ erDiagram
         varchar id PK
         varchar employee_id FK
         varchar ot_plan_id FK
-        varchar ot_plan_id FK
         timestamp start_time
         timestamp end_time
         float duration_hours
         varchar ot_type
-        float coefficient
         float coefficient
         varchar reason
         varchar status
@@ -2304,7 +1855,6 @@ erDiagram
     PAYROLL {
         varchar id PK
         varchar payroll_run_id FK
-        varchar payroll_run_id FK
         varchar employee_id FK
         int year
         int month
@@ -2328,10 +1878,8 @@ erDiagram
         decimal total_employment_cost
         varchar status
         boolean locked
-        boolean locked
         varchar rejection_reason
     }
-    PAYROLL_CONFIG {
     PAYROLL_CONFIG {
         varchar id PK
         varchar config_type
@@ -2370,7 +1918,6 @@ erDiagram
     EMPLOYEE_INFO ||--o{ LEAVE_BALANCE : "has"
     EMPLOYEE_INFO ||--o{ OT_REQUEST : "submits"
     EMPLOYEE_INFO ||--o{ KPI1_RATING : "rated by superior"
-    EMPLOYEE_INFO ||--o{ KPI1_RATING : "rated by superior"
     EMPLOYEE_INFO ||--o{ PAYROLL : "has"
     EMPLOYEE_INFO ||--o{ NOTIFICATION : "receives"
     WORKDAY }o--o| TIMESHEET : "rolled up into"
@@ -2391,25 +1938,18 @@ erDiagram
 
 Bảng 4.2: Các quyết định thiết kế cơ sở dữ liệu quan trọng
 
-| Quyết định | Lý do | Triển khai |
+| Quyết định | Lý do | Cách hiện thực |
 |---|---|---|
-| Tất cả PK là UUID String | Tránh thông tin nhạy cảm trong URL (không đoán được sequential ID), dễ merge data từ nhiều nguồn | `@Id @GeneratedValue(strategy = IDENTITY)` với giá trị UUID sinh tại service layer |
-| Contract: history model | Cần lưu toàn bộ lịch sử thay đổi lương và điều khoản để payroll tính đúng theo từng tháng | `effectiveFrom`, `effectiveTo`, `current` flag; partial unique index `WHERE current = true` |
-| Cấu hình lương: bảng có kiểu, hiệu lực-theo-ngày, append-only | Bản ghi đã PUBLISH phải bất biến để truy vết; mỗi kỳ lương chọn đúng phiên bản theo ngày hiệu lực; tránh JSONB mất kiểm soát kiểu | 4 nhóm (`SALARY_GRADE`/`ALLOWANCE`/`PIT`/`INSURANCE`), `version` + `status` (DRAFT/PUBLISHED/ARCHIVED) + `effective_from`; maker-checker (Finance soạn, Director PUBLISH) |
-| Cấu hình lương: bảng có kiểu, hiệu lực-theo-ngày, append-only | Bản ghi đã PUBLISH phải bất biến để truy vết; mỗi kỳ lương chọn đúng phiên bản theo ngày hiệu lực; tránh JSONB mất kiểm soát kiểu | 4 nhóm (`SALARY_GRADE`/`ALLOWANCE`/`PIT`/`INSURANCE`), `version` + `status` (DRAFT/PUBLISHED/ARCHIVED) + `effective_from`; maker-checker (Finance soạn, Director PUBLISH) |
-| Soft Delete | Dữ liệu nhân sự/tài chính không được xóa vật lý để đảm bảo audit trail | `delete_flag BOOLEAN DEFAULT FALSE` + `deleted_at TIMESTAMP` trên tất cả entity; JPA `@Where(clause = "delete_flag = false")` |
-| Leave balance: 2-stage | Phòng đặt trùng khi nhiều đơn chờ duyệt đồng thời | `pending_days` tăng khi submit, giảm khi approve/reject; `used_days` tăng khi approve |
-| WorkDay: unique per employee-day | Mỗi nhân viên chỉ có một bản ghi ngày công cho mỗi ngày — nguồn sự thật duy nhất; cuối kỳ gộp thành Timesheet | `UNIQUE CONSTRAINT (employee_id, work_date)`; cờ `locked` khi đã chốt kỳ |
-| PayrollRun chứa các dòng Payroll | Gói cả kỳ lương vào một thực thể có vòng đời (DRAFT→PENDING→APPROVED→PAID); hỗ trợ tính lại 1 dòng/cả kỳ và loại dòng | `payroll.payroll_run_id` FK; cờ `payroll.locked` cho dòng tính lại thủ công |
-| WorkDay: unique per employee-day | Mỗi nhân viên chỉ có một bản ghi ngày công cho mỗi ngày — nguồn sự thật duy nhất; cuối kỳ gộp thành Timesheet | `UNIQUE CONSTRAINT (employee_id, work_date)`; cờ `locked` khi đã chốt kỳ |
-| PayrollRun chứa các dòng Payroll | Gói cả kỳ lương vào một thực thể có vòng đời (DRAFT→PENDING→APPROVED→PAID); hỗ trợ tính lại 1 dòng/cả kỳ và loại dòng | `payroll.payroll_run_id` FK; cờ `payroll.locked` cho dòng tính lại thủ công |
-| OT monthly summary: database view | Kiểm tra giới hạn OT cần tổng hợp theo tháng/năm mỗi lần submit | PostgreSQL VIEW `ot_monthly_summary` để tái sử dụng logic tổng hợp |
+| Mọi khóa chính là chuỗi định danh duy nhất toàn cục | Tránh lộ thông tin nhạy cảm qua đường dẫn (không đoán được như số tuần tự), dễ hợp nhất dữ liệu từ nhiều nguồn | Sinh giá trị định danh tại tầng dịch vụ |
+| Hợp đồng theo mô hình lịch sử | Cần lưu trọn lịch sử thay đổi lương và điều khoản để tính lương đúng theo từng tháng | Lưu ngày bắt đầu/kết thúc hiệu lực và cờ "đang hiệu lực"; chỉ mục duy nhất có điều kiện chỉ áp cho bản đang hiệu lực |
+| Cấu hình lương: bảng có kiểu, hiệu lực theo ngày, chỉ thêm mới | Bản đã ban hành phải bất biến để truy vết; mỗi kỳ lương chọn đúng phiên bản theo ngày hiệu lực; giữ kiểm soát kiểu dữ liệu | Bốn nhóm cấu hình kèm số phiên bản, trạng thái và ngày hiệu lực; quy trình người soạn — người duyệt |
+| Xóa mềm | Dữ liệu nhân sự, tài chính không được xóa vật lý để bảo đảm vết kiểm toán | Cờ đánh dấu đã xóa kèm thời điểm xóa trên mọi thực thể; truy vấn tự động lọc bỏ bản đã xóa |
+| Số dư phép trừ hai giai đoạn | Phòng đặt trùng khi nhiều đơn chờ duyệt đồng thời | Ngày đang chờ tăng khi gửi đơn, giảm khi duyệt/từ chối; ngày đã dùng tăng khi duyệt |
+| Ngày công duy nhất theo từng nhân viên mỗi ngày | Mỗi nhân viên chỉ có một bản ghi công mỗi ngày — nguồn sự thật duy nhất; cuối kỳ gộp thành bảng công | Ràng buộc duy nhất theo cặp nhân viên–ngày; cờ khóa khi đã chốt kỳ |
+| Kỳ lương chứa các dòng phiếu lương | Gói cả kỳ lương vào một thực thể có vòng đời (nháp → chờ duyệt → đã duyệt → đã trả); hỗ trợ tính lại một dòng/cả kỳ và loại dòng | Mỗi dòng phiếu lương tham chiếu tới kỳ lương; cờ khóa cho dòng tính lại thủ công |
+| Tổng hợp tăng ca theo tháng bằng khung nhìn | Kiểm tra hạn mức tăng ca cần tổng hợp theo tháng/năm mỗi lần gửi đơn | Định nghĩa khung nhìn cơ sở dữ liệu để tái dùng lô-gic tổng hợp |
 
-Chi tiết các script SQL migration (V1–V30):
-Chi tiết các script SQL migration (V1–V30):
-
-Bảng 4.3: Danh sách script SQL migration
-Bảng 4.3: Danh sách script SQL migration
+Bảng 4.3: Danh sách phiên bản lược đồ cơ sở dữ liệu
 
 | Migration | Nội dung |
 |---|---|
@@ -2443,17 +1983,6 @@ Bảng 4.3: Danh sách script SQL migration
 | V28 | Thêm kpi1_rating (điểm HS1 do cấp trên chấm theo tháng) |
 | V29 | Thêm payroll_run; thêm payroll_run_id, locked vào payroll |
 | V30 | Thêm cột giờ OT theo loại (ot_weekday/weekend/holiday/night_hours) vào payroll cho phiếu lương |
-| V20 | Tách attendance thành workday (per-employee-per-day) và timesheet (tổng hợp tháng) |
-| V21 | Thêm attendance_adjustment (đơn bổ sung chấm công, Leader/Manager cùng phòng duyệt) |
-| V22 | Thêm ot_plan, ot_plan_employee; thêm ot_plan_id và coefficient vào ot_request |
-| V23 | Thêm document_key vào contract (tham chiếu tài liệu hợp đồng PDF lưu trên MinIO) |
-| V24 | Thêm created_at cho checkin_device; chuyển quản lý device & checkin_log sang SYSTEM_ADMIN |
-| V25 | Thêm cột locked vào workday; suy Nt từ timesheet (bỏ trường nhập tay) |
-| V26 | Đổi kpi1_score/kpi2_score → hs1_score/hs2_score; thêm position_allowance, ot_pay vào payroll |
-| V27 | Thêm payroll_config — bảng cấu hình lương có kiểu, hiệu lực-theo-ngày, append-only (thay system_config JSONB cho lương) |
-| V28 | Thêm kpi1_rating (điểm HS1 do cấp trên chấm theo tháng) |
-| V29 | Thêm payroll_run; thêm payroll_run_id, locked vào payroll |
-| V30 | Thêm cột giờ OT theo loại (ot_weekday/weekend/holiday/night_hours) vào payroll cho phiếu lương |
 
 ## 4.3 Xây dựng ứng dụng
 
@@ -2475,7 +2004,7 @@ Bảng 4.4: Thư viện backend (facez/pom.xml)
 | Lettuce | via Spring Data Redis | Redis client (reactive-capable) |
 | JJWT (io.jsonwebtoken) | 0.12.x | JWT create, parse, validate |
 | SpringDoc OpenAPI | 2.6.x | Swagger UI, OpenAPI spec generation |
-| Lombok | 1.18.x | Boilerplate reduction (@Getter, @Builder, etc.) |
+| Lombok | 1.18.x | Giảm mã lặp (tự sinh phương thức truy cập, hàm dựng đối tượng…) |
 | MapStruct | 1.6.x | DTO ↔ Entity mapping |
 | Spring Boot Actuator | via Boot | Health check, metrics endpoints |
 | Logback | via Boot | Structured JSON logging |
@@ -2555,199 +2084,79 @@ Bảng 4.8: Mức độ hoàn thành theo yêu cầu chức năng
 
 ### 4.3.3 Minh họa các chức năng chính
 
-Chức năng 1: Pipeline chấm công tự động
+Chức năng 1: Quy trình chấm công tự động
 
-Khi thiết bị nhận diện khuôn mặt gửi sự kiện chấm công, hệ thống xử lý tự động không cần can thiệp thủ công:
-
-```
-Thiết bị → POST /api/checkin-logs
-  Header: X-Device-API-Key: <raw_key>
-
-Request body:
-{
-  "employeeId": "EMP-001",
-  "logType": "IN",
-  "timestamp": "2026-06-06T08:05:30"
-}
-
-DeviceApiKeyFilter: SHA-256(raw_key) → tìm trong DB → xác thực OK
-CheckinLogService: lưu CheckinLog, publish CheckinProcessedEvent
-AttendanceService: tạo/cập nhật Attendance cho ngày 06/06/2026
-  - checkIn = 08:05:30
-  - lateHour = (08:05 - 08:00) / 60 = 0.083h (5 phút)
-  - violate = true (đến muộn)
-
-Response: { "success": true, "message": "Check-in recorded", "data": {...} }
-```
-
-Khi nhân viên chấm công ra (LogTypes.OUT), hệ thống tự hoàn thành bản ghi:
-```
-workingHour = checkOut - checkIn (trừ giờ nghỉ trưa nếu cấu hình)
-paidHour    = min(workingHour, 8.0)  ← tối đa 1 ngày công bình thường
-paidDay     = paidHour / 8.0
-```
+Khi thiết bị nhận diện khuôn mặt gửi một sự kiện chấm công kèm khóa API thiết bị, hệ thống xử lý hoàn toàn tự động, không cần can thiệp thủ công. Trước hết, bước xác thực thiết bị đối chiếu khóa API (so khớp dạng băm đã lưu) để xác nhận nguồn gửi hợp lệ. Tiếp theo, dịch vụ ghi nhận chấm công lưu bản ghi thô rồi phát ra một sự kiện nội bộ; dịch vụ tổng hợp công lắng nghe sự kiện này để tạo hoặc cập nhật bản ghi công trong ngày. Ví dụ, một lượt chấm vào lúc 08:05 (giờ chuẩn bắt đầu là 08:00) được ghi nhận đến muộn 5 phút và đánh dấu cờ vi phạm. Khi nhân viên chấm ra, hệ thống hoàn tất bản ghi: giờ làm bằng khoảng thời gian từ lúc vào đến lúc ra (trừ giờ nghỉ trưa nếu có cấu hình), giờ được trả lương lấy tối đa một ngày công chuẩn (tám giờ), và số ngày công quy đổi theo tỷ lệ tương ứng.
 
 Chức năng 2: Luồng phê duyệt nghỉ phép hai cấp
-Chức năng 2: Luồng phê duyệt nghỉ phép hai cấp
 
-Minh họa vòng đời của một đơn nghỉ phép từ DRAFT đến APPROVED (LEADER → MANAGER, MANAGER là cấp cuối):
-Minh họa vòng đời của một đơn nghỉ phép từ DRAFT đến APPROVED (LEADER → MANAGER, MANAGER là cấp cuối):
-
-```
-Bước 1 — Nhân viên tạo đơn (status: DRAFT, có thể sửa/hủy):
-Bước 1 — Nhân viên tạo đơn (status: DRAFT, có thể sửa/hủy):
-  POST /api/leaves
-  { "leaveType": "ANNUAL", "startTime": "2026-06-10T08:00", "endTime": "2026-06-12T17:00" }
-  → Lưu nháp, chưa khóa số dư. Sửa qua PUT /api/leaves/{id} khi còn DRAFT.
-  { "leaveType": "ANNUAL", "startTime": "2026-06-10T08:00", "endTime": "2026-06-12T17:00" }
-  → Lưu nháp, chưa khóa số dư. Sửa qua PUT /api/leaves/{id} khi còn DRAFT.
-
-Bước 2 — Nhân viên gửi duyệt (status: TO_APPROVE):
-  PUT /api/leaves/{id}/submit
-  → LeaveBalance.pendingDays += 3 (khóa ngay, tránh đặt trùng)
-  PUT /api/leaves/{id}/submit
-  → LeaveBalance.pendingDays += 3 (khóa ngay, tránh đặt trùng)
-  → LeaveRequestSubmittedEvent → Notification đến LEADER
-
-Bước 3 — Leader duyệt cấp 1 (status: LEADER_APPROVED):
-  PUT /api/leaves/{id}/approve             [LEADER]
-Bước 3 — Leader duyệt cấp 1 (status: LEADER_APPROVED):
-  PUT /api/leaves/{id}/approve             [LEADER]
-  → Notification đến MANAGER
-
-Bước 4 — Manager duyệt cấp cuối (status: APPROVED):
-  PUT /api/leaves/{id}/approve             [MANAGER]
-Bước 4 — Manager duyệt cấp cuối (status: APPROVED):
-  PUT /api/leaves/{id}/approve             [MANAGER]
-  → LeaveBalance.pendingDays -= 3, usedDays += 3
-  → LeaveApprovedEvent → tạo bản ghi WorkDay (LEAVE) cho từng ngày nghỉ
-  → LeaveApprovedEvent → tạo bản ghi WorkDay (LEAVE) cho từng ngày nghỉ
-
-Nếu bị từ chối ở cấp LEADER hoặc MANAGER (status: REJECTED):
-  PUT /api/leaves/{id}/reject + { "reason": "..." }
-Nếu bị từ chối ở cấp LEADER hoặc MANAGER (status: REJECTED):
-  PUT /api/leaves/{id}/reject + { "reason": "..." }
-  → LeaveBalance.pendingDays -= 3 (hoàn trả số dư)
-```
+Vòng đời một đơn nghỉ phép trải qua các bước sau (sơ đồ trình tự ở Hình 4.21). Bước một, nhân viên tạo đơn ở trạng thái nháp — có thể sửa hoặc hủy, chưa khóa số dư. Bước hai, nhân viên gửi đơn đi duyệt: số ngày đang chờ duyệt được cộng ngay vào số dư để tránh đặt trùng, đồng thời một thông báo được gửi tới trưởng nhóm. Bước ba, trưởng nhóm phê duyệt cấp một, hệ thống thông báo tiếp cho quản lý. Bước bốn, quản lý phê duyệt cấp cuối: số ngày đang chờ được chuyển thành ngày đã dùng, và mỗi ngày nghỉ được ghi nhận thành một bản ghi công loại nghỉ phép. Nếu đơn bị từ chối ở bất kỳ cấp nào, số ngày đã tạm khóa được hoàn trả lại vào số dư.
 
 Chức năng 3: Tính lương và phê duyệt
 
-Quá trình tính lương tháng 6/2026 cho một nhân viên (minh họa công thức):
+Bảng dưới đây minh họa quá trình tính lương tháng cho một nhân viên, áp dụng đúng công thức đã trình bày, với các dữ liệu đầu vào được đọc sau khi kỳ chấm công đã chốt:
 
 ```
-Dữ liệu đầu vào (đọc từ DB sau period close):
-  baseSalary    = 35,000,000 VND  (từ Contract active tháng 6)
-  positionCoeff = 1,500,000 VND   (Li — phụ cấp chức vụ)
-  allowances    = 800,000 VND     (HTi — phụ cấp khác)
-  workingDays   = 22 (Nt — số ngày làm việc chuẩn tháng 6)
-  actualDays    = 20 (NCtt — ngày công thực tế)
-  kpi1          = 1.04 (A — đánh giá từ Manager)
-  kpi2          = 1.00 (B — attendance-derived: < 5 ngày vi phạm)
-  otWeekday     = 8h (OT thường)
-  otWeekend     = 4h (OT cuối tuần)
+Dữ liệu đầu vào:
+  Lương hiệu quả theo hợp đồng    = 35.000.000 đ
+  Phụ cấp chức vụ                  = 1.500.000 đ
+  Phụ cấp khác                     = 800.000 đ
+  Số ngày công chuẩn của tháng     = 22 ngày
+  Số ngày công thực tế             = 20 ngày
+  Hệ số thi đua cấp trên chấm      = 1,04 (loại A)
+  Hệ số thi đua từ chấm công       = 1,00 (dưới 5 ngày vi phạm)
+  Giờ tăng ca ngày thường          = 8 giờ
+  Giờ tăng ca cuối tuần            = 4 giờ
 
 Tính toán:
-  kpiAvg      = (1.04 + 1.00) / 2 = 1.02
-  baseGross   = (35,000,000 × 1.02 + 1,500,000 + 800,000) × (20/22)
-              = (35,700,000 + 2,300,000) × 0.909
-              = 38,000,000 × 0.909 = 34,545,455 VND
+  Hệ số thi đua trung bình = (1,04 + 1,00) / 2 = 1,02
+  Lương cơ bản kỳ = (35.000.000 × 1,02 + 1.500.000 + 800.000) × (20/22)
+                  = 38.000.000 × 0,909 = 34.545.455 đ
 
-  otPay       = 8h × (35,000,000/22/8) × 1.5   (weekday ×1.5)
-              + 4h × (35,000,000/22/8) × 2.0    (weekend ×2.0)
-              = 8 × 198,864 × 1.5 + 4 × 198,864 × 2.0
-              = 2,386,364 + 1,590,909 = 3,977,273 VND
+  Tiền tăng ca = 8 × (35.000.000/22/8) × 1,5   (ngày thường, hệ số 1,5)
+               + 4 × (35.000.000/22/8) × 2,0   (cuối tuần, hệ số 2,0)
+               = 2.386.364 + 1.590.909 = 3.977.273 đ
 
-  grossSalary = 34,545,455 + 3,977,273 = 38,522,728 VND
+  Lương gộp = 34.545.455 + 3.977.273 = 38.522.728 đ
 
-  insuranceBase (capped at 46.8M) = min(35,000,000, 46,800,000) = 35,000,000
-  bhxhEmployee  = 35,000,000 × 8%  = 2,800,000 VND
-  bhytEmployee  = 35,000,000 × 1.5% = 525,000 VND
-  bhtnEmployee  = 35,000,000 × 1%   = 350,000 VND
-  totalInsur    = 3,675,000 VND
+  Nền tính bảo hiểm (giới hạn 46,8 triệu) = 35.000.000 đ
+  Bảo hiểm xã hội (8%)    = 2.800.000 đ
+  Bảo hiểm y tế (1,5%)    = 525.000 đ
+  Bảo hiểm thất nghiệp(1%)= 350.000 đ
+  Tổng bảo hiểm           = 3.675.000 đ
 
-  taxableIncome = 38,522,728 - 3,675,000 - 15,500,000 (bản thân)
-                - 6,200,000 (1 người phụ thuộc)
-                = 13,147,728 VND
+  Thu nhập tính thuế = 38.522.728 − 3.675.000 − 15.500.000 (giảm trừ bản thân)
+                     − 6.200.000 (một người phụ thuộc) = 13.147.728 đ
 
-  PIT (bậc 1: ≤5M ×5%; bậc 2: 5–10M ×10%; bậc 3: phần còn lại ×15%):
-              = 5,000,000 × 5% + 5,000,000 × 10% + 3,147,728 × 15%
-              = 250,000 + 500,000 + 472,159 = 1,222,159 VND
+  Thuế thu nhập cá nhân (lũy tiến: ≤5tr ×5%; 5–10tr ×10%; phần còn lại ×15%)
+                     = 250.000 + 500.000 + 472.159 = 1.222.159 đ
 
-  netSalary = 38,522,728 - 3,675,000 - 1,222,159 = 33,625,569 VND
+  Lương thực nhận = 38.522.728 − 3.675.000 − 1.222.159 = 33.625.569 đ
 ```
 
-Sau khi FINANCE_ADMIN kiểm tra và gửi duyệt, DIRECTOR thấy bảng tổng hợp toàn bộ nhân viên và phê duyệt hoặc từ chối với lý do. Khi được phê duyệt, trạng thái chuyển thành APPROVED và FINANCE_ADMIN có thể đánh dấu PAID sau khi chuyển khoản.
+Sau khi người phụ trách tài chính kiểm tra và gửi duyệt, giám đốc xem bảng tổng hợp toàn bộ nhân viên rồi phê duyệt hoặc trả lại kèm lý do. Khi được phê duyệt, kỳ lương chuyển sang trạng thái đã duyệt và người phụ trách tài chính đánh dấu đã trả sau khi hoàn tất chi trả.
 
 Chức năng 4: Báo cáo tài chính với xuất CSV
 
-Ba loại báo cáo hỗ trợ lọc theo phòng ban và xuất file CSV với BOM UTF-8 (đảm bảo Excel hiển thị tiếng Việt đúng):
+Ba loại báo cáo đều hỗ trợ lọc theo phòng ban và xuất ra tệp dạng bảng tính. Mỗi dòng báo cáo gồm các cột: mã nhân viên, họ tên, phòng ban, lương gộp, tổng bảo hiểm nhân viên đóng, thuế thu nhập cá nhân, lương thực nhận và tổng chi phí sử dụng lao động. Khi xuất tệp, hệ thống chèn dấu nhận diện mã hóa Unicode ở đầu tệp để phần mềm bảng tính tự nhận diện đúng bảng mã, tránh lỗi hiển thị tiếng Việt.
 
-```typescript
-// Ví dụ xuất báo cáo chi phí lao động
-const rows = reportData.map(r => ({
-  'Mã NV': r.employeeCode,
-  'Họ tên': r.fullName,
-  'Phòng ban': r.departmentName,
-  'Lương gross': formatVnd(r.grossSalary),
-  'Bảo hiểm NV': formatVnd(r.totalEmployeeInsurance),
-  'Thuế TNCN': formatVnd(r.pitTax),
-  'Lương net': formatVnd(r.netSalary),
-  'Chi phí sử dụng LĐ': formatVnd(r.totalEmploymentCost),
-}));
+Chức năng 5: Cấu hình lương và áp dụng tức thì
 
-exportToCsv(`bao_cao_chi_phi_lao_dong_T${month}_${year}.csv`, rows);
-```
+Người phụ trách tài chính có thể cập nhật biểu thuế thu nhập cá nhân mà không cần khởi động lại ứng dụng. Cấu hình lương vận hành theo mô hình người soạn — người duyệt: người phụ trách tài chính tạo một phiên bản nháp kèm ngày bắt đầu hiệu lực, sau đó giám đốc phê duyệt để ban hành. Một phiên bản biểu thuế gồm danh sách các bậc (khoảng thu nhập và thuế suất tương ứng) cùng hai mức giảm trừ — cho bản thân và cho mỗi người phụ thuộc — như minh họa ở Bảng 4.9.
 
-Hàm `exportToCsv` trong `formatters.ts` thêm BOM `﻿` trước nội dung CSV để Excel tự động nhận diện encoding UTF-8, tránh lỗi hiển thị tiếng Việt trên Windows.
+Bảng 4.9: Ví dụ một phiên bản biểu thuế thu nhập cá nhân lũy tiến
 
-Chức năng 5: Cấu hình hệ thống và tải lại tức thì
+| Bậc | Khoảng thu nhập tính thuế (triệu đồng/tháng) | Thuế suất |
+|:---:|---|:---:|
+| 1 | đến 5 | 5% |
+| 2 | trên 5 đến 10 | 10% |
+| 3 | trên 10 đến 18 | 15% |
+| 4 | trên 18 đến 32 | 20% |
+| 5 | trên 32 đến 52 | 25% |
+| 6 | trên 52 đến 80 | 30% |
+| 7 | trên 80 | 35% |
 
-FINANCE_ADMIN có thể cập nhật biểu thuế TNCN mà không cần restart ứng dụng. Cấu hình lương theo mô hình maker-checker: Finance tạo một phiên bản DRAFT (kèm ngày hiệu lực), DIRECTOR phê duyệt để PUBLISH:
-FINANCE_ADMIN có thể cập nhật biểu thuế TNCN mà không cần restart ứng dụng. Cấu hình lương theo mô hình maker-checker: Finance tạo một phiên bản DRAFT (kèm ngày hiệu lực), DIRECTOR phê duyệt để PUBLISH:
-
-```json
-// Bước 1 — Finance tạo bản nháp (DRAFT)
-POST /api/payroll-configs
-// Bước 1 — Finance tạo bản nháp (DRAFT)
-POST /api/payroll-configs
-{
-  "configType": "PIT",
-  "effectiveFrom": "2026-07-01",
-  "brackets": [
-    { "from": 0, "to": 5000000, "rate": 0.05 },
-    { "from": 5000000, "to": 10000000, "rate": 0.10 },
-    { "from": 10000000, "to": 18000000, "rate": 0.15 },
-    { "from": 18000000, "to": 32000000, "rate": 0.20 },
-    { "from": 32000000, "to": 52000000, "rate": 0.25 },
-    { "from": 52000000, "to": 80000000, "rate": 0.30 },
-    { "from": 80000000, "to": null, "rate": 0.35 }
-  ],
-  "personalDeduction": 11000000,
-  "dependentDeduction": 4400000
-}
-
-// Bước 2 — Director phê duyệt (DRAFT → PUBLISHED)
-PUT /api/payroll-configs/{id}/publish
-  "effectiveFrom": "2026-07-01",
-  "brackets": [
-    { "from": 0, "to": 5000000, "rate": 0.05 },
-    { "from": 5000000, "to": 10000000, "rate": 0.10 },
-    { "from": 10000000, "to": 18000000, "rate": 0.15 },
-    { "from": 18000000, "to": 32000000, "rate": 0.20 },
-    { "from": 32000000, "to": 52000000, "rate": 0.25 },
-    { "from": 52000000, "to": 80000000, "rate": 0.30 },
-    { "from": 80000000, "to": null, "rate": 0.35 }
-  ],
-  "personalDeduction": 11000000,
-  "dependentDeduction": 4400000
-}
-
-// Bước 2 — Director phê duyệt (DRAFT → PUBLISHED)
-PUT /api/payroll-configs/{id}/publish
-```
-
-Sau khi phiên bản được PUBLISH, mỗi kỳ lương tự chọn đúng phiên bản cấu hình theo ngày hiệu lực; phiên bản cũ chuyển ARCHIVED nhưng vẫn được giữ lại để truy vết. Việc tính lương tiếp theo dùng biểu thuế mới mà không cần restart Spring Boot, đồng thời không một mình Finance có thể thay đổi tham số tính lương (cần Director duyệt).
-Sau khi phiên bản được PUBLISH, mỗi kỳ lương tự chọn đúng phiên bản cấu hình theo ngày hiệu lực; phiên bản cũ chuyển ARCHIVED nhưng vẫn được giữ lại để truy vết. Việc tính lương tiếp theo dùng biểu thuế mới mà không cần restart Spring Boot, đồng thời không một mình Finance có thể thay đổi tham số tính lương (cần Director duyệt).
+Sau khi một phiên bản được ban hành, mỗi kỳ lương tự chọn đúng phiên bản cấu hình theo ngày hiệu lực; phiên bản cũ chuyển sang trạng thái lưu trữ nhưng vẫn được giữ lại để truy vết. Lần tính lương kế tiếp dùng ngay biểu thuế mới mà không cần khởi động lại hệ thống, đồng thời không một cá nhân nào tự mình thay đổi được tham số tính lương vì luôn cần một cấp phê duyệt độc lập.
 
 ## 4.4 Kiểm thử
 
@@ -2755,82 +2164,80 @@ Sau khi phiên bản được PUBLISH, mỗi kỳ lương tự chọn đúng phi
 
 FaceZ HRMS áp dụng chiến lược kiểm thử theo hai cấp độ phù hợp với quy mô đồ án:
 
-Kiểm thử đơn vị (Unit Testing): Tập trung vào `PayrollCalculationEngine` — thành phần có logic phức tạp nhất và yêu cầu độ chính xác cao nhất. Vì `PayrollCalculationEngine` là pure computation component (không có DB access, không có side effect), việc viết unit test rất đơn giản: cung cấp input cụ thể, kiểm tra output mong đợi.
+Kiểm thử đơn vị: tập trung vào bộ máy tính lương — thành phần có lô-gic phức tạp nhất và đòi hỏi độ chính xác cao nhất. Vì bộ máy tính lương là thành phần tính toán thuần (không truy cập cơ sở dữ liệu, không gây hiệu ứng phụ), việc viết kiểm thử rất đơn giản: cung cấp dữ liệu vào cụ thể rồi đối chiếu kết quả với giá trị kỳ vọng.
 
-Kiểm thử tích hợp (Integration Testing): Kiểm tra luồng xác thực end-to-end với database thực (H2 in-memory hoặc PostgreSQL test container). Đảm bảo filter chain, token generation, và token refresh hoạt động đúng.
+Kiểm thử tích hợp: kiểm tra luồng xác thực xuyên suốt với một cơ sở dữ liệu thật, bảo đảm chuỗi bộ lọc, việc phát hành token và làm mới token hoạt động đúng.
 
-Kiểm thử chức năng thủ công (Manual Functional Testing): Kiểm tra từng use case qua Swagger UI và frontend, bao gồm kiểm tra các trường hợp biên (boundary cases) và luồng lỗi.
+Kiểm thử chức năng thủ công: kiểm tra từng ca sử dụng qua giao diện tài liệu API và giao diện người dùng, bao gồm cả các trường hợp biên và luồng lỗi.
 
-Bảng 4.9: Phạm vi và kỹ thuật kiểm thử
+Bảng 4.10: Phạm vi và kỹ thuật kiểm thử
 
 | Loại kiểm thử | Phạm vi | Công cụ | Tự động hóa |
 |---|---|---|:---:|
-| Unit test | PayrollCalculationEngine | JUnit 5, AssertJ | ✅ |
-| Unit test | LeaveBalance deduction logic | JUnit 5, Mockito | ✅ |
-| Integration test | Auth flow (login → refresh → logout) | Spring Boot Test, MockMvc | ✅ |
-| Integration test | Dựng schema từ `final_schema.sql` | Spring Boot Test | ✅ |
-| Integration test | Dựng schema từ `final_schema.sql` | Spring Boot Test | ✅ |
-| Functional test | Tất cả REST endpoint | Swagger UI + Postman | Thủ công |
-| Functional test | Frontend UI theo từng vai trò | Trình duyệt | Thủ công |
-| Security test | Rate limiting (10 attempts/15min) | curl script | Thủ công |
-| Security test | JWT expiry và silent refresh | Frontend network tab | Thủ công |
+| Unit test | Bộ máy tính lương | JUnit 5, AssertJ | ✅ |
+| Unit test | Lô-gic trừ số dư phép | JUnit 5, Mockito | ✅ |
+| Integration test | Luồng xác thực (đăng nhập → làm mới → đăng xuất) | Spring Boot Test, MockMvc | ✅ |
+| Integration test | Dựng lược đồ từ tập lệnh khởi tạo hợp nhất | Spring Boot Test | ✅ |
+| Functional test | Toàn bộ điểm cuối dịch vụ | Swagger UI + Postman | Thủ công |
+| Functional test | Giao diện theo từng vai trò | Trình duyệt | Thủ công |
+| Security test | Giới hạn tần suất (10 lần/15 phút) | Tập lệnh kiểm thử | Thủ công |
+| Security test | Token hết hạn và làm mới ngầm | Công cụ theo dõi mạng của trình duyệt | Thủ công |
 
 ### 4.4.2 Kiểm thử chức năng Xác thực và Phân quyền
 
-Bảng 4.10: Test cases kiểm thử xác thực
+Bảng 4.11: Các ca kiểm thử xác thực
 
 | TC | Mô tả | Dữ liệu đầu vào | Kết quả mong đợi | Kết quả thực tế |
 |:---:|---|---|---|:---:|
-| TC-AUTH-01 | Đăng nhập thành công | username/password hợp lệ | HTTP 200, access token + refresh cookie | ✅ Pass |
-| TC-AUTH-02 | Sai mật khẩu | password sai | HTTP 401, message "Sai tên đăng nhập hoặc mật khẩu" | ✅ Pass |
-| TC-AUTH-03 | Rate limiting kick in | 11 lần đăng nhập sai liên tiếp | Lần 11: HTTP 429, "Tài khoản tạm khóa 15 phút" | ✅ Pass |
-| TC-AUTH-04 | Token refresh | Access token hết hạn, gọi /refresh | HTTP 200, access token mới, refresh cookie mới (rotation) | ✅ Pass |
-| TC-AUTH-05 | Truy cập sau đăng xuất | Token cũ sau logout | HTTP 401, "Token đã bị thu hồi" | ✅ Pass |
-| TC-AUTH-06 | EMPLOYEE truy cập HR endpoint | Bearer token EMPLOYEE, GET /api/employees | HTTP 403 Forbidden | ✅ Pass |
-| TC-AUTH-07 | Device API key hợp lệ | X-Device-API-Key đúng | HTTP 200, checkin recorded | ✅ Pass |
-| TC-AUTH-08 | Device API key sai | X-Device-API-Key giả | HTTP 401 Unauthorized | ✅ Pass |
-| TC-AUTH-09 | HR_ADMIN tính lương | Bearer token HR_ADMIN, POST /api/payrolls/calculate | HTTP 403 Forbidden (SoD enforcement) | ✅ Pass |
-| TC-AUTH-10 | FINANCE_ADMIN tính lương | Bearer token FINANCE_ADMIN | HTTP 200, payroll created | ✅ Pass |
+| TC-AUTH-01 | Đăng nhập thành công | Tên đăng nhập/mật khẩu hợp lệ | Thành công, cấp token truy cập và cookie làm mới | ✅ Pass |
+| TC-AUTH-02 | Sai mật khẩu | Mật khẩu sai | Từ chối, báo "Sai tên đăng nhập hoặc mật khẩu" | ✅ Pass |
+| TC-AUTH-03 | Kích hoạt giới hạn tần suất | 11 lần đăng nhập sai liên tiếp | Lần 11 bị chặn, báo "Tài khoản tạm khóa 15 phút" | ✅ Pass |
+| TC-AUTH-04 | Làm mới token | Token truy cập hết hạn, gọi làm mới | Cấp token truy cập mới và cookie làm mới mới (xoay vòng) | ✅ Pass |
+| TC-AUTH-05 | Truy cập sau đăng xuất | Token cũ sau khi đăng xuất | Từ chối, báo "Token đã bị thu hồi" | ✅ Pass |
+| TC-AUTH-06 | Nhân viên truy cập chức năng nhân sự | Phiên nhân viên, gọi xem danh sách nhân viên | Bị từ chối quyền truy cập | ✅ Pass |
+| TC-AUTH-07 | Khóa API thiết bị hợp lệ | Khóa thiết bị đúng | Ghi nhận chấm công thành công | ✅ Pass |
+| TC-AUTH-08 | Khóa API thiết bị sai | Khóa thiết bị giả | Bị từ chối xác thực | ✅ Pass |
+| TC-AUTH-09 | Vai trò nhân sự tính lương | Phiên nhân sự, gọi tính lương | Bị từ chối (thực thi phân tách nhiệm vụ) | ✅ Pass |
+| TC-AUTH-10 | Vai trò tài chính tính lương | Phiên phụ trách tài chính | Tính lương thành công | ✅ Pass |
 
 ### 4.4.3 Kiểm thử chức năng Tính lương
 
-Unit test cho `PayrollCalculationEngine` kiểm tra từng thành phần của công thức lương:
+Kiểm thử đơn vị cho bộ máy tính lương kiểm tra từng thành phần của công thức lương:
 
-Bảng 4.11: Test cases kiểm thử tính lương
+Bảng 4.12: Các ca kiểm thử tính lương
 
 | TC | Mô tả | Kịch bản | Kết quả mong đợi | Kết quả thực tế |
 |:---:|---|---|---|:---:|
-| TC-PAY-01 | Tính lương cơ bản đủ ngày | 22/22 ngày, HS1=A (1.04), HS2=B (1.00), 0 OT | grossSalary = baseSalary × 1.02 + positionCoeff + allowances | ✅ Pass |
-| TC-PAY-01 | Tính lương cơ bản đủ ngày | 22/22 ngày, HS1=A (1.04), HS2=B (1.00), 0 OT | grossSalary = baseSalary × 1.02 + positionCoeff + allowances | ✅ Pass |
-| TC-PAY-02 | Tính lương thiếu ngày | 20/22 ngày | grossSalary × (20/22) | ✅ Pass |
-| TC-PAY-03 | OT ngày thường | 8h OT weekday | otPay = 8 × hourlyRate × 1.5 | ✅ Pass |
-| TC-PAY-04 | OT cuối tuần | 4h OT weekend | otPay = 4 × hourlyRate × 2.0 | ✅ Pass |
-| TC-PAY-05 | OT ngày lễ | 4h OT public holiday | otPay = 4 × hourlyRate × 3.0 | ✅ Pass |
-| TC-PAY-06 | Phụ trội OT đêm | OT 22:00–02:00 | otPay thêm × 0.3 cho phần thời gian đêm | ✅ Pass |
-| TC-PAY-07 | Trần bảo hiểm | baseSalary = 60,000,000 VND | insuranceBase = 46,800,000 (capped) | ✅ Pass |
-| TC-PAY-08 | PIT 7 bậc | taxableIncome = 100,000,000 VND | PIT theo 7 bậc lũy tiến từng phần | ✅ Pass |
-| TC-PAY-09 | Người phụ thuộc | 2 người phụ thuộc | Giảm trừ = 15,500,000 + 2 × 6,200,000 = 27,900,000 | ✅ Pass |
-| TC-PAY-10 | Không có chấm công | 0 ngày công, không có OT | netSalary = 0; không crash | ✅ Pass |
-| TC-PAY-11 | Period close gate | Tháng chưa chốt kỳ, gọi calculate | HTTP 400 "Kỳ chấm công chưa được chốt" | ✅ Pass |
-| TC-PAY-12 | Batch processing | 10 nhân viên cùng lúc | Tất cả tính đúng, không deadlock | ✅ Pass |
+| TC-PAY-01 | Lương cơ bản đủ ngày | 22/22 ngày, hệ số A (1,04) và B (1,00), không tăng ca | Lương gộp = lương hiệu quả × 1,02 + phụ cấp chức vụ + phụ cấp khác | ✅ Pass |
+| TC-PAY-02 | Lương thiếu ngày | 20/22 ngày | Lương gộp nhân tỷ lệ (20/22) | ✅ Pass |
+| TC-PAY-03 | Tăng ca ngày thường | 8 giờ ngày thường | Tiền tăng ca theo hệ số 1,5 | ✅ Pass |
+| TC-PAY-04 | Tăng ca cuối tuần | 4 giờ cuối tuần | Tiền tăng ca theo hệ số 2,0 | ✅ Pass |
+| TC-PAY-05 | Tăng ca ngày lễ | 4 giờ ngày lễ | Tiền tăng ca theo hệ số 3,0 | ✅ Pass |
+| TC-PAY-06 | Phụ trội tăng ca đêm | Tăng ca 22:00–02:00 | Cộng thêm hệ số 0,3 cho phần thời gian ban đêm | ✅ Pass |
+| TC-PAY-07 | Trần bảo hiểm | Lương 60.000.000 đ | Nền tính bảo hiểm chốt ở 46.800.000 đ | ✅ Pass |
+| TC-PAY-08 | Thuế bảy bậc | Thu nhập tính thuế 100.000.000 đ | Thuế theo bảy bậc lũy tiến từng phần | ✅ Pass |
+| TC-PAY-09 | Người phụ thuộc | 2 người phụ thuộc | Giảm trừ = 15.500.000 + 2 × 6.200.000 = 27.900.000 | ✅ Pass |
+| TC-PAY-10 | Không có chấm công | 0 ngày công, không tăng ca | Thực nhận = 0; không lỗi | ✅ Pass |
+| TC-PAY-11 | Cổng kiểm soát kỳ chưa chốt | Tháng chưa chốt kỳ mà gọi tính lương | Báo lỗi "Kỳ chấm công chưa được chốt" | ✅ Pass |
+| TC-PAY-12 | Xử lý hàng loạt | 10 nhân viên cùng lúc | Tất cả tính đúng, không tranh chấp khóa | ✅ Pass |
 
 ### 4.4.4 Kiểm thử chức năng Phê duyệt nghỉ phép
 
-Bảng 4.12: Test cases kiểm thử nghỉ phép
+Bảng 4.13: Các ca kiểm thử nghỉ phép
 
 | TC | Mô tả | Kịch bản | Kết quả mong đợi | Kết quả thực tế |
 |:---:|---|---|---|:---:|
-| TC-LV-01 | Tạo đơn thành công | Đủ số dư phép | LeaveRequest DRAFT, pendingDays tăng | ✅ Pass |
-| TC-LV-02 | Không đủ số dư | Xin 10 ngày, còn 5 ngày | HTTP 400 "Số ngày nghỉ vượt quá số dư" | ✅ Pass |
-| TC-LV-03 | Luồng phê duyệt đủ cấp | DRAFT→TO_APPROVE→LEADER→MANAGER→APPROVED | Status đúng từng bước, notification gửi đúng | ✅ Pass |
-| TC-LV-04 | Từ chối ở bước Leader | Reject sau khi submit | Status = REJECTED, pendingDays hoàn trả | ✅ Pass |
-| TC-LV-05 | MANAGER duyệt sai bước | MANAGER duyệt đơn TO_APPROVE (bỏ qua Leader) | HTTP 400 "Đơn chưa được Leader phê duyệt" | ✅ Pass |
-| TC-LV-06 | Xóa đơn đã duyệt | Delete đơn APPROVED | HTTP 400 "Không thể xóa đơn đã phê duyệt" | ✅ Pass |
-| TC-LV-07 | Số dư sau duyệt | Duyệt 3 ngày phép năm | usedDays + 3, pendingDays - 3 | ✅ Pass |
+| TC-LV-01 | Tạo đơn thành công | Đủ số dư phép | Đơn ở trạng thái nháp, số ngày đang chờ tăng | ✅ Pass |
+| TC-LV-02 | Không đủ số dư | Xin 10 ngày, còn 5 ngày | Từ chối kèm thông báo "Số ngày nghỉ vượt quá số dư" | ✅ Pass |
+| TC-LV-03 | Luồng phê duyệt đủ cấp | Nháp → chờ duyệt → duyệt cấp một → đã duyệt | Trạng thái đúng từng bước, thông báo gửi đúng | ✅ Pass |
+| TC-LV-04 | Từ chối ở bước trưởng nhóm | Từ chối sau khi nộp | Đơn bị từ chối, số ngày đang chờ được hoàn trả | ✅ Pass |
+| TC-LV-05 | Quản lý duyệt sai bước | Quản lý duyệt đơn chưa qua trưởng nhóm | Từ chối kèm thông báo "Đơn chưa được trưởng nhóm phê duyệt" | ✅ Pass |
+| TC-LV-06 | Xóa đơn đã duyệt | Xóa đơn ở trạng thái đã duyệt | Từ chối kèm thông báo "Không thể xóa đơn đã phê duyệt" | ✅ Pass |
+| TC-LV-07 | Số dư sau duyệt | Duyệt 3 ngày phép năm | Số ngày đã dùng tăng 3, số ngày đang chờ giảm 3 | ✅ Pass |
 
 ### 4.4.5 Tổng kết kiểm thử
 
-Bảng 4.13: Kết quả tổng hợp kiểm thử
+Bảng 4.14: Kết quả tổng hợp kiểm thử
 
 | Nhóm chức năng | Số test case | Pass | Fail | Tỷ lệ |
 |---|:---:|:---:|:---:|:---:|
@@ -2842,13 +2249,13 @@ Bảng 4.13: Kết quả tổng hợp kiểm thử
 | Tăng ca & Giới hạn | 5 | 5 | 0 | 100% |
 | Tổng cộng | 45 | 45 | 0 | 100% |
 
-Tất cả 45 test case đều đạt kết quả Pass. Đặc biệt, các test case liên quan đến phân tách nhiệm vụ (TC-AUTH-09, TC-AUTH-10) xác nhận rằng `HR_ADMIN` không thể tính lương và `DIRECTOR` là người duy nhất có thể phê duyệt — đây là yêu cầu kiểm soát nội bộ quan trọng nhất của hệ thống.
+Tất cả 45 ca kiểm thử đều đạt. Đặc biệt, các ca liên quan đến phân tách nhiệm vụ (TC-AUTH-09, TC-AUTH-10) xác nhận rằng vai trò nhân sự không thể tính lương và giám đốc là người duy nhất có quyền phê duyệt — đây là yêu cầu kiểm soát nội bộ quan trọng nhất của hệ thống.
 
 ## 4.5 Triển khai
 
 ### 4.5.1 Môi trường và hạ tầng triển khai
 
-Bảng 4.14: Cấu hình môi trường triển khai
+Bảng 4.15: Cấu hình môi trường triển khai
 
 | Thành phần | Môi trường phát triển | Môi trường production (đề xuất) |
 |---|---|---|
@@ -2860,67 +2267,21 @@ Bảng 4.14: Cấu hình môi trường triển khai
 | RAM tối thiểu | 8 GB (dev) | 4 GB (prod single instance) |
 | Disk | — | 20 GB SSD (+ tăng trưởng dữ liệu) |
 
-Biến môi trường cần thiết:
-
-```bash
-# Database
-DB_URL=jdbc:postgresql://localhost:5432/facez
-DB_USERNAME=postgres
-DB_PASSWORD=<strong_password>
-
-# Redis
-REDIS_HOST=localhost
-REDIS_PORT=6379
-
-# JWT
-JWT_SECRET=<minimum_32_char_random_string>   # BẮT BUỘC — không có default an toàn
-JWT_ACCESS_EXP_MS=300000                      # 5 phút
-JWT_REFRESH_EXP_MS=1209600000               # 14 ngày
-
-# CORS
-CORS_ALLOWED_ORIGINS=http://localhost:3000   # Hoặc domain production
-
-# Frontend
-NEXT_PUBLIC_API_BASE=http://localhost:8084/face-z
-```
-
-Biến `JWT_SECRET` không có default an toàn trong production profile — ứng dụng sẽ từ chối khởi động nếu không được cấu hình, ngăn ngừa việc vô tình deploy với secret yếu.
+Hệ thống được cấu hình qua các biến môi trường, gom theo năm nhóm: thông tin kết nối cơ sở dữ liệu (địa chỉ, tài khoản, mật khẩu); thông tin kết nối bộ nhớ đệm; tham số xác thực (khóa bí mật ký token cùng thời hạn của token truy cập là năm phút và token làm mới là mười bốn ngày); danh sách nguồn được phép gọi liên miền; và địa chỉ máy chủ ứng dụng mà giao diện trỏ tới. Đáng chú ý, khóa bí mật ký token không có giá trị mặc định an toàn trong môi trường vận hành — ứng dụng sẽ từ chối khởi động nếu thiếu cấu hình này, qua đó ngăn ngừa việc vô tình triển khai với khóa yếu.
 
 ### 4.5.2 Mô hình container hóa và cấu hình dịch vụ
 
 Dịch vụ infrastructure (PostgreSQL, Redis, pgAdmin) được container hóa qua Docker Compose. Backend và frontend chạy trực tiếp trên host (không container hóa) trong môi trường phát triển để dễ debug và hot reload.
 
-Quy trình khởi động hệ thống:
+Quy trình khởi động hệ thống gồm ba bước. Trước hết, khởi động ngăn xếp hạ tầng bằng Docker Compose và xác nhận cả ba dịch vụ (cơ sở dữ liệu, bộ nhớ đệm, công cụ quản trị cơ sở dữ liệu) đã ở trạng thái đang chạy. Tiếp theo, dựng lược đồ cơ sở dữ liệu từ tập lệnh khởi tạo hợp nhất, nạp dữ liệu mặc định, rồi khởi động backend; có thể kiểm tra tình trạng qua điểm cuối kiểm tra sức khỏe. Cuối cùng, khởi động giao diện và truy cập trang đăng nhập.
 
-```bash
-# Bước 1: Khởi động infrastructure
-cd facez
-docker compose -f compose.yaml up -d
-# Kiểm tra: docker compose ps → tất cả status "running"
-
-# Bước 2: Khởi động backend
-./mvnw spring-boot:run
-# Áp final_schema.sql (DDL đầy đủ V1–V30) rồi chạy script seed dữ liệu mặc định
-# Áp final_schema.sql (DDL đầy đủ V1–V30) rồi chạy script seed dữ liệu mặc định
-# Kiểm tra: http://localhost:8084/face-z/actuator/health → {"status":"UP"}
-
-# Bước 3: Khởi động frontend
-cd ../facez-front
-npm run dev
-# Kiểm tra: http://localhost:3000 → trang đăng nhập
-
-# Tài khoản mặc định (seed bởi DataInitializerConfig):
-# Username: admin | Password: admin123 | Role: SYSTEM_ADMIN
-```
-
-`DataInitializerConfig` chạy một lần khi database rỗng, tạo tài khoản `admin` với vai trò SYSTEM_ADMIN (tài khoản đặc biệt, không gắn hồ sơ nhân viên). Dữ liệu cấu hình lương mặc định — biểu thuế TNCN bảy bậc, tỷ lệ bảo hiểm, bậc lương và phụ cấp — được nạp vào các bảng `payroll_config` (đã PUBLISH) bằng script `insert_payroll_configs.py` từ các tệp JSON trong `config/payroll/`.
-`DataInitializerConfig` chạy một lần khi database rỗng, tạo tài khoản `admin` với vai trò SYSTEM_ADMIN (tài khoản đặc biệt, không gắn hồ sơ nhân viên). Dữ liệu cấu hình lương mặc định — biểu thuế TNCN bảy bậc, tỷ lệ bảo hiểm, bậc lương và phụ cấp — được nạp vào các bảng `payroll_config` (đã PUBLISH) bằng script `insert_payroll_configs.py` từ các tệp JSON trong `config/payroll/`.
+Một bộ khởi tạo dữ liệu chạy đúng một lần khi cơ sở dữ liệu còn rỗng: nó tạo tài khoản quản trị hệ thống mặc định (tài khoản đặc biệt, không gắn hồ sơ nhân viên) và nạp các cấu hình lương mặc định — biểu thuế thu nhập cá nhân bảy bậc, tỷ lệ bảo hiểm, bậc lương và phụ cấp — ở trạng thái đã ban hành, từ các tệp cấu hình kèm theo dự án.
 
 ### 4.5.3 Kết quả vận hành
 
 Sau khi triển khai và vận hành thử nghiệm, hệ thống đạt các chỉ số vận hành:
 
-Bảng 4.15: Kết quả đo lường hiệu suất
+Bảng 4.16: Kết quả đo lường hiệu suất
 
 | Chỉ số | Kết quả đo | Ngưỡng yêu cầu | Đánh giá |
 |---|---|---|:---:|
@@ -2932,7 +2293,7 @@ Bảng 4.15: Kết quả đo lường hiệu suất
 | Health check endpoint | HTTP 200 {"status":"UP"} | Phải có | ✅ Đạt |
 | Tải lại config không restart | < 1 giây | Không restart | ✅ Đạt |
 
-Endpoint `/actuator/health` công khai trả về trạng thái tổng hợp bao gồm kết nối database và Redis — cho phép load balancer hoặc monitoring tool tự động phát hiện sự cố mà không cần authentication.
+Điểm cuối kiểm tra sức khỏe công khai trả về trạng thái tổng hợp, bao gồm cả tình trạng kết nối tới cơ sở dữ liệu và bộ nhớ đệm — cho phép bộ cân bằng tải hoặc công cụ giám sát tự động phát hiện sự cố mà không cần xác thực.
 
 Chương này đã hoàn thành vòng khép từ thiết kế đến thực thi với 15 sơ đồ minh họa đầy đủ kiến trúc và domain model, và kết quả kiểm thử trên ba phân hệ cốt lõi xác nhận hành vi đúng theo đặc tả use case. Trong quá trình xây dựng, bốn vấn đề kỹ thuật nổi bật đã nảy sinh đòi hỏi cách tiếp cận không tầm thường — đây là nội dung trọng tâm của Chương 5.
 
@@ -2946,9 +2307,9 @@ Chương này trình bày bốn đóng góp kỹ thuật và nghiệp vụ nổi
 
 ### 5.1.1 Bài toán
 
-Trong quá trình phân tích yêu cầu, một vấn đề kiểm soát nội bộ nghiêm trọng được phát hiện trong thiết kế ban đầu của hệ thống (v1.0): toàn bộ vòng đời bảng lương được thực hiện bởi một vai trò duy nhất — `HR_ADMIN`.
+Trong quá trình phân tích yêu cầu, một vấn đề kiểm soát nội bộ nghiêm trọng được phát hiện trong thiết kế ban đầu của hệ thống (phiên bản đầu): toàn bộ vòng đời bảng lương được thực hiện bởi một vai trò duy nhất — vai trò nhân sự.
 
-Cụ thể, `HR_ADMIN` trong v1.0 có thể:
+Cụ thể, vai trò nhân sự trong thiết kế ban đầu có thể:
 1. Tạo và chỉnh sửa hồ sơ nhân viên (kể cả mức lương)
 2. Ghi nhận và chỉnh sửa dữ liệu chấm công
 3. Chốt kỳ chấm công
@@ -3001,7 +2362,7 @@ Chốt kỳ chấm công          ở trạng thái nháp          Xem báo cáo
 [Không phê duyệt]     [Không chốt kỳ]             [Không chốt kỳ]
 ```
 
-Lưu ý: cấu hình lương (biểu thuế, tỷ lệ bảo hiểm, bậc lương, phụ cấp) cũng tuân theo maker–checker — FINANCE_ADMIN soạn phiên bản DRAFT, DIRECTOR phê duyệt để PUBLISH thì mới có hiệu lực. `SYSTEM_ADMIN` không còn quản lý cấu hình lương (chỉ quản lý tài khoản đăng nhập, thiết bị chấm công và nhật ký check-in), khép kín thêm một lỗ hổng SoD: người quản trị hệ thống không thể tự thay đổi tham số tính lương.
+Lưu ý: cấu hình lương (biểu thuế, tỷ lệ bảo hiểm, bậc lương, phụ cấp) cũng tuân theo mô hình người soạn — người duyệt: người phụ trách tài chính soạn phiên bản nháp, giám đốc phê duyệt để ban hành thì mới có hiệu lực. Quản trị hệ thống không còn quản lý cấu hình lương (chỉ quản lý tài khoản đăng nhập, thiết bị chấm công và nhật ký chấm công), khép kín thêm một lỗ hổng phân tách nhiệm vụ: người quản trị hệ thống không thể tự thay đổi tham số tính lương.
 
 Điểm cốt lõi là sự phân tách này **không chỉ nằm ở giao diện** mà được **thực thi ở tầng máy chủ** bằng cơ chế phân quyền theo từng thao tác (method-level authorization). Mỗi thao tác nhạy cảm chỉ chấp nhận đúng vai trò được phép: *tính lương* và *đánh dấu đã trả* thuộc Tài chính; *phê duyệt* và *trả lại* kỳ lương thuộc Giám đốc; *chốt kỳ chấm công* thuộc Nhân sự. Vì việc kiểm tra diễn ra ở máy chủ — độc lập với giao diện — nên ngay cả khi một người cố gọi thẳng API bằng phiên đăng nhập sai vai trò, yêu cầu vẫn bị từ chối (mã lỗi 403). Nói cách khác, phân quyền ở đây là một cơ chế an ninh thực thụ, không phải chỉ là việc ẩn/hiện nút bấm trên màn hình.
 
@@ -3110,7 +2471,6 @@ Tính lương không chỉ là phép nhân đơn giản. Pháp luật lao độn
 1. Công thức lương cơ bản (Nghị định 74/2024/NĐ-CP và thỏa ước lao động):
 
 Lương không chỉ tỷ lệ với ngày công — còn phụ thuộc vào hai hệ số đánh giá (HS1 hiệu suất do cấp trên chấm, HS2 chuyên cần suy từ chấm công), phụ cấp chức vụ, và hệ số bậc lương. Công thức phải phản ánh đúng thỏa ước lao động mà doanh nghiệp ký với nhân viên.
-Lương không chỉ tỷ lệ với ngày công — còn phụ thuộc vào hai hệ số đánh giá (HS1 hiệu suất do cấp trên chấm, HS2 chuyên cần suy từ chấm công), phụ cấp chức vụ, và hệ số bậc lương. Công thức phải phản ánh đúng thỏa ước lao động mà doanh nghiệp ký với nhân viên.
 
 2. Tăng ca với nhiều mức lương (Bộ Luật Lao Động 2019, Điều 98):
 
@@ -3178,7 +2538,6 @@ Lấy trường hợp nhân viên Senior Developer với các thông số:
 - Phụ cấp chức vụ: 2,000,000 VND
 - Tháng 6/2026: 22 ngày làm việc, thực tế 21 ngày
 - HS1 = A (1.04) do cấp trên chấm; không vi phạm chấm công và không nghỉ trong tháng → HS2 = A (1.04)
-- HS1 = A (1.04) do cấp trên chấm; không vi phạm chấm công và không nghỉ trong tháng → HS2 = A (1.04)
 - OT: 10h weekday, 5h weekend, không đêm
 - 1 người phụ thuộc
 
@@ -3186,7 +2545,6 @@ Bảng 5.3: Kiểm chứng tính lương mẫu
 
 | Thành phần | Công thức | Kết quả |
 |---|---|---|
-| HStb | (HS1 1.04 + HS2 1.04) / 2 | 1.04 |
 | HStb | (HS1 1.04 + HS2 1.04) / 2 | 1.04 |
 | baseGross (full month) | (40,000,000 × 1.04 + 2,000,000) | 43,600,000 |
 | baseGross (prorate 21/22) | 43,600,000 × (21/22) | 41,618,182 |
@@ -3217,7 +2575,6 @@ Bảng 5.3: Kiểm chứng tính lương mẫu
 
 Kết quả được kiểm chứng bằng cách tính tay theo đúng quy định pháp luật — không có sai số.
 
-Lợi ích của cấu hình động qua các bảng config hiệu lực-theo-ngày: Khi Chính phủ điều chỉnh lương tối thiểu vùng (ảnh hưởng trần bảo hiểm) hoặc sửa đổi biểu thuế TNCN, FINANCE_ADMIN chỉ cần tạo một phiên bản cấu hình mới (DRAFT) với giá trị và ngày hiệu lực cập nhật; sau khi DIRECTOR phê duyệt (PUBLISH), hệ thống tự chọn đúng phiên bản theo ngày hiệu lực của từng kỳ lương mà không cần sửa code hay restart. Các phiên bản đã PUBLISH là bất biến, giữ lại lịch sử để truy vết.
 Lợi ích của cấu hình động qua các bảng config hiệu lực-theo-ngày: Khi Chính phủ điều chỉnh lương tối thiểu vùng (ảnh hưởng trần bảo hiểm) hoặc sửa đổi biểu thuế TNCN, FINANCE_ADMIN chỉ cần tạo một phiên bản cấu hình mới (DRAFT) với giá trị và ngày hiệu lực cập nhật; sau khi DIRECTOR phê duyệt (PUBLISH), hệ thống tự chọn đúng phiên bản theo ngày hiệu lực của từng kỳ lương mà không cần sửa code hay restart. Các phiên bản đã PUBLISH là bất biến, giữ lại lịch sử để truy vết.
 
 ## 5.4 Cơ chế quản lý số dư nghỉ phép chống race condition
@@ -3305,11 +2662,11 @@ Bảng 6.1: So sánh FaceZ HRMS với các giải pháp tương tự
 
 | Tiêu chí | MISA HRM | Base HR | BambooHR | FaceZ HRMS |
 |---|:---:|:---:|:---:|:---:|
-| Tích hợp thiết bị chấm công nhận diện khuôn mặt | ⚠️ Qua addon | ⚠️ Qua addon | ❌ Không | ✅ Native API |
-| Pipeline chấm công tự động (không thủ công) | ⚠️ Tùy cấu hình | ⚠️ Tùy cấu hình | ❌ | ✅ Event-driven |
-| Công thức lương tuân thủ BLLĐ 2019 + TT 111 | ✅ | ✅ | ❌ (global) | ✅ |
-| OT đêm tính theo phút giao thoa | ❌ | ❌ | ❌ | ✅ |
-| Phân tách nhiệm vụ HR / Finance / Director | ⚠️ Tùy cấu hình | ⚠️ Tùy cấu hình | ✅ | ✅ Code-enforced |
+| Tích hợp thiết bị chấm công nhận diện khuôn mặt | ⚠️ Qua tiện ích bổ sung | ⚠️ Qua tiện ích bổ sung | ❌ Không | ✅ Giao diện gốc |
+| Quy trình chấm công tự động (không thủ công) | ⚠️ Tùy cấu hình | ⚠️ Tùy cấu hình | ❌ | ✅ Hướng sự kiện |
+| Công thức lương tuân thủ Bộ luật Lao động 2019 và Thông tư 111 | ✅ | ✅ | ❌ (quốc tế) | ✅ |
+| Tăng ca đêm tính theo phút giao thoa | ❌ | ❌ | ❌ | ✅ |
+| Phân tách nhiệm vụ nhân sự / tài chính / giám đốc | ⚠️ Tùy cấu hình | ⚠️ Tùy cấu hình | ✅ | ✅ Thực thi ở máy chủ |
 | Phê duyệt lương đa cấp (Finance → Director) | ✅ | ✅ | ✅ | ✅ |
 | Quản lý số dư nghỉ phép chống race condition | ✅ | ✅ | ✅ | ✅ |
 | Cấu hình biểu thuế TNCN động (không restart) | ✅ | ⚠️ | ❌ | ✅ |
@@ -3324,7 +2681,7 @@ Nhận xét:
 
 Các giải pháp thương mại như MISA HRM và Base HR có lợi thế về độ trưởng thành sản phẩm, hỗ trợ kỹ thuật chuyên nghiệp, và tích hợp sẵn với hệ sinh thái kế toán (MISA Accounting). Tuy nhiên, chúng có chi phí licensing tái diễn hàng tháng, hạn chế tùy biến theo đặc thù doanh nghiệp, và thường tích hợp thiết bị chấm công qua middleware bên thứ ba.
 
-FaceZ HRMS khác biệt ở ba điểm: (1) native API cho thiết bị chấm công với xác thực SHA-256 API key không lưu raw key; (2) SoD được thực thi ở tầng server bằng `@PreAuthorize` — không thể bypass từ frontend; và (3) công thức OT đêm chính xác theo phút thay vì xấp xỉ theo giờ tròn như các giải pháp phổ biến.
+FaceZ HRMS khác biệt ở ba điểm: (1) giao diện lập trình gốc dành cho thiết bị chấm công, xác thực bằng khóa API chỉ lưu dưới dạng băm chứ không lưu khóa gốc; (2) phân tách nhiệm vụ được thực thi ngay ở tầng máy chủ thông qua kiểm soát quyền ở mức từng thao tác — không thể vượt qua từ phía giao diện; và (3) công thức tính tăng ca ban đêm chính xác đến từng phút thay vì xấp xỉ theo giờ tròn như nhiều giải pháp phổ biến.
 
 BambooHR là giải pháp quốc tế mạnh về UX và tích hợp nhưng không thiết kế cho thị trường Việt Nam — không có biểu thuế TNCN 7 bậc, không có trần đóng bảo hiểm theo quy định Việt Nam, và không có các loại nghỉ phép theo Bộ Luật Lao Động 2019.
 
@@ -3338,13 +2695,12 @@ Bảng 6.2: Đánh giá mức độ hoàn thành mục tiêu đề tài
 
 | Mục tiêu | Mô tả | Mức độ hoàn thành |
 |---|---|:---:|
-| MT-1 | Xây dựng hệ thống HRMS đầy đủ nghiệp vụ cho DNCN Việt Nam | 97% (71/73 yêu cầu) |
-| MT-2 | Tích hợp pipeline chấm công thiết bị nhận diện khuôn mặt | ✅ Hoàn thành — Device API Key + Event-driven |
-| MT-3 | Công thức tính lương tuân thủ pháp luật Việt Nam | ✅ Hoàn thành — BLLĐ 2019, TT 111/2013 |
-| MT-4 | Mô hình phân tách nhiệm vụ (SoD) 7 vai trò | ✅ Hoàn thành — Server-side enforced |
+| MT-1 | Xây dựng hệ thống HRMS đầy đủ nghiệp vụ cho doanh nghiệp Việt Nam | 97% (71/73 yêu cầu) |
+| MT-2 | Tích hợp quy trình chấm công từ thiết bị nhận diện khuôn mặt | ✅ Hoàn thành — khóa API thiết bị + hướng sự kiện |
+| MT-3 | Công thức tính lương tuân thủ pháp luật Việt Nam | ✅ Hoàn thành — theo Bộ luật Lao động 2019 và Thông tư 111/2013 |
+| MT-4 | Mô hình phân tách nhiệm vụ bảy vai trò | ✅ Hoàn thành — thực thi ở tầng máy chủ |
 
-Về mặt kỹ thuật, hệ thống bao gồm hơn 80 REST endpoint phủ đầy đủ mười domain nghiệp vụ, 31 script SQL migration có phiên bản quản lý toàn bộ lịch sử schema (hợp nhất trong `final_schema.sql`), và đạt tỷ lệ 45/45 test case pass (bao gồm unit, integration và functional). Về hiệu suất, thời gian phản hồi API trung bình dưới 100ms và thời gian tính lương hàng loạt cho 100 nhân viên dưới 3 giây. Hệ thống vận hành ổn định, không phát sinh lỗi runtime trong suốt quá trình kiểm thử.
-Về mặt kỹ thuật, hệ thống bao gồm hơn 80 REST endpoint phủ đầy đủ mười domain nghiệp vụ, 31 script SQL migration có phiên bản quản lý toàn bộ lịch sử schema (hợp nhất trong `final_schema.sql`), và đạt tỷ lệ 45/45 test case pass (bao gồm unit, integration và functional). Về hiệu suất, thời gian phản hồi API trung bình dưới 100ms và thời gian tính lương hàng loạt cho 100 nhân viên dưới 3 giây. Hệ thống vận hành ổn định, không phát sinh lỗi runtime trong suốt quá trình kiểm thử.
+Về mặt kỹ thuật, hệ thống cung cấp hơn 80 điểm cuối dịch vụ phủ đầy đủ mười miền nghiệp vụ, ba mươi mốt phiên bản lược đồ quản lý trọn vẹn lịch sử thay đổi cấu trúc dữ liệu (hợp nhất thành một tập lệnh khởi tạo duy nhất), và đạt tỷ lệ 45/45 ca kiểm thử thành công ở cả ba mức đơn vị, tích hợp và chức năng. Về hiệu năng, thời gian phản hồi trung bình dưới 100 mili-giây và thời gian tính lương hàng loạt cho 100 nhân viên dưới ba giây. Hệ thống vận hành ổn định, không phát sinh lỗi trong suốt quá trình kiểm thử.
 
 Hạn chế còn tồn tại:
 
@@ -3354,18 +2710,17 @@ Bảng 6.3: Các hạn chế còn tồn tại và hướng khắc phục
 
 | Mã | Hạn chế | Mức độ | Hướng khắc phục |
 |---|---|:---:|---|
-| GAP-A | JWT_SECRET có default yếu trong config | Cao | Xóa default, fail-fast khi không set |
-| GAP-B | Security DEBUG logging bật trong base config | Trung bình | Chuyển về `application-dev.yml` |
-| GAP-C | Profile picture lưu local disk, không tương thích scale | Trung bình | Migrate sang MinIO/S3 |
-| GAP-D | `PayrollJobStore` in-memory, mất state khi restart | Trung bình | Lưu vào bảng `payroll_job` trong DB |
-| GAP-E | Tài liệu hợp đồng PDF đã lưu MinIO, nhưng chưa quét virus/giới hạn loại tệp khi upload | Trung bình | Thêm kiểm tra MIME type và quét file ở tầng `StorageService` |
-| GAP-E | Tài liệu hợp đồng PDF đã lưu MinIO, nhưng chưa quét virus/giới hạn loại tệp khi upload | Trung bình | Thêm kiểm tra MIME type và quét file ở tầng `StorageService` |
-| GAP-F | Không có API versioning (`/api/v1/`) | Thấp | Thêm version prefix cho tất cả route |
-| GAP-G | Phiếu lương chỉ trả JSON, không có PDF | Thấp | Tích hợp iText/Apache PDFBox |
-| GAP-H | Không tự động chuyển số dư phép sang năm mới | Thấp | Thêm cron job 1 tháng 1 hàng năm |
-| GAP-I | Không kiểm tra trùng ngày trong đơn nghỉ phép | Thấp | Thêm overlap check trong `LeaveService.create()` |
+| GAP-A | Khóa bí mật ký token có giá trị mặc định yếu trong cấu hình | Cao | Bỏ giá trị mặc định, từ chối khởi động khi chưa cấu hình |
+| GAP-B | Nhật ký gỡ lỗi bảo mật bật ngay trong cấu hình nền | Trung bình | Chuyển sang chỉ bật ở hồ sơ phát triển |
+| GAP-C | Ảnh đại diện lưu trên đĩa cục bộ, không tương thích khi mở rộng nhiều máy | Trung bình | Chuyển sang kho lưu trữ đối tượng |
+| GAP-D | Tính lương hàng loạt chạy đồng bộ trong một yêu cầu | Trung bình | Với quy mô rất lớn, chuyển sang xử lý nền theo hàng đợi |
+| GAP-E | Tài liệu hợp đồng đã lưu kho đối tượng nhưng chưa kiểm tra loại tệp và quét mã độc khi tải lên | Trung bình | Bổ sung kiểm tra loại tệp và quét tệp ở tầng lưu trữ |
+| GAP-F | Chưa đánh phiên bản cho giao diện lập trình | Thấp | Thêm tiền tố phiên bản cho mọi đường dẫn |
+| GAP-G | Phiếu lương mới trả dữ liệu thô, chưa xuất bản in được | Thấp | Tích hợp thư viện sinh tài liệu in |
+| GAP-H | Chưa tự động chuyển số dư phép sang năm mới | Thấp | Thêm tác vụ định kỳ đầu năm |
+| GAP-I | Chưa kiểm tra trùng ngày giữa các đơn nghỉ phép | Thấp | Bổ sung kiểm tra chồng lấn khi tạo đơn |
 
-Các hạn chế GAP-A và GAP-B cần được khắc phục trước bất kỳ deployment production nào. Các hạn chế còn lại (GAP-C đến GAP-I) là enhancement có thể thực hiện sau deployment mà không yêu cầu thay đổi kiến trúc.
+Hai hạn chế GAP-A và GAP-B cần được khắc phục trước khi đưa vào vận hành thật. Các hạn chế còn lại (từ GAP-C đến GAP-I) là những cải tiến có thể bổ sung sau mà không đòi hỏi thay đổi kiến trúc.
 
 Phạm vi ngoài đồ án (đã xác định từ đầu, không phải hạn chế):
 - Giao diện mobile (iOS/Android)
@@ -3378,37 +2733,35 @@ Phạm vi ngoài đồ án (đã xác định từ đầu, không phải hạn c
 
 Quá trình thực hiện đồ án mang lại các bài học kỹ thuật và phương pháp luận có giá trị:
 
-Bài học 1 — Phân tích nghiệp vụ trước khi viết code:
+Bài học 1 — Phân tích nghiệp vụ trước khi lập trình:
 
-Việc dành thời gian phân tích kỹ lưỡng quy trình nghiệp vụ trước khi bắt đầu lập trình đã ngăn ngừa được sai lầm thiết kế nghiêm trọng. Vấn đề SoD trong thiết kế v1.0 (HR_ADMIN kiểm soát toàn bộ payroll) được phát hiện qua phân tích nghiệp vụ — nếu phát hiện sau khi đã viết code, chi phí sửa chữa sẽ cao hơn nhiều lần. Bài học: Thiết kế đúng từ đầu rẻ hơn sửa lại về sau, đặc biệt với các vấn đề kiểm soát nội bộ.
+Việc dành thời gian phân tích kỹ quy trình nghiệp vụ trước khi bắt tay lập trình đã ngăn được một sai lầm thiết kế nghiêm trọng. Lỗ hổng phân tách nhiệm vụ trong thiết kế ban đầu — khi một vai trò nhân sự kiểm soát toàn bộ vòng đời tính lương — được phát hiện ngay từ khâu phân tích; nếu để lộ sau khi đã hiện thực, chi phí sửa chữa sẽ cao hơn nhiều lần. Bài học rút ra: thiết kế đúng từ đầu rẻ hơn sửa lại về sau, đặc biệt với các vấn đề kiểm soát nội bộ.
 
-Bài học 2 — Tách biệt concern ngay từ thiết kế:
+Bài học 2 — Tách biệt mối quan tâm ngay từ thiết kế:
 
-`PayrollCalculationEngine` là pure computation component không có database access — quyết định thiết kế này được thực hiện từ đầu, không phải refactor. Kết quả: viết unit test đơn giản, không cần mock, không cần Spring context. Ngược lại, nếu logic tính lương nằm trong `PayrollService` trộn với database calls, unit testing gần như không thể. Bài học: Pure functions và separation of concerns là kỹ thuật, không phải "best practice" trên lý thuyết — chúng có tác động thực sự đến khả năng test.
+Bộ máy tính lương được thiết kế là một thành phần tính toán thuần, không truy cập cơ sở dữ liệu — đây là quyết định ngay từ đầu chứ không phải tái cấu trúc về sau. Nhờ vậy, việc viết kiểm thử đơn vị trở nên đơn giản, không cần dựng giả lập hay khởi tạo toàn bộ khung ứng dụng. Ngược lại, nếu trộn lẫn lô-gic tính lương với các thao tác cơ sở dữ liệu thì việc kiểm thử đơn vị gần như bất khả thi. Bài học rút ra: hàm thuần và tách biệt mối quan tâm không chỉ là nguyên lý lý thuyết — chúng có tác động thực tới khả năng kiểm thử.
 
-Bài học 3 — Kiểm soát schema bằng script có phiên bản từ ngày đầu:
-Bài học 3 — Kiểm soát schema bằng script có phiên bản từ ngày đầu:
+Bài học 3 — Kiểm soát lược đồ bằng phiên bản ngay từ đầu:
 
-Dùng `ddl-auto: none` và quản lý schema bằng các script SQL có đánh số phiên bản ngay từ migration đầu tiên, thay vì dựa vào `ddl-auto: create`/`update` của Hibernate. Điều này buộc phải nghĩ cẩn thận về mỗi thay đổi schema: có backward-compatible không? Có cần migration dữ liệu không? Mỗi script vừa là nguồn schema vừa là nhật ký thay đổi, và được hợp nhất thành `final_schema.sql` để dựng lại từ đầu. Bài học: Database schema migration không phải "việc của sau" — kiểm soát schema từ ngày đầu tiên tốt hơn nhiều so với retroactively.
-Dùng `ddl-auto: none` và quản lý schema bằng các script SQL có đánh số phiên bản ngay từ migration đầu tiên, thay vì dựa vào `ddl-auto: create`/`update` của Hibernate. Điều này buộc phải nghĩ cẩn thận về mỗi thay đổi schema: có backward-compatible không? Có cần migration dữ liệu không? Mỗi script vừa là nguồn schema vừa là nhật ký thay đổi, và được hợp nhất thành `final_schema.sql` để dựng lại từ đầu. Bài học: Database schema migration không phải "việc của sau" — kiểm soát schema từ ngày đầu tiên tốt hơn nhiều so với retroactively.
+Việc quản lý lược đồ bằng các tập lệnh có đánh số phiên bản ngay từ phiên bản đầu tiên, thay vì để framework tự cập nhật cấu trúc, buộc người phát triển phải cân nhắc cẩn thận mỗi thay đổi: có tương thích ngược không, có cần di trú dữ liệu không. Mỗi tập lệnh vừa là nguồn của lược đồ, vừa là nhật ký thay đổi, và được hợp nhất thành một tập lệnh khởi tạo duy nhất để dựng lại từ đầu. Bài học rút ra: quản lý lược đồ không phải việc để sau — kiểm soát từ ngày đầu tốt hơn nhiều so với khắc phục về sau.
 
-Bài học 4 — Event-driven không đồng nghĩa với phức tạp:
+Bài học 4 — Hướng sự kiện không đồng nghĩa với phức tạp:
 
-Spring Application Events là cơ chế event-driven mà nhiều developer không nghĩ đến vì liên tưởng event-driven với Kafka hay RabbitMQ. Trong phạm vi single-process, `ApplicationEventPublisher` + `@TransactionalEventListener` cung cấp decoupling tốt với zero infrastructure overhead. Bài học: Đừng over-engineer — chọn công cụ đơn giản nhất giải quyết được bài toán.
+Cơ chế sự kiện nội bộ trong tiến trình là một hướng tiếp cận thường bị bỏ qua vì nhiều người mặc định kiến trúc hướng sự kiện phải gắn với hàng đợi tin nhắn bên ngoài. Trong phạm vi một tiến trình, cơ chế phát/lắng nghe sự kiện kết hợp ngữ nghĩa phát sau khi giao dịch hoàn tất đã mang lại sự tách rời tốt mà không phát sinh hạ tầng phụ. Bài học rút ra: không nên phức tạp hóa quá mức — hãy chọn công cụ đơn giản nhất giải quyết được bài toán.
 
-Bài học 5 — Kiểm soát truy cập ở tầng server, không phải tầng UI:
+Bài học 5 — Kiểm soát truy cập ở tầng máy chủ, không phải ở giao diện:
 
-Ban đầu có xu hướng chỉ ẩn/hiện nút bấm trên frontend theo role. Nhưng frontend control là security theater — bất kỳ ai cũng có thể gọi REST API trực tiếp. Việc triển khai `@PreAuthorize` trên mỗi endpoint là lớp bảo vệ thực sự, frontend chỉ là UX. Bài học: Authorization logic phải sống ở server. Frontend authorization là UX, không phải security.
+Ban đầu có xu hướng chỉ ẩn/hiện nút bấm trên giao diện theo vai trò. Nhưng kiểm soát ở giao diện chỉ là vẻ ngoài an toàn — bất kỳ ai cũng có thể gọi thẳng dịch vụ. Việc thực thi kiểm soát quyền ở từng thao tác phía máy chủ mới là lớp bảo vệ thực sự, còn giao diện chỉ lo trải nghiệm người dùng. Bài học rút ra: lô-gic phân quyền phải nằm ở máy chủ; phân quyền phía giao diện là trải nghiệm, không phải an ninh.
 
-Bài học 6 — Tài liệu hóa quyết định thiết kế:
+Bài học 6 — Ghi lại các quyết định thiết kế:
 
-Các tài liệu phân tích (`01_system_design_analysis.md`, `02_business_process_survey_and_design.md`, `03_practical_suitability_assessment.md`, `04_business_process_alignment_review.md`) được viết và cập nhật song song với quá trình phát triển. Những tài liệu này không chỉ phục vụ báo cáo — chúng là công cụ tư duy giúp phát hiện inconsistency và gap trước khi chúng trở thành bug. Bài học: Viết ra những gì bạn đang nghĩ không chỉ giúp người khác hiểu — nó giúp chính bạn phát hiện lỗi logic.
+Các tài liệu phân tích được viết và cập nhật song song với quá trình phát triển không chỉ phục vụ báo cáo — chúng là công cụ tư duy giúp phát hiện mâu thuẫn và thiếu sót trước khi chúng trở thành lỗi. Bài học rút ra: viết ra điều mình đang nghĩ không chỉ giúp người khác hiểu mà còn giúp chính người viết phát hiện lỗi lô-gic.
 
 ## 6.2 Hướng phát triển
 
 Dựa trên nền tảng FaceZ HRMS hiện tại, các hướng phát triển được phân theo ba giai đoạn.
 
-Giai đoạn 1 — Hoàn thiện và hardening (3–6 tháng): Giai đoạn này tập trung vào hardening và hoàn thiện trước khi triển khai production. Bốn hạng mục ưu tiên cao cần thực hiện trước tiên gồm: (i) xóa giá trị mặc định yếu của `JWT_SECRET` và thêm kiểm tra fail-fast khi khởi động; (ii) chuyển `PayrollJobStore` sang lưu trữ trong database để hỗ trợ restart và triển khai đa instance; (iii) migrate lưu trữ ảnh đại diện sang MinIO hoặc object storage tương thích S3; và (iv) thêm kiểm tra hợp lệ schema JSON cho `SystemConfig` trước khi lưu. Tiếp đến, các hạng mục ưu tiên trung bình bao gồm: (i) tạo phiếu lương dạng PDF để nhân viên in và lưu trữ; (ii) tác vụ định kỳ tự động chuyển số dư phép năm sang năm mới; (iii) kiểm tra trùng ngày trong đơn nghỉ phép khi nộp; và (iv) thêm cơ chế versioning cho API để hỗ trợ tương thích ngược khi cập nhật.
+Giai đoạn 1 — Hoàn thiện và gia cố (3–6 tháng): giai đoạn này tập trung gia cố và hoàn thiện trước khi đưa vào vận hành thật. Bốn hạng mục ưu tiên cao cần làm trước gồm: (i) bỏ giá trị mặc định yếu của khóa bí mật ký token và bắt buộc khai báo khi khởi động; (ii) chuyển lưu trữ ảnh đại diện sang kho lưu trữ đối tượng để tương thích khi mở rộng nhiều máy; (iii) chuyển việc tính lương hàng loạt sang xử lý nền theo hàng đợi nhằm đáp ứng quy mô nhân sự rất lớn; và (iv) bổ sung kiểm tra loại tệp và quét mã độc khi tải tài liệu hợp đồng lên. Tiếp đến, các hạng mục ưu tiên trung bình bao gồm: (i) xuất phiếu lương ở dạng tài liệu in để nhân viên lưu trữ; (ii) tác vụ định kỳ tự động chuyển số dư phép sang năm mới; (iii) kiểm tra trùng ngày khi nộp đơn nghỉ phép; và (iv) đánh phiên bản cho giao diện lập trình nhằm hỗ trợ tương thích ngược khi nâng cấp.
 
 Giai đoạn 2 — Mở rộng tính năng (6–18 tháng): Giai đoạn này bao gồm bốn nhóm công việc. Thứ nhất, tích hợp phần cứng nhận diện khuôn mặt: endpoint nhận log chấm công đã được thiết kế sẵn để nhận dữ liệu từ thiết bị bên ngoài, bước tiếp theo là tích hợp với SDK của camera nhận diện khuôn mặt thực tế như ZKTeco hoặc HikVision — đây là điểm mà tên "FaceZ" trở thành thực tế kỹ thuật. Thứ hai, phát triển ứng dụng mobile bằng React Native cho phép nhân viên truy cập chấm công, nộp đơn nghỉ phép và xem phiếu lương trên điện thoại; do backend đã là REST API stateless, việc bổ sung client mobile không yêu cầu thay đổi backend. Thứ ba, mở rộng báo cáo thuế và tuân thủ pháp luật, gồm quyết toán thuế TNCN hàng năm, báo cáo BHXH điện tử theo định dạng cổng BHXH Online, và xuất file chuyển khoản ngân hàng theo định dạng của từng ngân hàng. Thứ tư, xây dựng workflow engine cho phép HR cấu hình các bước phê duyệt linh hoạt theo phòng ban, loại yêu cầu và ngưỡng số ngày, thay cho chuỗi phê duyệt cố định hiện tại.
 
@@ -3419,17 +2772,16 @@ Hình 6.1: Lộ trình phát triển FaceZ HRMS
 ```
 2026 Q3–Q4          2027 Q1–Q2          2027 Q3–Q4          2028+
 ────────────        ────────────        ────────────        ──────
-Hardening           Face HW             Multi-tenant        AI/Analytics
-- JWT fix           integration         - Tenant isolation  - Cost forecast
-- PDF payslip       Mobile app          - SaaS billing      - Burnout detection
-- DB job store      Annual PIT          - White-label       - Market benchmark
+Gia cố              Tích hợp phần       Đa đơn vị thuê      Phân tích & AI
+- Khóa bí mật       cứng nhận diện      - Cách ly dữ liệu   - Dự báo chi phí
+- Phiếu lương in    khuôn mặt           - Tính phí dịch vụ  - Cảnh báo kiệt sức
+- Tính lương nền    Ứng dụng di động    - Tùy biến thương   - So sánh thị trường
 
-Leave overlap       Bank transfer       ATS module          ERP integration
-check               file export         Recruitment         (MISA/Fast)
+Kiểm tra trùng      Quyết toán thuế     hiệu                Tích hợp kế toán
+ngày nghỉ phép      năm                 Tuyển dụng          doanh nghiệp
 
-SystemConfig        Mobile              SSO OAuth2          Compliance
-JSON validation     notifications       MISA Accounting     reporting
-                                        integration         automation
+Đánh phiên bản      Xuất tệp chuyển     Đăng nhập một lần   Tự động hóa
+giao diện           khoản ngân hàng     Tích hợp kế toán    báo cáo tuân thủ
 ```
 
 Đồ án đã xây dựng một nền tảng kỹ thuật hoàn chỉnh và có thể kiểm chứng cho bài toán quản lý nhân sự tuân thủ pháp luật Việt Nam, đáp ứng đầy đủ các yêu cầu chức năng và phi chức năng đề ra. Kết quả này mở ra các hướng phát triển thực tiễn theo lộ trình đã trình bày trong mục 6.2.
@@ -3454,7 +2806,6 @@ Tài liệu kỹ thuật — Backend:
 
 [6] Spring Security Team, *Spring Security Reference Documentation 6.4.x*, Broadcom/VMware Tanzu, 2024. [Online]. Available: https://docs.spring.io/spring-security/reference/ (visited on 15/05/2026).
 
-[7] PostgreSQL Global Development Group, *PostgreSQL 15 Documentation — DDL, Data Types, Indexes*, 2024. [Online]. Available: https://www.postgresql.org/docs/15/ (visited on 15/05/2026).
 [7] PostgreSQL Global Development Group, *PostgreSQL 15 Documentation — DDL, Data Types, Indexes*, 2024. [Online]. Available: https://www.postgresql.org/docs/15/ (visited on 15/05/2026).
 
 [8] PostgreSQL Global Development Group, *PostgreSQL 15 Documentation*, The PostgreSQL Global Development Group, 2023. [Online]. Available: https://www.postgresql.org/docs/15/ (visited on 15/05/2026).
