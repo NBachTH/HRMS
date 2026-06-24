@@ -14,9 +14,9 @@ Em hy vọng đồ án này đóng góp một phần nhỏ vào hướng nghiên
 
 Quản lý nhân sự trong doanh nghiệp công nghệ Việt Nam hiện nay vẫn phụ thuộc nhiều vào bảng tính và quy trình thủ công, dẫn đến sai sót trong tính lương, thiếu kiểm soát nội bộ và khó truy vết khi xảy ra tranh chấp. Các phần mềm thương mại như MISA HRM, Base HR hay Bamboo HR hoặc thiếu tính năng phù hợp với đặc thù pháp luật Việt Nam, hoặc không hỗ trợ tích hợp thiết bị chấm công nhận diện khuôn mặt, hoặc có chi phí bản quyền vượt khả năng đầu tư của các doanh nghiệp quy mô vừa và nhỏ.
 
-Xuất phát từ thực tế đó, đồ án xây dựng hệ thống quản lý nhân sự tích hợp chấm công nhận diện khuôn mặt mang tên FaceZ HRMS, nhằm số hóa toàn bộ vòng đời quản lý nhân viên trong một nền tảng tập trung, duy nhất. Hướng tiếp cận là xây dựng ứng dụng web theo kiến trúc client–server, với backend Spring Boot 4.0.0-M3 (Java 21) và frontend Next.js 15 (TypeScript, React 19). Trọng tâm kỹ thuật của đồ án nằm ở ba điểm: (1) pipeline chấm công tự động kết nối thiết bị nhận diện khuôn mặt với bản ghi chấm công qua cơ chế Spring Application Events; (2) công thức tính lương tuân thủ đầy đủ quy định pháp luật Việt Nam (biểu thuế TNCN 7 bậc theo Thông tư 111/2013/TT-BTC, trần đóng bảo hiểm 46,8 triệu VND, KPI song phần); và (3) mô hình phân tách nhiệm vụ 7 vai trò nhằm khôi phục kiểm soát tài chính nội bộ mà quy trình giấy tờ truyền thống thực hiện qua chữ ký vật lý.
+Xuất phát từ thực tế đó, đồ án xây dựng hệ thống quản lý nhân sự tích hợp chấm công nhận diện khuôn mặt mang tên FaceZ HRMS, nhằm số hóa toàn bộ vòng đời quản lý nhân viên trong một nền tảng tập trung, duy nhất. Hướng tiếp cận là xây dựng ứng dụng web theo kiến trúc client–server, với backend Spring Boot 4.0.0-M3 (Java 21) và frontend Next.js 15 (TypeScript, React 19). Trọng tâm kỹ thuật của đồ án nằm ở ba điểm: (1) quy trình chấm công tự động kết nối thiết bị nhận diện khuôn mặt với bản ghi chấm công qua cơ chế sự kiện ứng dụng nội bộ; (2) công thức tính lương tuân thủ đầy đủ quy định pháp luật Việt Nam (biểu thuế thu nhập cá nhân 7 bậc theo Thông tư 111/2013/TT-BTC, trần đóng bảo hiểm 46,8 triệu đồng, hệ số thi đua song phần); và (3) mô hình phân tách nhiệm vụ 7 vai trò nhằm khôi phục kiểm soát tài chính nội bộ mà quy trình giấy tờ truyền thống thực hiện qua chữ ký vật lý.
 
-Sản phẩm cuối cùng là một hệ thống hoàn chỉnh, bao gồm backend RESTful API với schema quản lý bằng 31 script SQL migration có phiên bản, và frontend đa vai trò với giao diện phù hợp từng nhóm người dùng. FaceZ HRMS bao phủ đầy đủ các nghiệp vụ cốt lõi: quản lý nhân viên và phòng ban, vòng đời hợp đồng, chấm công tự động và chốt kỳ, phê duyệt nghỉ phép/tăng ca đa cấp, tính lương và báo cáo tài chính. Hệ thống là nền tảng để tiếp tục mở rộng theo hướng tích hợp giải pháp nhận diện khuôn mặt thực tế và triển khai thương mại trong tương lai.
+Sản phẩm cuối cùng là một hệ thống hoàn chỉnh, bao gồm backend cung cấp giao diện dịch vụ với lược đồ quản lý bằng 31 phiên bản có đánh số, và giao diện đa vai trò phù hợp từng nhóm người dùng. FaceZ HRMS bao phủ đầy đủ các nghiệp vụ cốt lõi: quản lý nhân viên và phòng ban, vòng đời hợp đồng, chấm công tự động và chốt kỳ, phê duyệt nghỉ phép/tăng ca đa cấp, tính lương và báo cáo tài chính. Hệ thống là nền tảng để tiếp tục mở rộng theo hướng tích hợp giải pháp nhận diện khuôn mặt thực tế và triển khai thương mại trong tương lai.
 
 # CHƯƠNG 1. GIỚI THIỆU ĐỀ TÀI
 
@@ -64,7 +64,7 @@ Mục tiêu 4 — Tuân thủ pháp luật Việt Nam: Triển khai công thức
 
 Phạm vi thị trường: Đồ án hướng riêng tới các doanh nghiệp công nghệ tại Việt Nam, với quy mô nhân sự từ 20 đến 500 người. Các đặc thù pháp luật, ngôn ngữ giao diện và quy trình nghiệp vụ đều được thiết kế cho thị trường trong nước.
 
-Phạm vi tính năng: Hệ thống tập trung vào tám nhóm nghiệp vụ cốt lõi. Thứ nhất, quản lý nhân viên bao gồm thông tin cá nhân và pháp lý (CMND/CCCD, mã số thuế, số BHXH), tài khoản ngân hàng, ảnh đại diện và người phụ thuộc thuế. Thứ hai, quản lý tổ chức gồm phòng ban và phân công quản lý. Thứ ba, quản lý hợp đồng lao động theo vòng đời đầy đủ kèm cảnh báo hết hạn và đính kèm tài liệu hợp đồng PDF (lưu trên MinIO). Thứ tư, chấm công tích hợp thiết bị nhận diện khuôn mặt qua API key xác thực, xử lý tự động và chốt kỳ hằng tháng. Thứ năm, nghỉ phép và tăng ca với chín loại nghỉ phép theo Bộ Luật Lao Động, số dư theo dõi thời gian thực, phê duyệt hai cấp (LEADER → MANAGER, MANAGER là cấp duyệt cuối) và giới hạn OT theo pháp luật. Thứ sáu, tính lương cá nhân và hàng loạt, phê duyệt qua luồng Finance → Director, kèm ba loại báo cáo tài chính (chi phí lao động, nộp bảo hiểm, tổng hợp thuế TNCN). Thứ bảy, hệ thống thông báo in-app cho các sự kiện nghiệp vụ. Thứ tám, cấu hình quản lý phiên bản các thông số tính lương gồm bậc lương, phụ cấp, thuế và bảo hiểm.
+Phạm vi tính năng: Hệ thống tập trung vào tám nhóm nghiệp vụ cốt lõi. Thứ nhất, quản lý nhân viên bao gồm thông tin cá nhân và pháp lý (CMND/CCCD, mã số thuế, số BHXH), tài khoản ngân hàng, ảnh đại diện và người phụ thuộc thuế. Thứ hai, quản lý tổ chức gồm phòng ban và phân công quản lý. Thứ ba, quản lý hợp đồng lao động theo vòng đời đầy đủ kèm cảnh báo hết hạn và đính kèm tài liệu hợp đồng PDF (lưu trên MinIO). Thứ tư, chấm công tích hợp thiết bị nhận diện khuôn mặt qua API key xác thực, xử lý tự động và chốt kỳ hằng tháng. Thứ năm, nghỉ phép và tăng ca với chín loại nghỉ phép theo Bộ luật Lao động, số dư theo dõi thời gian thực, phê duyệt hai cấp (trưởng nhóm → quản lý, quản lý là cấp duyệt cuối) và giới hạn tăng ca theo pháp luật. Thứ sáu, tính lương cá nhân và hàng loạt, phê duyệt qua luồng tài chính → giám đốc, kèm ba loại báo cáo tài chính (chi phí lao động, nộp bảo hiểm, tổng hợp thuế thu nhập). Thứ bảy, hệ thống thông báo trong ứng dụng cho các sự kiện nghiệp vụ. Thứ tám, cấu hình quản lý phiên bản các thông số tính lương gồm bậc lương, phụ cấp, thuế và bảo hiểm.
 
 Ngoài phạm vi: Hệ thống không bao gồm tích hợp phần mềm kế toán (MISA, Fast), xuất báo cáo theo mẫu biểu của Bộ Tài chính, quản lý tuyển dụng và đào tạo, phiếu lương dạng PDF có thể in, và tích hợp ngân hàng để thanh toán lương tự động. Đây là các hướng phát triển tiếp theo được xác định trong Chương 6.
 
@@ -76,7 +76,7 @@ Về backend, đồ án chọn Spring Boot 4.0.0-M3 trên Java 21 vì hệ sinh 
 
 Về bảo mật, hệ thống áp dụng cơ chế xác thực dựa trên JWT cho người dùng và khóa API cho thiết bị chấm công, với các chi tiết thiết kế được trình bày trong mục 3.4.
 
-Sản phẩm của đồ án là hệ thống FaceZ HRMS — nền tảng quản lý nhân sự hoàn chỉnh với backend RESTful API (schema quản lý bằng 31 script SQL migration có phiên bản, tài liệu Swagger đầy đủ) và frontend đa vai trò. Bốn đóng góp kỹ thuật chính, được trình bày chi tiết trong Chương 5, gồm: (1) kiến trúc phân tách nhiệm vụ 7 vai trò; (2) pipeline chấm công tự động qua Spring Application Events; (3) công thức tính lương tuân thủ đầy đủ pháp luật Việt Nam; và (4) cơ chế trừ hai giai đoạn số dư nghỉ phép chống race condition.
+Sản phẩm của đồ án là hệ thống FaceZ HRMS — nền tảng quản lý nhân sự hoàn chỉnh với backend cung cấp giao diện dịch vụ (lược đồ quản lý bằng 31 phiên bản có đánh số, tài liệu giao diện đầy đủ) và giao diện đa vai trò. Bốn đóng góp kỹ thuật chính, được trình bày chi tiết trong Chương 5, gồm: (1) kiến trúc phân tách nhiệm vụ 7 vai trò; (2) quy trình chấm công tự động theo hướng sự kiện; (3) công thức tính lương tuân thủ đầy đủ pháp luật Việt Nam; và (4) cơ chế trừ hai giai đoạn số dư nghỉ phép chống tranh chấp đồng thời.
 
 Hệ thống được thiết kế để triển khai bằng Docker Compose với cấu hình dịch vụ tối giản (backend + PostgreSQL + Redis + MinIO), phù hợp với hạ tầng VPS tiêu chuẩn mà các doanh nghiệp quy mô vừa đang sử dụng.
 
@@ -387,7 +387,7 @@ sequenceDiagram
 
 Hình 2.8: Quy trình chấm công và xử lý Attendance
 
-Pipeline chấm công được thiết kế theo hướng event-driven: bản ghi chấm công thô được lưu trước, sau đó hệ thống mới tạo bản ghi chấm công đã xử lý. Nhờ đó, dù khâu xử lý gặp lỗi, dữ liệu thô vẫn được bảo toàn và tác vụ định kỳ lúc nửa đêm sẽ tự động bù đắp. Chi tiết kiến trúc và lý do lựa chọn được trình bày trong mục 5.2.
+Quy trình chấm công được thiết kế theo hướng sự kiện: bản ghi chấm công thô được lưu trước, sau đó hệ thống mới tạo bản ghi chấm công đã xử lý. Nhờ đó, dù khâu xử lý gặp lỗi, dữ liệu thô vẫn được bảo toàn và tác vụ định kỳ lúc nửa đêm sẽ tự động bù đắp. Chi tiết kiến trúc và lý do lựa chọn được trình bày trong mục 5.2.
 
 #### b. Quy trình phê duyệt nghỉ phép đa cấp
 
@@ -408,7 +408,7 @@ stateDiagram-v2
 
 Hình 2.9: Quy trình phê duyệt nghỉ phép đa cấp
 
-Về mặt nghiệp vụ, khi nhân viên nộp yêu cầu, số ngày nghỉ được tạm giữ ngay để ngăn việc đăng ký trùng vượt quá số dư; chỉ khi yêu cầu được phê duyệt cuối, số ngày này mới được tính là đã sử dụng, còn khi bị từ chối hoặc hủy thì được hoàn trả đầy đủ. Cơ chế trừ hai giai đoạn và cách chống tranh chấp đồng thời (race condition) được trình bày chi tiết trong mục 5.4.
+Về mặt nghiệp vụ, khi nhân viên nộp yêu cầu, số ngày nghỉ được tạm giữ ngay để ngăn việc đăng ký trùng vượt quá số dư; chỉ khi yêu cầu được phê duyệt cuối, số ngày này mới được tính là đã sử dụng, còn khi bị từ chối hoặc hủy thì được hoàn trả đầy đủ. Cơ chế trừ hai giai đoạn và cách chống tranh chấp đồng thời được trình bày chi tiết trong Mục 5.4.
 
 #### c. Quy trình tính lương và phê duyệt chi trả
 
@@ -633,7 +633,7 @@ Bảng 3.1: Tóm tắt các lựa chọn công nghệ
 
 ### 3.2.1 Spring Boot và Java 21
 
-Bài toán cần giải quyết: Hệ thống HRMS có độ phức tạp nghiệp vụ cao — nhiều entity với vòng đời phức tạp, transaction lồng nhau, event-driven pipeline, scheduled jobs, và batch processing. Cần một nền tảng có hệ sinh thái đủ trưởng thành để không phải tự xây dựng các thành phần cơ sở từ đầu.
+Bài toán cần giải quyết: hệ thống HRMS có độ phức tạp nghiệp vụ cao — nhiều thực thể với vòng đời phức tạp, giao dịch lồng nhau, xử lý theo hướng sự kiện, tác vụ định kỳ và xử lý hàng loạt. Cần một nền tảng có hệ sinh thái đủ trưởng thành để không phải tự xây dựng các thành phần cơ sở từ đầu.
 
 Lý do chọn Java 21 và Spring Boot 4.0.0-M3:
 
@@ -799,7 +799,7 @@ Tailwind CSS theo hướng tiện ích — không có tệp định kiểu riên
 
 ### 3.5.3 Recharts
 
-Bài toán cần giải quyết: Dashboard của HR_ADMIN và SYSTEM_ADMIN cần hiển thị nhiều loại biểu đồ: xu hướng chi phí lao động theo tháng (line chart), phân bổ chi phí lao động theo loại (pie chart), tỷ lệ nghỉ phép theo bộ phận (bar chart), và xu hướng chấm công (area chart).
+Bài toán cần giải quyết: bảng điều khiển của bộ phận nhân sự và quản trị hệ thống cần hiển thị nhiều loại biểu đồ: xu hướng chi phí lao động theo tháng (line chart), phân bổ chi phí lao động theo loại (pie chart), tỷ lệ nghỉ phép theo bộ phận (bar chart), và xu hướng chấm công (area chart).
 
 Recharts được chọn vì:
 
@@ -2045,41 +2045,38 @@ Bảng 4.7: Thống kê kỹ thuật dự án
 | Chỉ số | Giá trị |
 |---|---|
 | Backend | |
-| Số REST endpoint | > 80 endpoint |
-| Số script SQL migration | 31 file (V1–V30) + final_schema.sql hợp nhất |
-| Số domain module | 10 (employee, department, attendance, leave, otrequest, contract, payroll, payrollconfig, notification, auth) |
-| Số REST endpoint | > 80 endpoint |
-| Số script SQL migration | 31 file (V1–V30) + final_schema.sql hợp nhất |
-| Số domain module | 10 (employee, department, attendance, leave, otrequest, contract, payroll, payrollconfig, notification, auth) |
-| Số scheduled job | 3 (attendance midnight, payroll monthly, contract expiry monthly) |
-| Độ phủ test | Unit test cho PayrollCalculationEngine; Integration test cho auth flow |
-| Frontend | |
-| Số route (page) | > 25 trang |
-| Số vai trò được hỗ trợ | 7 (EMPLOYEE, LEADER, MANAGER, HR_ADMIN, FINANCE_ADMIN, DIRECTOR, SYSTEM_ADMIN) |
-| Số loại dashboard | 4 (Employee, Manager, HR Admin, System Admin) |
-| Số loại báo cáo tài chính | 3 (Labour Cost, Insurance Remittance, PIT Summary) |
+| Số điểm cuối dịch vụ | > 80 |
+| Số phiên bản lược đồ | 31 phiên bản, hợp nhất thành một tập lệnh khởi tạo |
+| Số mô-đun nghiệp vụ | 10 (nhân sự, phòng ban, chấm công, nghỉ phép, tăng ca, hợp đồng, tính lương, cấu hình lương, thông báo, xác thực) |
+| Số tác vụ định kỳ | 3 (tổng hợp chấm công, tính lương hằng tháng, rà soát hợp đồng hết hạn) |
+| Phạm vi kiểm thử | Kiểm thử đơn vị cho bộ máy tính lương; kiểm thử tích hợp cho luồng xác thực |
+| Giao diện | |
+| Số trang | > 25 trang |
+| Số vai trò được hỗ trợ | 7 (nhân viên, trưởng nhóm, quản lý, nhân sự, phụ trách tài chính, giám đốc, quản trị hệ thống) |
+| Số loại bảng điều khiển | 4 (nhân viên, quản lý, nhân sự, quản trị hệ thống) |
+| Số loại báo cáo tài chính | 3 (chi phí lao động, nộp bảo hiểm, tổng hợp thuế thu nhập) |
 | Cơ sở dữ liệu | |
 | Số bảng chính | 17 bảng |
-| Số database view | 1 (ot_monthly_summary) |
-| Số partial unique index | 1 (contract WHERE current = true) |
-| Cột JSONB | 1 (system_config.config_data) |
+| Số khung nhìn cơ sở dữ liệu | 1 (tổng hợp tăng ca theo tháng) |
+| Số chỉ mục duy nhất có điều kiện | 1 (cho hợp đồng đang hiệu lực) |
+| Số cột kiểu JSON | 1 (cho cấu hình hệ thống) |
 
 Bảng 4.8: Mức độ hoàn thành theo yêu cầu chức năng
 
 | Nhóm chức năng | Yêu cầu | Hoàn thành | Ghi chú |
 |---|:---:|:---:|---|
-| Xác thực & Phân quyền | 8 | 8 | JWT, refresh token, rate limiting, device key |
+| Xác thực & Phân quyền | 8 | 8 | Xác thực bằng token, làm mới phiên, giới hạn tần suất, khóa thiết bị |
 | Quản lý nhân viên | 10 | 9 | Thiếu: xác nhận hợp đồng điện tử |
-| Quản lý phòng ban | 4 | 4 | CRUD đầy đủ |
-| Chấm công tự động | 7 | 7 | Pipeline, period close, public holidays |
+| Quản lý phòng ban | 4 | 4 | Đầy đủ thao tác tạo/đọc/sửa/xóa |
+| Chấm công tự động | 7 | 7 | Quy trình tự động, chốt kỳ, ngày lễ |
 | Nghỉ phép & Số dư | 8 | 7 | Thiếu: kiểm tra trùng ngày |
-| Tăng ca & Giới hạn | 6 | 6 | OT limits, night rate, holiday rate |
-| Hợp đồng & Lịch sử | 6 | 6 | History model, expiry alerts |
-| Tính lương | 9 | 9 | Công thức đầy đủ, batch processing |
-| Phê duyệt lương | 4 | 4 | Workflow DIRECTOR, reject reason |
-| Báo cáo tài chính | 3 | 3 | Labour cost, insurance, PIT + CSV export |
-| Thông báo | 4 | 4 | Event-driven, read/unread, inbox |
-| Cấu hình hệ thống | 4 | 4 | SALARY_GRADE, ALLOWANCE, PIT, INSURANCE |
+| Tăng ca & Giới hạn | 6 | 6 | Hạn mức tăng ca, phụ trội ca đêm, ngày lễ |
+| Hợp đồng & Lịch sử | 6 | 6 | Mô hình lịch sử, cảnh báo hết hạn |
+| Tính lương | 9 | 9 | Công thức đầy đủ, xử lý hàng loạt |
+| Phê duyệt lương | 4 | 4 | Luồng phê duyệt của giám đốc, lý do từ chối |
+| Báo cáo tài chính | 3 | 3 | Chi phí lao động, bảo hiểm, thuế thu nhập + xuất tệp |
+| Thông báo | 4 | 4 | Theo hướng sự kiện, đã đọc/chưa đọc, hộp thư |
+| Cấu hình hệ thống | 4 | 4 | Bậc lương, phụ cấp, thuế thu nhập, bảo hiểm |
 | Tổng cộng | 73 | 71 | 97% hoàn thành |
 
 ### 4.3.3 Minh họa các chức năng chính
@@ -2244,7 +2241,7 @@ Bảng 4.14: Kết quả tổng hợp kiểm thử
 | Xác thực & Phân quyền | 10 | 10 | 0 | 100% |
 | Tính lương | 12 | 12 | 0 | 100% |
 | Nghỉ phép & Số dư | 7 | 7 | 0 | 100% |
-| Chấm công & Pipeline | 6 | 6 | 0 | 100% |
+| Chấm công & Quy trình tự động | 6 | 6 | 0 | 100% |
 | Hợp đồng & Lịch sử | 5 | 5 | 0 | 100% |
 | Tăng ca & Giới hạn | 5 | 5 | 0 | 100% |
 | Tổng cộng | 45 | 45 | 0 | 100% |
@@ -2291,7 +2288,7 @@ Bảng 4.16: Kết quả đo lường hiệu suất
 | Thời gian khởi động ứng dụng | ~8 giây | < 30 giây | ✅ Đạt |
 | Bộ nhớ JVM heap (idle) | ~256 MB | < 512 MB | ✅ Đạt |
 | Health check endpoint | HTTP 200 {"status":"UP"} | Phải có | ✅ Đạt |
-| Tải lại config không restart | < 1 giây | Không restart | ✅ Đạt |
+| Nạp lại cấu hình không cần khởi động lại | < 1 giây | Không khởi động lại | ✅ Đạt |
 
 Điểm cuối kiểm tra sức khỏe công khai trả về trạng thái tổng hợp, bao gồm cả tình trạng kết nối tới cơ sở dữ liệu và bộ nhớ đệm — cho phép bộ cân bằng tải hoặc công cụ giám sát tự động phát hiện sự cố mà không cần xác thực.
 
@@ -2316,7 +2313,7 @@ Cụ thể, vai trò nhân sự trong thiết kế ban đầu có thể:
 4. Tính toán bảng lương (trách nhiệm của Kế toán/Tài chính)
 5. Phê duyệt bảng lương để thanh toán (trách nhiệm của Giám đốc)
 
-Đây là vi phạm nghiêm trọng nguyên tắc Phân tách nhiệm vụ (Separation of Duties — SoD) — một nguyên tắc kiểm soát nội bộ căn bản trong kế toán và quản lý tài chính. Vấn đề không chỉ là lý thuyết: một nhân viên HR_ADMIN duy nhất có thể tạo nhân viên ma, gán mức lương cao, và tự phê duyệt thanh toán — toàn bộ quy trình gian lận trong một tài khoản, không cần ai phê duyệt hay kiểm tra.
+Đây là vi phạm nghiêm trọng nguyên tắc Phân tách nhiệm vụ (Separation of Duties — SoD) — một nguyên tắc kiểm soát nội bộ căn bản trong kế toán và quản lý tài chính. Vấn đề không chỉ là lý thuyết: một người giữ vai trò nhân sự duy nhất có thể tạo nhân viên ma, gán mức lương cao, và tự phê duyệt thanh toán — toàn bộ quy trình gian lận trong một tài khoản, không cần ai phê duyệt hay kiểm tra.
 
 Hình 5.1: Lỗ hổng kiểm soát nội bộ trong thiết kế v1.0
 
@@ -2337,7 +2334,7 @@ Trong thực tế doanh nghiệp Việt Nam, quy trình lương giấy tờ truy
 
 ### 5.1.2 Giải pháp
 
-Thiết kế lại mô hình vai trò từ 5 vai trò (v1.0) thành 7 vai trò (v2.0), trong đó hai vai trò mới được giới thiệu đặc biệt để giải quyết vấn đề SoD:
+Thiết kế lại mô hình vai trò từ 5 vai trò ban đầu thành 7 vai trò, trong đó hai vai trò mới được giới thiệu đặc biệt để giải quyết vấn đề phân tách nhiệm vụ:
 
 Hình 5.2: Sơ đồ phân tách nhiệm vụ trong quy trình lương v2.0
 
@@ -2384,21 +2381,21 @@ Bên cạnh đó, hệ thống đặt một **cổng kiểm soát "kỳ đã ch�
 
 ### 5.1.3 Kết quả đạt được
 
-Sau khi triển khai 7-role SoD model, hệ thống đạt được:
+Sau khi triển khai mô hình phân tách nhiệm vụ bảy vai trò, hệ thống đạt được:
 
-Bảng 5.1: So sánh kiểm soát nội bộ trước và sau giải pháp SoD
+Bảng 5.1: So sánh kiểm soát nội bộ trước và sau giải pháp phân tách nhiệm vụ
 
-| Kịch bản gian lận | v1.0 (HR_ADMIN) | v2.0 (7 roles) |
+| Kịch bản gian lận | Thiết kế ban đầu (một vai trò) | Thiết kế mới (bảy vai trò) |
 |---|:---:|:---:|
-| Tạo nhân viên ma và tính lương | ✅ Có thể (1 tài khoản) | ❌ Không thể (cần HR + Finance) |
-| Tự phê duyệt bảng lương mình tính | ✅ Có thể (1 tài khoản) | ❌ Không thể (Finance tính, Director duyệt) |
-| Tăng ngày công rồi tính lương cao | ✅ Có thể (1 tài khoản) | ❌ Không thể (HR chốt kỳ, Finance tính) |
-| Xem lương nhân viên khác (Employee) | ✅ Không kiểm soát | ❌ /my endpoint chỉ trả dữ liệu của chính người đó |
-| Gọi API tính lương với token HR_ADMIN | ✅ Có thể | ❌ HTTP 403 (server-side enforcement) |
+| Tạo nhân viên ma và tính lương | ✅ Có thể (một tài khoản) | ❌ Không thể (cần nhân sự và tài chính) |
+| Tự phê duyệt bảng lương mình tính | ✅ Có thể (một tài khoản) | ❌ Không thể (tài chính tính, giám đốc duyệt) |
+| Tăng ngày công rồi tính lương cao | ✅ Có thể (một tài khoản) | ❌ Không thể (nhân sự chốt kỳ, tài chính tính) |
+| Xem lương của nhân viên khác | ✅ Không kiểm soát | ❌ Chỉ truy được dữ liệu của chính mình |
+| Gọi dịch vụ tính lương bằng phiên sai vai trò | ✅ Có thể | ❌ Bị từ chối (thực thi ở máy chủ) |
 
-Mô hình 7 vai trò này tương đương với kiểm soát nội bộ mà các doanh nghiệp áp dụng trong quy trình giấy tờ: không một cá nhân nào có thể hoàn thành toàn bộ vòng đời thanh toán lương một mình. Đây là yêu cầu của các chuẩn kiểm toán như ISO 27001 (Access Control) và COSO Internal Control Framework.
+Mô hình bảy vai trò này tương đương với kiểm soát nội bộ mà các doanh nghiệp áp dụng trong quy trình giấy tờ: không một cá nhân nào có thể hoàn thành toàn bộ vòng đời thanh toán lương một mình. Đây là yêu cầu của các chuẩn kiểm toán như ISO 27001 (kiểm soát truy cập) và khung kiểm soát nội bộ COSO.
 
-## 5.2 Pipeline chấm công tự động qua Spring Application Events
+## 5.2 Quy trình chấm công tự động theo hướng sự kiện
 
 ### 5.2.1 Bài toán
 
@@ -2445,7 +2442,7 @@ Hình 5.3: Kiến trúc hướng sự kiện cho pipeline chấm công
 
 ### 5.2.3 Kết quả đạt được
 
-Giải pháp Spring Application Events mang lại ba lợi ích đồng thời:
+Giải pháp dựa trên cơ chế sự kiện ứng dụng nội bộ mang lại ba lợi ích đồng thời:
 
 Lợi ích thứ nhất — **tách biệt hoàn toàn hai mô-đun**: mô-đun xử lý chấm công thô và mô-đun ngày công không tham chiếu trực tiếp lẫn nhau mà chỉ liên lạc qua sự kiện. Hai mô-đun có thể phát triển và kiểm thử độc lập; nếu sau này cần tách thành dịch vụ riêng (microservice) thì chỉ việc thay cơ chế phát sự kiện nội bộ bằng một hàng đợi thông điệp, không phải sửa logic.
 
@@ -2545,39 +2542,39 @@ Bảng 5.3: Kiểm chứng tính lương mẫu
 
 | Thành phần | Công thức | Kết quả |
 |---|---|---|
-| HStb | (HS1 1.04 + HS2 1.04) / 2 | 1.04 |
-| baseGross (full month) | (40,000,000 × 1.04 + 2,000,000) | 43,600,000 |
-| baseGross (prorate 21/22) | 43,600,000 × (21/22) | 41,618,182 |
-| hourlyRate | 40,000,000 / (22 × 8) | 227,273/h |
-| OT weekday | 10h × 227,273 × 1.5 | 3,409,091 |
-| OT weekend | 5h × 227,273 × 2.0 | 2,272,727 |
-| grossSalary | 41,618,182 + 5,681,818 | 47,300,000 |
-| insuranceBase | min(40,000,000; 46,800,000) | 40,000,000 |
-| BHXH employee (8%) | 40,000,000 × 8% | 3,200,000 |
-| BHYT employee (1.5%) | 40,000,000 × 1.5% | 600,000 |
-| BHTN employee (1%) | 40,000,000 × 1% | 400,000 |
-| Tổng bảo hiểm NV | | 4,200,000 |
-| Thu nhập chịu thuế | 47,300,000 − 4,200,000 | 43,100,000 |
-| Giảm trừ bản thân | | 15,500,000 |
-| Giảm trừ 1 phụ thuộc | | 6,200,000 |
-| Thu nhập tính thuế | 43,100,000 − 21,700,000 | 21,400,000 |
-| PIT bậc 1 (0–5M × 5%) | 5,000,000 × 5% | 250,000 |
-| PIT bậc 2 (5M–10M × 10%) | 5,000,000 × 10% | 500,000 |
-| PIT bậc 3 (10M–18M × 15%) | 8,000,000 × 15% | 1,200,000 |
-| PIT bậc 4 (18M–32M × 20%) | 3,400,000 × 20% | 680,000 |
-| Thuế TNCN | | 2,630,000 |
-| netSalary | 47,300,000 − 4,200,000 − 2,630,000 | 40,470,000 |
-| BHXH employer (17%) | 40,000,000 × 17% | 6,800,000 |
-| BHYT employer (3%) | 40,000,000 × 3% | 1,200,000 |
-| BHTN employer (1%) | 40,000,000 × 1% | 400,000 |
-| TNLĐ employer (0.5%) | 40,000,000 × 0.5% | 200,000 |
-| totalEmploymentCost | 47,300,000 + 8,600,000 | 55,900,000 |
+| Hệ số thi đua trung bình | (HS1 1,04 + HS2 1,04) / 2 | 1,04 |
+| Lương cơ bản kỳ (đủ tháng) | (40.000.000 × 1,04 + 2.000.000) | 43.600.000 |
+| Lương cơ bản kỳ (theo tỷ lệ 21/22) | 43.600.000 × (21/22) | 41.618.182 |
+| Đơn giá giờ | 40.000.000 / (22 × 8) | 227.273/giờ |
+| Tăng ca ngày thường | 10 giờ × 227.273 × 1,5 | 3.409.091 |
+| Tăng ca cuối tuần | 5 giờ × 227.273 × 2,0 | 2.272.727 |
+| Lương gộp | 41.618.182 + 5.681.818 | 47.300.000 |
+| Nền tính bảo hiểm | min(40.000.000; 46.800.000) | 40.000.000 |
+| Bảo hiểm xã hội nhân viên (8%) | 40.000.000 × 8% | 3.200.000 |
+| Bảo hiểm y tế nhân viên (1,5%) | 40.000.000 × 1,5% | 600.000 |
+| Bảo hiểm thất nghiệp nhân viên (1%) | 40.000.000 × 1% | 400.000 |
+| Tổng bảo hiểm nhân viên đóng | | 4.200.000 |
+| Thu nhập chịu thuế | 47.300.000 − 4.200.000 | 43.100.000 |
+| Giảm trừ bản thân | | 15.500.000 |
+| Giảm trừ một người phụ thuộc | | 6.200.000 |
+| Thu nhập tính thuế | 43.100.000 − 21.700.000 | 21.400.000 |
+| Thuế bậc 1 (0–5tr × 5%) | 5.000.000 × 5% | 250.000 |
+| Thuế bậc 2 (5–10tr × 10%) | 5.000.000 × 10% | 500.000 |
+| Thuế bậc 3 (10–18tr × 15%) | 8.000.000 × 15% | 1.200.000 |
+| Thuế bậc 4 (18–32tr × 20%) | 3.400.000 × 20% | 680.000 |
+| Thuế thu nhập cá nhân | | 2.630.000 |
+| Lương thực nhận | 47.300.000 − 4.200.000 − 2.630.000 | 40.470.000 |
+| Bảo hiểm xã hội chủ đóng (17%) | 40.000.000 × 17% | 6.800.000 |
+| Bảo hiểm y tế chủ đóng (3%) | 40.000.000 × 3% | 1.200.000 |
+| Bảo hiểm thất nghiệp chủ đóng (1%) | 40.000.000 × 1% | 400.000 |
+| Bảo hiểm tai nạn lao động chủ đóng (0,5%) | 40.000.000 × 0,5% | 200.000 |
+| Tổng chi phí sử dụng lao động | 47.300.000 + 8.600.000 | 55.900.000 |
 
 Kết quả được kiểm chứng bằng cách tính tay theo đúng quy định pháp luật — không có sai số.
 
-Lợi ích của cấu hình động qua các bảng config hiệu lực-theo-ngày: Khi Chính phủ điều chỉnh lương tối thiểu vùng (ảnh hưởng trần bảo hiểm) hoặc sửa đổi biểu thuế TNCN, FINANCE_ADMIN chỉ cần tạo một phiên bản cấu hình mới (DRAFT) với giá trị và ngày hiệu lực cập nhật; sau khi DIRECTOR phê duyệt (PUBLISH), hệ thống tự chọn đúng phiên bản theo ngày hiệu lực của từng kỳ lương mà không cần sửa code hay restart. Các phiên bản đã PUBLISH là bất biến, giữ lại lịch sử để truy vết.
+Lợi ích của cấu hình động qua các bảng có hiệu lực theo ngày: khi Nhà nước điều chỉnh lương tối thiểu vùng (ảnh hưởng trần bảo hiểm) hoặc sửa đổi biểu thuế thu nhập cá nhân, người phụ trách tài chính chỉ cần tạo một phiên bản cấu hình mới ở trạng thái nháp với giá trị và ngày hiệu lực cập nhật; sau khi giám đốc phê duyệt và ban hành, hệ thống tự chọn đúng phiên bản theo ngày hiệu lực của từng kỳ lương mà không cần sửa mã nguồn hay khởi động lại. Các phiên bản đã ban hành là bất biến, giữ lại lịch sử để truy vết.
 
-## 5.4 Cơ chế quản lý số dư nghỉ phép chống race condition
+## 5.4 Cơ chế quản lý số dư nghỉ phép chống tranh chấp đồng thời
 
 ### 5.4.1 Bài toán
 
@@ -2596,7 +2593,7 @@ Luồng thực thi KHÔNG an toàn (hai luồng xử lý song song):
 Kết quả: A có hai đơn đang chờ duyệt tổng 6 ngày trong khi chỉ có 5 ngày số dư.
 ```
 
-Ngoài race condition, còn có bài toán về thời điểm trừ số dư:
+Ngoài tranh chấp đồng thời, còn có bài toán về thời điểm trừ số dư:
 
 Phương án A — Trừ khi duyệt xong:
 - Ưu: Đơn chưa duyệt không chiếm số dư
@@ -2620,7 +2617,7 @@ trong đó *Ngày đang chờ duyệt* là phần tạm giữ cho các đơn ch�
 
 **Hai giai đoạn** vận hành như sau. Khi nhân viên **nộp** một đơn nghỉ N ngày, hệ thống kiểm tra số dư còn lại có đủ không; nếu đủ thì **tạm giữ** ngay N ngày vào phần "đang chờ duyệt" — số dư còn lại giảm tức thì, qua đó ngăn việc đăng ký trùng vượt quá số dư. Khi đơn được **phê duyệt cuối** (ở cấp Quản lý), N ngày được chuyển từ "đang chờ duyệt" sang "đã nghỉ" — số dư còn lại không đổi. Khi đơn bị **từ chối hoặc hủy** ở bất kỳ bước nào, N ngày được **hoàn trả** khỏi "đang chờ duyệt" — số dư trở lại như trước khi nộp. Nhờ tách bạch "đang chờ" và "đã nghỉ", số dư luôn phản ánh đúng cả đơn đang treo lẫn đơn đã dùng, và việc hoàn trả khi từ chối là tức thời.
 
-**Chống tranh chấp đồng thời (race condition).** Vấn đề kinh điển: hai đơn nộp gần như cùng lúc cùng đọc một số dư cũ, cùng thấy "đủ" rồi cùng ghi — dẫn đến vượt số dư (overdraft). Đồ án giải quyết bằng **khóa bi quan ở mức dòng dữ liệu** (pessimistic lock): khi một giao dịch nộp đơn bắt đầu, nó khóa đúng dòng số dư của nhân viên đó cho tới khi giao dịch cam kết; mọi giao dịch khác trên cùng dòng số dư phải xếp hàng chờ. Nhờ đó chuỗi "đọc số dư → kiểm tra → tạm giữ" diễn ra tuần tự, loại bỏ hoàn toàn khả năng hai đơn cùng ghi đè. So với các phương án thay thế (khóa lạc quan có thử lại, hoặc khóa ở tầng ứng dụng bằng Redis), khóa bi quan ở mức dòng là đủ và đơn giản nhất cho quy mô bài toán này.
+**Chống tranh chấp đồng thời.** Vấn đề kinh điển: hai đơn nộp gần như cùng lúc cùng đọc một số dư cũ, cùng thấy "đủ" rồi cùng ghi — dẫn đến vượt số dư (overdraft). Đồ án giải quyết bằng **khóa bi quan ở mức dòng dữ liệu** (pessimistic lock): khi một giao dịch nộp đơn bắt đầu, nó khóa đúng dòng số dư của nhân viên đó cho tới khi giao dịch cam kết; mọi giao dịch khác trên cùng dòng số dư phải xếp hàng chờ. Nhờ đó chuỗi "đọc số dư → kiểm tra → tạm giữ" diễn ra tuần tự, loại bỏ hoàn toàn khả năng hai đơn cùng ghi đè. So với các phương án thay thế (khóa lạc quan có thử lại, hoặc khóa ở tầng ứng dụng bằng Redis), khóa bi quan ở mức dòng là đủ và đơn giản nhất cho quy mô bài toán này.
 
 Bảng 5.4: So sánh các phương án quản lý số dư nghỉ phép
 
@@ -2644,7 +2641,7 @@ Cơ chế trừ hai giai đoạn mang lại ba đảm bảo đồng thời:
 
 Ví dụ về trải nghiệm: nhân viên còn 5 ngày phép, đã gửi một đơn nghỉ 3 ngày (đang chờ duyệt); khi muốn gửi tiếp đơn 4 ngày, hệ thống báo "Số ngày nghỉ vượt quá số dư còn lại: 2 ngày" — chính xác vì 5 − 3 (đang chờ) = 2 ngày thực sự còn lại.
 
-Bốn đóng góp trong chương này xuất phát từ các bài toán thực tế phát sinh trong quá trình xây dựng hệ thống và được giải quyết bằng lập luận kỹ thuật có căn cứ. Phân tách nhiệm vụ và cơ chế trừ hai giai đoạn đảm bảo tính toàn vẹn tài chính từ hai phía tổ chức và đồng thời. Pipeline Spring Events và công thức tính lương tuân thủ pháp luật cung cấp hai nền tảng tự động hóa và tuân thủ cốt lõi của hệ thống HR chuyên nghiệp. Tổng kết toàn bộ đồ án — kết quả đạt được, hạn chế còn tồn tại và lộ trình phát triển tiếp theo — được trình bày trong Chương 6.
+Bốn đóng góp trong chương này xuất phát từ các bài toán thực tế phát sinh trong quá trình xây dựng hệ thống và được giải quyết bằng lập luận kỹ thuật có căn cứ. Phân tách nhiệm vụ và cơ chế trừ hai giai đoạn đảm bảo tính toàn vẹn tài chính từ hai phía tổ chức và đồng thời. Quy trình chấm công theo hướng sự kiện và công thức tính lương tuân thủ pháp luật cung cấp hai nền tảng tự động hóa và tuân thủ cốt lõi của một hệ thống quản lý nhân sự chuyên nghiệp. Tổng kết toàn bộ đồ án — kết quả đạt được, hạn chế còn tồn tại và lộ trình phát triển tiếp theo — được trình bày trong Chương 6.
 
 ---
 
@@ -2668,8 +2665,8 @@ Bảng 6.1: So sánh FaceZ HRMS với các giải pháp tương tự
 | Tăng ca đêm tính theo phút giao thoa | ❌ | ❌ | ❌ | ✅ |
 | Phân tách nhiệm vụ nhân sự / tài chính / giám đốc | ⚠️ Tùy cấu hình | ⚠️ Tùy cấu hình | ✅ | ✅ Thực thi ở máy chủ |
 | Phê duyệt lương đa cấp (Finance → Director) | ✅ | ✅ | ✅ | ✅ |
-| Quản lý số dư nghỉ phép chống race condition | ✅ | ✅ | ✅ | ✅ |
-| Cấu hình biểu thuế TNCN động (không restart) | ✅ | ⚠️ | ❌ | ✅ |
+| Quản lý số dư nghỉ phép chống tranh chấp đồng thời | ✅ | ✅ | ✅ | ✅ |
+| Cấu hình biểu thuế thu nhập động (không cần khởi động lại) | ✅ | ⚠️ | ❌ | ✅ |
 | Trần bảo hiểm theo quy định Việt Nam | ✅ | ✅ | ❌ | ✅ |
 | Chi phí sử dụng lao động (employer cost) | ✅ | ✅ | ✅ | ✅ |
 | Báo cáo BHXH/BHYT/BHTN | ✅ | ✅ | ❌ | ✅ |
