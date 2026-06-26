@@ -1,0 +1,13 @@
+\chapter*{LỜI CẢM ƠN}
+\addcontentsline{toc}{chapter}{LỜI CẢM ƠN}
+
+
+Em xin gửi lời cảm ơn chân thành nhất đến cô Nguyễn Thị Thanh Nga đã tận tình hướng dẫn, định hướng và góp ý trong suốt quá trình thực hiện đồ án. Sự hỗ trợ và kinh nghiệm thực tiễn mà cô chia sẻ đã giúp em không chỉ hoàn thiện sản phẩm về mặt kỹ thuật mà còn hiểu sâu hơn về bài toán quản lý nhân sự trong doanh nghiệp thực tế.
+
+
+Em xin cảm ơn gia đình và bạn bè đã luôn ở bên cạnh, thông cảm và động viên trong những giai đoạn áp lực nhất của quá trình làm đồ án. Và cuối cùng, em muốn cảm ơn chính bản thân đã kiên trì với những thử thách về nghiệp vụ và kỹ thuật trong một đề tài đòi hỏi sự chính xác ở từng chi tiết pháp lý.
+
+
+Em hy vọng đồ án này đóng góp một phần nhỏ vào hướng nghiên cứu và ứng dụng thực tế trong lĩnh vực quản lý nhân sự cho doanh nghiệp Việt Nam.
+
+

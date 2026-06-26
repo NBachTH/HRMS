@@ -1,0 +1,107 @@
+\chapter*{TÀI LIỆU THAM KHẢO}
+\addcontentsline{toc}{chapter}{TÀI LIỆU THAM KHẢO}
+
+
+Văn bản pháp lý:
+
+
+[1] Quốc hội Việt Nam, \textit{Bộ Luật Lao Động 2019} (Luật số 45/2019/QH14), Hà Nội, 2019.
+
+
+[2] Bộ Tài chính, \textit{Thông tư 111/2013/TT-BTC hướng dẫn thực hiện Luật Thuế TNCN}, Hà Nội, 2013 (sửa đổi bổ sung năm 2014, 2015).
+
+
+[3] Chính phủ Việt Nam, \textit{Nghị định 74/2024/NĐ-CP quy định mức lương tối thiểu đối với người lao động làm việc theo hợp đồng lao động}, Hà Nội, 2024.
+
+
+[4] Quốc hội Việt Nam, \textit{Luật Bảo hiểm xã hội 2014} (Luật số 58/2014/QH13), Hà Nội, 2014.
+
+
+Tài liệu kỹ thuật --- Backend:
+
+
+[5] Spring Framework Team, \textit{Spring Boot Reference Documentation 4.0.x}, Broadcom/VMware Tanzu, 2025. [Online]. Available: https://docs.spring.io/spring-boot/docs/current/reference/html/ (visited on 15/05/2026).
+
+
+[6] Spring Security Team, \textit{Spring Security Reference Documentation 6.4.x}, Broadcom/VMware Tanzu, 2024. [Online]. Available: https://docs.spring.io/spring-security/reference/ (visited on 15/05/2026).
+
+
+[7] PostgreSQL Global Development Group, \textit{PostgreSQL 15 Documentation --- DDL, Data Types, Indexes}, 2024. [Online]. Available: https://www.postgresql.org/docs/15/ (visited on 15/05/2026).
+
+
+[8] PostgreSQL Global Development Group, \textit{PostgreSQL 15 Documentation}, The PostgreSQL Global Development Group, 2023. [Online]. Available: https://www.postgresql.org/docs/15/ (visited on 15/05/2026).
+
+
+[9] Redis Ltd., \textit{Redis 7.x Documentation}, Redis Ltd., 2024. [Online]. Available: https://redis.io/docs/ (visited on 15/05/2026).
+
+
+[10] B. Stoyanchev, S. Brannen, R. Winch, \textit{Spring Framework Documentation --- Application Events}, Broadcom/VMware Tanzu, 2024. [Online]. Available: https://docs.spring.io/spring-framework/docs/current/reference/html/ (visited on 15/05/2026).
+
+
+[11] M. Jones, J. Bradley, N. Sakimura, \textit{RFC 7519: JSON Web Token (JWT)}, Internet Engineering Task Force (IETF), 2015. [Online]. Available: https://tools.ietf.org/html/rfc7519 (visited on 15/05/2026).
+
+
+Tài liệu kỹ thuật --- Frontend:
+
+
+[12] Vercel Inc., \textit{Next.js 15 Documentation}, Vercel, 2024. [Online]. Available: https://nextjs.org/docs (visited on 15/05/2026).
+
+
+[13] Meta Platforms Inc., \textit{React 19 Documentation}, Meta Open Source, 2024. [Online]. Available: https://react.dev/ (visited on 15/05/2026).
+
+
+[14] A. Wathan, S. Schoger, \textit{Tailwind CSS Documentation v3}, Tailwind Labs, 2024. [Online]. Available: https://tailwindcss.com/docs (visited on 15/05/2026).
+
+
+[15] Recharts Team, \textit{Recharts --- Redefined Chart Library Built with React and D3}, 2024. [Online]. Available: https://recharts.org/en-US/api (visited on 15/05/2026).
+
+
+Sách và bài báo tham khảo:
+
+
+[16] M. Fowler, \textit{Patterns of Enterprise Application Architecture}, Addison-Wesley Professional, 2002.
+
+
+[17] M. Fowler, \textit{Refactoring: Improving the Design of Existing Code}, 2nd ed., Addison-Wesley Professional, 2018.
+
+
+[18] R. C. Martin, \textit{Clean Architecture: A Craftsman's Guide to Software Structure and Design}, Prentice Hall, 2017.
+
+
+[19] E. Evans, \textit{Domain-Driven Design: Tackling Complexity in the Heart of Software}, Addison-Wesley Professional, 2003.
+
+
+[20] OWASP Foundation, \textit{OWASP Top Ten 2021}, Open Web Application Security Project, 2021. [Online]. Available: https://owasp.org/www-project-top-ten/ (visited on 15/05/2026).
+
+
+[21] COSO, \textit{Internal Control --- Integrated Framework}, Committee of Sponsoring Organizations of the Treadway Commission, 2013.
+
+
+[22] Nguyễn Văn Vỵ, Nguyễn Việt Hà, \textit{Phân tích thiết kế hệ thống thông tin}, NXB Đại học Quốc gia Hà Nội, 2009.
+
+
+Văn bản pháp lý và số liệu thống kê bổ sung:
+
+
+[23] Ủy ban Thường vụ Quốc hội, \textit{Nghị quyết 110/2025/UBTVQH15 về điều chỉnh mức giảm trừ gia cảnh thuế thu nhập cá nhân}, Hà Nội, 2025 (áp dụng từ kỳ tính thuế năm 2026).
+
+
+[24] Bộ Thông tin và Truyền thông, \textit{Sách trắng Công nghệ thông tin và Truyền thông Việt Nam 2024}, NXB Thông tin và Truyền thông, Hà Nội, 2024.
+
+
+
+\textit{Hà Nội, tháng 07 năm 2026}
+
+
+\textit{Sinh viên thực hiện}
+
+
+Nguyễn Thanh Bách
+
+
+\textit{MSSV: 20204812 --- Lớp: Kỹ thuật phần mềm K65}
+
+
+\textit{Email: bach.nt204812@sis.hust.edu.vn}
+
+

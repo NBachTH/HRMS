@@ -1,0 +1,1076 @@
+\chapter{PHÂN TÍCH THIẾT KẾ, TRIỂN KHAI VÀ ĐÁNH GIÁ HỆ THỐNG}
+
+
+Từ nền tảng công nghệ đã xác lập trong Chương 3, chương này trình bày toàn bộ quá trình từ quyết định kiến trúc đến xây dựng và đánh giá hệ thống. Mục 4.1 lựa chọn kiến trúc monolithic phân lớp, mô tả tổng quan hệ thống và biểu đồ phụ thuộc gói. Mục 4.2 đặc tả thiết kế chi tiết ba tầng gồm giao diện người dùng theo vai trò, domain model với sơ đồ lớp và biểu đồ trình tự cho hai luồng nghiệp vụ quan trọng, và cơ sở dữ liệu với ERD đầy đủ. Mục 4.3 thống kê kết quả xây dựng và minh họa giao diện các chức năng chính. Mục 4.4 trình bày phương pháp và kết quả kiểm thử. Mục 4.5 mô tả cấu hình triển khai thực tế.
+
+
+\section{Thiết kế kiến trúc}
+
+
+\subsection{Lựa chọn kiến trúc phần mềm}
+
+
+Quyết định kiến trúc quan trọng nhất của đồ án là lựa chọn giữa kiến trúc nguyên khối (monolithic) và kiến trúc vi dịch vụ (microservices). Cả hai đều phổ biến trong phát triển ứng dụng doanh nghiệp hiện đại, nhưng phù hợp với bối cảnh khác nhau.
+
+
+
+\begin{table}[ht]
+\centering
+\caption{So sánh kiến trúc Monolithic và Microservices}
+\small
+\begin{tabularx}{\textwidth}{|X|X|X|}
+\hline
+\textbf{Tiêu chí} & \textbf{Monolithic} & \textbf{Microservices} \\ \hline
+Độ phức tạp ban đầu & Thấp --- một codebase, một deployment & Cao --- nhiều service độc lập, service discovery, API gateway \\ \hline
+Transaction xuyên domain & Đơn giản --- một transaction ACID cho nhiều bảng & Phức tạp --- cần Saga pattern hoặc two-phase commit \\ \hline
+Debugging & Đơn giản --- một stack trace, một log stream & Phức tạp --- cần distributed tracing (Zipkin, Jaeger) \\ \hline
+Scaling & Scale toàn bộ --- không scale riêng từng module & Scale riêng từng service theo nhu cầu \\ \hline
+Team size & Phù hợp team nhỏ (1--10 người) & Phù hợp team lớn, nhiều team độc lập \\ \hline
+Domain coupling & Các domain gọi trực tiếp nhau & Giao tiếp qua message bus hoặc REST \\ \hline
+\end{tabularx}
+\end{table}
+
+
+Lý do chọn Monolithic cho FaceZ HRMS: Nghiệp vụ HRMS có tính coupling cao giữa các domain --- tính lương cần đọc dữ liệu từ attendance, contract, leave, OT cùng lúc trong một transaction. Nếu tách thành microservices, các cross-domain query này sẽ phải thực hiện qua mạng, thêm độ trễ và phức tạp xử lý lỗi mạng. Với quy mô dự án đồ án (một developer, một server), monolithic là lựa chọn tối ưu.
+
+
+Kiến trúc phân lớp trong khối nguyên: dù là khối nguyên, backend được tổ chức theo kiến trúc phân lớp rõ ràng để bảo đảm tách biệt mối quan tâm, như Hình 4.1.
+
+
+\begin{figure}[ht]
+\centering
+\begin{verbatim}
+┌─────────────────────────────────────────────────────────────┐
+│                    Tầng trình diễn                           │
+│      Tiếp nhận yêu cầu, ánh xạ dữ liệu, kiểm tra hợp lệ      │
+├─────────────────────────────────────────────────────────────┤
+│                    Tầng nghiệp vụ                            │
+│      Lô-gic nghiệp vụ, các luồng phê duyệt                  │
+├─────────────────────────────────────────────────────────────┤
+│                    Tầng truy cập dữ liệu                     │
+│      Kho dữ liệu, truy vấn quan hệ - đối tượng              │
+├─────────────────────────────────────────────────────────────┤
+│                    Tầng hạ tầng                              │
+│      PostgreSQL 15, Redis 7, hệ thống tệp                   │
+└─────────────────────────────────────────────────────────────┘
+\end{verbatim}
+\caption{Kiến trúc phân lớp của backend}
+\end{figure}
+
+
+
+Quy tắc phụ thuộc một chiều được tuân thủ: tầng trình diễn chỉ gọi tầng nghiệp vụ; tầng nghiệp vụ gọi tầng truy cập dữ liệu và các dịch vụ nghiệp vụ khác; tầng truy cập dữ liệu chỉ làm việc với cơ sở dữ liệu. Không tầng nào gọi ngược lên tầng phía trên.
+
+
+Kiến trúc frontend tách biệt (SPA + SSR): Frontend Next.js 15 là ứng dụng độc lập, giao tiếp với backend qua REST API. Next.js hỗ trợ cả Server-Side Rendering (SSR) cho SEO và tốc độ tải lần đầu, và Client-Side Rendering (CSR) cho tương tác động. FaceZ HRMS chủ yếu dùng CSR vì nội dung phụ thuộc vào trạng thái đăng nhập.
+
+
+\subsection{Thiết kế tổng quan}
+
+
+
+\begin{figure}[ht]
+\centering
+\begin{verbatim}
+┌──────────────────────────────────────────────────────────────────────────┐
+│                           TẦNG NGƯỜI DÙNG                                  │
+│                                                                            │
+│   ┌─────────────────────────┐      ┌─────────────────────────────────┐   │
+│   │   Trình duyệt web        │      │   Thiết bị chấm công khuôn mặt  │   │
+│   │   Ứng dụng Next.js       │      │   (thiết bị nhúng)              │   │
+│   │   Cổng 3000              │      │   Xác thực bằng khóa API thiết bị│   │
+│   └──────────┬──────────────┘      └──────────────┬──────────────────┘   │
+└──────────────┼───────────────────────────────────-┼──────────────────────┘
+               │ HTTPS + token người dùng            │ HTTPS + khóa API
+               ▼                                     ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│                     MÁY CHỦ ỨNG DỤNG (Spring Boot)                        │
+│                     Cổng 8084                                             │
+│                                                                            │
+│   ┌────────────────┐  ┌────────────────┐  ┌────────────────────────────┐ │
+│   │ Lọc khóa       │  │  Lọc token     │  │  Luật phân quyền đường dẫn │ │
+│   │ thiết bị       │  │  người dùng    │  │  + kiểm soát mức phương thức│ │
+│   └────────────────┘  └────────────────┘  └────────────────────────────┘ │
+│                                                                            │
+│   ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌───────────────────────┐ │
+│   │ Điều khiển │ │ Điều khiển │ │ Điều khiển │ │ Điều khiển nghỉ phép, │ │
+│   │ xác thực   │ │ nhân sự    │ │ chấm công  │ │ tăng ca, thông báo    │ │
+│   └──────┬─────┘ └──────┬─────┘ └──────┬─────┘ └──────────┬────────────┘ │
+│          │              │              │                    │             │
+│   ┌──────┴──────────────┴──────────────┴────────────────────┴───────────┐ │
+│   │                    Tầng dịch vụ nghiệp vụ                            │ │
+│   │  Xác thực · Nhân sự · Chấm công · Tính lương · Hợp đồng              │ │
+│   │  Nghỉ phép · Tăng ca · Thông báo                                    │ │
+│   │  Bộ máy tính lương (tính toán thuần)                               │ │
+│   └──────┬──────────────┬──────────────┬──────────────────────────────-─┘ │
+│          │              │              │                                   │
+│   ┌──────┴─────┐  ┌─────┴──────┐  ┌───┴──────┐                           │
+│   │ Kho dữ liệu│  │ Bộ nhớ đệm │  │ Kho tệp  │                           │
+│   │            │  │ + token    │  │          │                           │
+│   └──────┬─────┘  └─────┬──────┘  └──────────┘                           │
+└──────────┼──────────────┼──────────────────────────────────────────────────┘
+           │              │
+  ┌────────▼───────┐  ┌───▼────────┐
+  │  PostgreSQL 15 │  │  Redis 7   │
+  │  Cổng 5432     │  │  Cổng 6379 │
+  └────────────────┘  └────────────┘
+\end{verbatim}
+\caption{Sơ đồ tổng quan hệ thống FaceZ HRMS}
+\end{figure}
+
+
+Thiết kế luồng dữ liệu chính:
+
+
+Mọi yêu cầu từ giao diện đều đi qua một lớp gọi dịch vụ tập trung duy nhất. Lớp này: (1) đính kèm token truy cập vào tiêu đề ủy quyền; (2) khi nhận mã từ chối truy cập, tự gọi điểm làm mới phiên (cookie tự động đi kèm); (3) nếu làm mới thành công, lưu token mới vào bộ nhớ và thực hiện lại yêu cầu gốc; (4) nếu làm mới thất bại, đăng xuất người dùng và chuyển hướng về trang đăng nhập. Luồng này bảo đảm người dùng không bao giờ gặp màn hình lỗi đột ngột khi token truy cập hết hạn giữa chừng.
+
+
+Thiết kế luồng chấm công (hướng sự kiện), minh họa ở Hình 4.3:
+
+
+\begin{figure}[ht]
+\centering
+\begin{verbatim}
+Thiết bị chấm công
+    │  gửi bản ghi chấm công (kèm khóa API thiết bị)
+    ▼
+Dịch vụ ghi nhận chấm công
+    │  lưu bản ghi thô vào cơ sở dữ liệu
+    │  phát ra một sự kiện "đã xử lý chấm công"
+    ▼
+Dịch vụ tổng hợp công  ← lắng nghe sự kiện, kích hoạt sau khi giao dịch hoàn tất
+    │
+    ├── bản ghi VÀO  → tạo/tìm bản ghi công trong ngày, đặt giờ vào
+    └── bản ghi RA   → tìm bản ghi công đang mở, đặt giờ ra, tính giờ làm,
+                       giờ đến muộn, giờ được trả lương, cờ vi phạm
+\end{verbatim}
+\caption{Luồng xử lý chấm công hướng sự kiện}
+\end{figure}
+
+
+
+Cơ chế lắng nghe sự kiện sau khi giao dịch hoàn tất bảo đảm bản ghi công chỉ được tạo hoặc cập nhật sau khi bản ghi chấm công thô đã lưu thành công vào cơ sở dữ liệu, loại bỏ tình trạng dữ liệu không nhất quán do giao dịch bị hoàn tác. Chi tiết kiến trúc hướng sự kiện và các phương án thay thế được trình bày ở Mục 5.2.
+
+
+
+\begin{figure}[ht]
+\centering
+\begin{verbatim}
+┌─────────────────────────────────────────────────────────┐
+│                    Máy chủ vật lý                        │
+│                                                          │
+│   ┌───────────────────────────────────────────────────┐ │
+│   │             Mạng nội bộ Docker Compose             │ │
+│   │                                                    │ │
+│   │  ┌──────────────┐  ┌──────────┐  ┌─────────────┐ │ │
+│   │  │ PostgreSQL   │  │ Redis    │  │ Quản trị DB │ │ │
+│   │  │ :5432        │  │ :6379    │  │ :5050       │ │ │
+│   │  └──────────────┘  └──────────┘  └─────────────┘ │ │
+│   └───────────────────────────────────────────────────┘ │
+│                                                          │
+│   ┌────────────────────────────────────────────────────┐ │
+│   │  Ứng dụng backend (tiến trình máy ảo Java)         │ │
+│   │  Cổng 8084                                         │ │
+│   │  Kết nối tới: PostgreSQL :5432, Redis :6379        │ │
+│   └────────────────────────────────────────────────────┘ │
+│                                                          │
+│   ┌────────────────────────────────────────────────────┐ │
+│   │  Ứng dụng giao diện (tiến trình Node.js)           │ │
+│   │  Cổng 3000                                         │ │
+│   │  Trỏ tới máy chủ ứng dụng qua biến môi trường      │ │
+│   └────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────┘
+\end{verbatim}
+\caption{Sơ đồ triển khai}
+\end{figure}
+
+
+\subsection{Thiết kế chi tiết gói}
+
+
+Mục này mô tả quan hệ phụ thuộc giữa các mô-đun trong hai hệ thống con, tuân thủ nguyên tắc một chiều: mô-đun tầng trên chỉ phụ thuộc mô-đun tầng dưới; không có phụ thuộc vòng hay phụ thuộc bắc cầu vượt tầng.
+
+
+Biểu đồ phụ thuộc mô-đun phía backend (Hình 4.5):
+
+
+\begin{figure}[ht]
+\centering
+\fbox{\parbox{0.85\textwidth}{\centering\vspace{2em}
+[\textit{Sơ đồ — chèn hình vẽ tương ứng tại đây}]\vspace{2em}}}
+\caption{Biểu đồ phụ thuộc mô-đun phía backend}
+\end{figure}
+
+
+
+Ba điểm đáng chú ý: (i) mô-đun dùng chung không phụ thuộc bất kỳ mô-đun nào khác --- điều kiện đủ để bảo đảm toàn hệ thống không có phụ thuộc vòng; (ii) mô-đun tính lương có mức lan tỏa cao nhất (phụ thuộc năm miền), phản ánh đúng bản chất nghiệp vụ: tính lương cần đọc tổng hợp dữ liệu hợp đồng, chấm công, nghỉ phép, tăng ca và thông tin nhân viên trong cùng một giao dịch; (iii) mô-đun xác thực chỉ phụ thuộc mô-đun dùng chung, bảo đảm cơ chế xác thực tách biệt hoàn toàn khỏi lô-gic nghiệp vụ --- đổi chiến lược xác thực không kéo theo thay đổi ở bất kỳ miền nào.
+
+
+Biểu đồ phụ thuộc mô-đun phía giao diện (Hình 4.6):
+
+
+\begin{figure}[ht]
+\centering
+\fbox{\parbox{0.85\textwidth}{\centering\vspace{2em}
+[\textit{Sơ đồ — chèn hình vẽ tương ứng tại đây}]\vspace{2em}}}
+\caption{Biểu đồ phụ thuộc mô-đun phía giao diện}
+\end{figure}
+
+
+
+Nguyên tắc kiến trúc giao diện được thực thi qua cấu trúc mô-đun: (i) mọi lời gọi API phải đi qua lớp gọi dịch vụ --- không thành phần nào gọi thẳng tới lớp truyền thông; (ii) toàn bộ định nghĩa kiểu dữ liệu tập trung một nơi làm nguồn sự thật duy nhất, tránh khai báo rải rác trong từng thành phần.
+
+
+\section{Thiết kế chi tiết}
+
+
+\subsection{Thiết kế giao diện}
+
+
+Giao diện FaceZ HRMS được thiết kế theo nguyên tắc role-aware layout: mỗi vai trò thấy một bộ menu và trang khác nhau, nhưng chia sẻ cùng cấu trúc layout tổng thể gồm Sidebar (trái), Header (trên), và vùng nội dung chính.
+
+
+Cấu trúc layout chung:
+
+
+\begin{figure}[ht]
+\centering
+\begin{verbatim}
+┌─────────────────────────────────────────────────────────────┐
+│  THANH ĐẦU TRANG                                  [người ▼] │
+├──────────────┬──────────────────────────────────────────────┤
+│              │                                              │
+│ THANH ĐIỀU   │           VÙNG NỘI DUNG CHÍNH               │
+│ HƯỚNG        │                                              │
+│  ▪ Tổng quan │  ┌──────────────────────────────────────┐   │
+│  ▪ Mục 1     │  │  Tiêu đề trang + nút thao tác        │   │
+│  ▪ Mục 2     │  ├──────────────────────────────────────┤   │
+│  ▪ Mục 3     │  │  Thanh tìm kiếm / lọc                │   │
+│              │  ├──────────────────────────────────────┤   │
+│ [nhãn vai trò]│  │  Bảng dữ liệu có phân trang          │   │
+│              │  └──────────────────────────────────────┘   │
+└──────────────┴──────────────────────────────────────────────┘
+\end{verbatim}
+\caption{Thiết kế trang đăng nhập}
+\end{figure}
+
+
+
+\begin{figure}[ht]
+\centering
+\begin{verbatim}
+┌─────────────────────────────────────────────────────────────┐
+│                                                             │
+│              ┌─────────────────────────────┐               │
+│              │         FaceZ HRMS          │               │
+│              │  ─────────────────────────  │               │
+│              │  Tên đăng nhập              │               │
+│              │  [________________________] │               │
+│              │                             │               │
+│              │  Mật khẩu                   │               │
+│              │  [________________________] │               │
+│              │                             │               │
+│              │  [    Đăng nhập    ]        │               │
+│              │                             │               │
+│              │  [!] Thông báo lỗi           │               │
+│              └─────────────────────────────┘               │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+\end{verbatim}
+\caption{Thiết kế trang đăng nhập}
+\end{figure}
+
+
+Trang đăng nhập hiển thị thông báo lỗi rõ ràng do backend trả về, ví dụ: "Tài khoản đã bị khóa tạm thời do đăng nhập sai quá 10 lần. Vui lòng thử lại sau 15 phút." Điều này cho phép người dùng phân biệt lỗi mật khẩu sai với lỗi tài khoản bị khóa.
+
+
+
+\begin{figure}[ht]
+\centering
+\begin{verbatim}
+┌──────────────┬──────────────────────────────────────────────┐
+│  FaceZ HRMS  │  Dashboard                                   │
+│──────────────│──────────────────────────────────────────────│
+│ ▪ Dashboard  │  ┌──────────────┐ ┌──────────────┐          │
+│ ▪ Chấm công  │  │ Ngày làm     │ │ Nghỉ phép    │          │
+│ ▪ Nghỉ phép  │  │ việc tháng   │ │ còn lại      │          │
+│ ▪ Tăng ca    │  │  22/23 ngày  │ │   8 ngày     │          │
+│ ▪ Phiếu lương│  └──────────────┘ └──────────────┘          │
+│ ▪ Hồ sơ      │                                              │
+│              │  Chấm công gần đây                           │
+│              │  ┌────────────────────────────────────────┐  │
+│              │  │ Ngày    │ Vào    │ Ra     │ Giờ làm    │  │
+│              │  │ 03/06   │ 08:05  │ 17:32  │ 8.5h       │  │
+│              │  │ 02/06   │ 08:10  │ 17:15  │ 7.9h       │  │
+│              │  └────────────────────────────────────────┘  │
+│  [Bách - EMP]│                                              │
+└──────────────┴──────────────────────────────────────────────┘
+\end{verbatim}
+\caption{Thiết kế bảng điều khiển của nhân viên}
+\end{figure}
+
+
+\noindent\textbf{Hình 4.9: Thiết kế bảng điều khiển của bộ phận nhân sự}\par
+
+
+HR Admin dashboard tổng hợp dữ liệu toàn công ty, bao gồm biểu đồ xu hướng chi phí lao động, tỷ lệ nghỉ phép theo phòng ban, trạng thái hợp đồng sắp hết hạn, và hàng đợi phê duyệt.
+
+
+\begin{figure}[ht]
+\centering
+\begin{verbatim}
+┌──────────────┬──────────────────────────────────────────────┐
+│  FaceZ HRMS  │  Dashboard HR Admin                          │
+│──────────────│──────────────────────────────────────────────│
+│ ▪ Dashboard  │  ┌─────────────┐ ┌─────────────┐            │
+│ ▪ Nhân viên  │  │ Tổng NV     │ │ Hợp đồng    │            │
+│ ▪ Hợp đồng  │  │    245 người │ │ hết hạn <30 │            │
+│ ▪ Chấm công  │  │             │ │  ngày: 12   │            │
+│ ▪ Chốt kỳ    │  └─────────────┘ └─────────────┘            │
+│ ▪ Bảng công  │                                              │
+│ ▪ Ngày lễ    │  Chi phí lao động 6 tháng (BarChart)         │
+│              │  ┌────────────────────────────────────────┐  │
+│ ▪ Chốt kỳ    │  └─────────────┘ └─────────────┘            │
+│ ▪ Bảng công  │                                              │
+│ ▪ Ngày lễ    │  Chi phí lao động 6 tháng (BarChart)         │
+│              │  ┌────────────────────────────────────────┐  │
+│              │  │ ██  ██  ██  ██  ██  ██                 │  │
+│              │  │ T1  T2  T3  T4  T5  T6                 │  │
+│              │  └────────────────────────────────────────┘  │
+│  [HR - HRAD] │                                              │
+└──────────────┴──────────────────────────────────────────────┘
+\end{verbatim}
+\caption{Thiết kế trang Quản lý nhân viên (bộ phận nhân sự)}
+\end{figure}
+
+
+
+\begin{figure}[ht]
+\centering
+\begin{verbatim}
+┌──────────────────────────────────────────────────────────────┐
+│  Quản lý nhân viên                          [+ Thêm NV]     │
+│──────────────────────────────────────────────────────────────│
+│  Tìm kiếm: [_________________]  Phòng ban: [Tất cả ▼]       │
+│──────────────────────────────────────────────────────────────│
+│  Mã NV   │ Họ tên          │ Phòng ban  │ Trạng thái│ Hành động│
+│──────────┼─────────────────┼────────────┼───────────┼─────────│
+│ EMP-001  │ Nguyễn Văn A    │ Engineering│ Đang làm  │ [s] [d]  │
+│ EMP-002  │ Trần Thị B      │ HR         │ Đang làm  │ [s] [d]  │
+│ EMP-003  │ Lê Minh C       │ Finance    │ Nghỉ phép │ [s] [d]  │
+│──────────────────────────────────────────────────────────────│
+│                  [< Trước]  Trang 1/10  [Tiếp >]            │
+└──────────────────────────────────────────────────────────────┘
+\end{verbatim}
+\caption{Thiết kế trang Quản lý nhân viên (bộ phận nhân sự)}
+\end{figure}
+
+
+
+\begin{figure}[ht]
+\centering
+\begin{verbatim}
+┌──────────────────────────────────────────────────────────────┐
+│  Nghỉ phép của tôi                          [+ Tạo đơn]     │
+│──────────────────────────────────────────────────────────────│
+│  Phép năm: 8/12 ngày còn lại  │  Phép ốm: 3/5 ngày còn lại │
+│──────────────────────────────────────────────────────────────│
+│  Loại phép  │ Từ ngày  │ Đến ngày │ Số ngày │ Trạng thái   │
+│─────────────┼──────────┼──────────┼─────────┼──────────────│
+│ Phép năm    │ 10/06    │ 12/06    │ 3       │ [o] Chờ duyệt │
+│ Phép ốm     │ 01/05    │ 02/05    │ 2       │ [v] Đã duyệt  │
+│─────────────────────────────────────────────────────────────│
+│                  [< Trước]  Trang 1/3  [Tiếp >]             │
+└──────────────────────────────────────────────────────────────┘
+\end{verbatim}
+\caption{Thiết kế trang Quản lý nghỉ phép (nhân viên)}
+\end{figure}
+
+
+
+\begin{figure}[ht]
+\centering
+\begin{verbatim}
+┌─────────────────────────────────────────────────────────────┐
+│  Tạo đơn nghỉ phép                                    [×]  │
+│─────────────────────────────────────────────────────────────│
+│                                                             │
+│  Loại nghỉ phép *                                           │
+│  [Phép năm (ANNUAL)                    ▼]                   │
+│                                                             │
+│  Từ ngày *           Đến ngày *                             │
+│  [10/06/2026  [ngay]]    [12/06/2026  [ngay]]                       │
+│                                                             │
+│  Lý do *                                                    │
+│  [Du lịch gia đình                                      ]   │
+│                                                             │
+│  Số ngày: 3 ngày (Phép còn lại: 8 ngày)                    │
+│                                                             │
+│  [     Hủy     ]              [  Gửi yêu cầu  ]            │
+└─────────────────────────────────────────────────────────────┘
+\end{verbatim}
+\caption{Thiết kế cửa sổ tạo đơn nghỉ phép}
+\end{figure}
+
+
+
+\begin{figure}[ht]
+\centering
+\begin{verbatim}
+┌──────────────────────────────────────────────────────────────┐
+│  Phê duyệt yêu cầu                                          │
+│──────────────────────────────────────────────────────────────│
+│  [Thẻ: Nghỉ phép]  [Thẻ: Tăng ca]                           │
+│──────────────────────────────────────────────────────────────│
+│  Nhân viên    │ Loại    │ Từ–Đến          │ Trạng thái │ TĐ │
+│───────────────┼─────────┼─────────────────┼────────────┼────│
+│ Nguyễn Văn A │ Phép năm│ 10/06 – 12/06   │ Chờ duyệt  │[v][x]│
+│ Trần Thị B   │ Phép ốm │ 15/06 – 15/06   │ Chờ duyệt  │[v][x]│
+└──────────────────────────────────────────────────────────────┘
+\end{verbatim}
+\caption{Thiết kế trang Phê duyệt yêu cầu (trưởng nhóm/quản lý)}
+\end{figure}
+
+
+
+\begin{figure}[ht]
+\centering
+\begin{verbatim}
+┌──────────────────────────────────────────────────────────────┐
+│  Kỳ lương 06/2026  (trạng thái: Nháp)        [+ Tạo kỳ lương]│
+│──────────────────────────────────────────────────────────────│
+│  Trạng thái: Nháp     [Tính lại cả kỳ] [Trình duyệt]        │
+│──────────────────────────────────────────────────────────────│
+│  Nhân viên     │ Lương gộp    │ Thực nhận    │ Dòng         │
+│────────────────┼──────────────┼──────────────┼──────────────│
+│ Nguyễn Văn A  │ 25.000.000 ₫ │ 21.500.000 ₫ │ [Tính lại][[x]]│
+│ Trần Thị B    │ 18.000.000 ₫ │ 15.800.000 ₫ │ [L] đã khóa   │
+│──────────────────────────────────────────────────────────────│
+│  Trình duyệt bị chặn nếu còn nhân viên thiếu điểm HS1        │
+└──────────────────────────────────────────────────────────────┘
+\end{verbatim}
+\caption{Thiết kế trang Kỳ lương (phụ trách tài chính)}
+\end{figure}
+
+
+Toàn bộ một kỳ lương được gói trong một thực thể kỳ lương bền vững, đi qua chuỗi trạng thái Nháp $\rightarrow$ Chờ duyệt $\rightarrow$ Đã duyệt $\rightarrow$ Đã trả. Người phụ trách tài chính có thể \textit{tính lại một dòng} (khóa dòng đó thành ngoại lệ), \textit{tính lại cả kỳ} (giữ nguyên các dòng đã khóa), hoặc \textit{loại một dòng} khỏi kỳ. Nút trình duyệt bị chặn nếu còn nhân viên chưa được chấm điểm hệ số thi đua. Giám đốc phê duyệt hoặc trả lại kỳ về trạng thái nháp; sau khi chi trả, người phụ trách tài chính đánh dấu đã trả.
+
+
+
+\begin{figure}[ht]
+\centering
+\begin{verbatim}
+┌──────────────────────────────────────────────────────────────┐
+│  Quản trị tài khoản                          [+ Tạo tài khoản]│
+│──────────────────────────────────────────────────────────────│
+│  Tài khoản  │ Vai trò       │ NV gắn kết │ Trạng thái │ T.tác │
+│─────────────┼───────────────┼────────────┼────────────┼───────│
+│ admin       │ Quản trị HT   │ (không)    │ Hoạt động  │ [K] [L] │
+│ b.tran      │ Nhân sự       │ EMP-002    │ Hoạt động  │ [K] [L] │
+│ c.le        │ Tài chính     │ EMP-003    │ Bị khóa    │ [K] [U] │
+└──────────────────────────────────────────────────────────────┘
+\end{verbatim}
+\caption{Thiết kế trang Quản trị tài khoản (quản trị hệ thống)}
+\end{figure}
+
+
+Quản trị hệ thống là một tài khoản đặc biệt, \textbf{không phải nhân viên thật}: nó không có hồ sơ nhân sự, không có mục "Cá nhân" trên thanh điều hướng, và chỉ thực hiện các tác vụ kỹ thuật --- quản trị tài khoản (tạo, gán vai trò, khóa, đặt lại mật khẩu), quản lý thiết bị chấm công, và xem nhật ký chấm công (chỉ đọc). Việc chuyển quản lý thiết bị và nhật ký chấm công từ bộ phận nhân sự sang quản trị hệ thống tách bạch quản trị kỹ thuật khỏi nghiệp vụ nhân sự, đồng thời giữ cho quản trị hệ thống nằm ngoài mọi luồng phê duyệt nghiệp vụ và tài chính.
+
+
+\subsection{Thiết kế lớp}
+
+
+Thiết kế domain model backend tập trung vào các entity chính và quan hệ giữa chúng. Dưới đây là sơ đồ lớp rút gọn cho các domain cốt lõi.
+
+
+
+\begin{figure}[ht]
+\centering
+\fbox{\parbox{0.85\textwidth}{\centering\vspace{2em}
+[\textit{Sơ đồ — chèn hình vẽ tương ứng tại đây}]\vspace{2em}}}
+\caption{Sơ đồ lớp miền Nhân sự và Hợp đồng}
+\end{figure}
+
+
+
+\begin{figure}[ht]
+\centering
+\fbox{\parbox{0.85\textwidth}{\centering\vspace{2em}
+[\textit{Sơ đồ — chèn hình vẽ tương ứng tại đây}]\vspace{2em}}}
+\caption{Sơ đồ lớp miền Chấm công (bản ghi chấm công $\rightarrow$ ngày công $\rightarrow$ bảng công)}
+\end{figure}
+
+
+
+\begin{figure}[ht]
+\centering
+\fbox{\parbox{0.85\textwidth}{\centering\vspace{2em}
+[\textit{Sơ đồ — chèn hình vẽ tương ứng tại đây}]\vspace{2em}}}
+\caption{Sơ đồ lớp miền Nghỉ phép, Tăng ca và Số dư phép}
+\end{figure}
+
+
+
+\begin{figure}[ht]
+\centering
+\fbox{\parbox{0.85\textwidth}{\centering\vspace{2em}
+[\textit{Sơ đồ — chèn hình vẽ tương ứng tại đây}]\vspace{2em}}}
+\caption{Sơ đồ lớp miền Tính lương}
+\end{figure}
+
+
+Thực thể cấu hình lương đại diện cho bốn nhóm bảng cấu hình có kiểu, hiệu lực theo ngày và chỉ thêm mới (bậc lương, phụ cấp, thuế thu nhập cá nhân, bảo hiểm), đi qua vòng đời nháp $\rightarrow$ đã ban hành $\rightarrow$ đã lưu trữ. Kỳ lương là thực thể bền vững; mỗi dòng phiếu lương trỏ về một kỳ lương và mang một cờ khóa đánh dấu dòng đã được tính lại thủ công --- một ngoại lệ không bị thao tác "tính lại cả kỳ" ghi đè.
+
+
+Về phía giao diện, cây thành phần được tổ chức phân cấp từ trên xuống. Ở gốc là hai ngữ cảnh dùng chung --- trạng thái phiên đăng nhập và trạng thái thông báo --- bao bọc toàn bộ ứng dụng. Bên dưới là bố cục gốc, rồi tới lớp bảo vệ kiểm tra vai trò và chuyển hướng khi cần. Mỗi trang gồm thanh điều hướng (menu thay đổi theo vai trò), thanh đầu trang (thông tin người dùng, đăng xuất) và vùng nội dung tuân theo mô hình tách ba tệp đã nêu ở Mục 3.5. Ngoài ra, một bộ thành phần dùng chung --- cửa sổ nổi, hộp xác nhận, thanh phân trang, trạng thái rỗng, biểu tượng chờ, hộp nhập lý do từ chối --- được tái sử dụng xuyên suốt.
+
+
+Lớp gọi dịch vụ được tách thành nhiều mô-đun theo từng miền nghiệp vụ: xác thực, nhân sự, chấm công, đơn bổ sung chấm công, nghỉ phép, tăng ca, hợp đồng, phiếu lương, kỳ lương, chấm hệ số thi đua, phòng ban, thông báo, quản trị tài khoản và cấu hình lương. Mỗi mô-đun xuất các hàm bất đồng bộ gọi tới lớp truyền thông tập trung và trả về phản hồi đã được bao bọc theo khuôn dạng thống nhất, nhờ vậy mọi xử lý lỗi đều tuân theo cùng một khuôn mẫu chuẩn.
+
+
+Để minh họa luồng truyền thông điệp giữa các đối tượng, dưới đây là biểu đồ trình tự cho hai ca sử dụng quan trọng nhất:
+
+
+Biểu đồ trình tự --- Tính lương một nhân viên (Hình 4.20):
+
+
+\begin{figure}[ht]
+\centering
+\fbox{\parbox{0.85\textwidth}{\centering\vspace{2em}
+[\textit{Sơ đồ — chèn hình vẽ tương ứng tại đây}]\vspace{2em}}}
+\caption{Biểu đồ trình tự tính lương một nhân viên}
+\end{figure}
+
+
+
+Biểu đồ trình tự --- Phê duyệt nghỉ phép đa cấp (Hình 4.21):
+
+
+\begin{figure}[ht]
+\centering
+\fbox{\parbox{0.85\textwidth}{\centering\vspace{2em}
+[\textit{Sơ đồ — chèn hình vẽ tương ứng tại đây}]\vspace{2em}}}
+\caption{Biểu đồ trình tự phê duyệt nghỉ phép đa cấp}
+\end{figure}
+
+
+
+\subsection{Thiết kế cơ sở dữ liệu}
+
+
+
+\begin{figure}[ht]
+\centering
+\fbox{\parbox{0.85\textwidth}{\centering\vspace{2em}
+[\textit{Sơ đồ — chèn hình vẽ tương ứng tại đây}]\vspace{2em}}}
+\caption{Sơ đồ thực thể quan hệ}
+\end{figure}
+
+
+
+\begin{table}[ht]
+\centering
+\caption{Các quyết định thiết kế cơ sở dữ liệu quan trọng}
+\small
+\begin{tabularx}{\textwidth}{|X|X|X|}
+\hline
+\textbf{Quyết định} & \textbf{Lý do} & \textbf{Cách hiện thực} \\ \hline
+Mọi khóa chính là chuỗi định danh duy nhất toàn cục & Tránh lộ thông tin nhạy cảm qua đường dẫn (không đoán được như số tuần tự), dễ hợp nhất dữ liệu từ nhiều nguồn & Sinh giá trị định danh tại tầng dịch vụ \\ \hline
+Hợp đồng theo mô hình lịch sử & Cần lưu trọn lịch sử thay đổi lương và điều khoản để tính lương đúng theo từng tháng & Lưu ngày bắt đầu/kết thúc hiệu lực và cờ "đang hiệu lực"; chỉ mục duy nhất có điều kiện chỉ áp cho bản đang hiệu lực \\ \hline
+Cấu hình lương: bảng có kiểu, hiệu lực theo ngày, chỉ thêm mới & Bản đã ban hành phải bất biến để truy vết; mỗi kỳ lương chọn đúng phiên bản theo ngày hiệu lực; giữ kiểm soát kiểu dữ liệu & Bốn nhóm cấu hình kèm số phiên bản, trạng thái và ngày hiệu lực; quy trình người soạn --- người duyệt \\ \hline
+Xóa mềm & Dữ liệu nhân sự, tài chính không được xóa vật lý để bảo đảm vết kiểm toán & Cờ đánh dấu đã xóa kèm thời điểm xóa trên mọi thực thể; truy vấn tự động lọc bỏ bản đã xóa \\ \hline
+Số dư phép trừ hai giai đoạn & Phòng đặt trùng khi nhiều đơn chờ duyệt đồng thời & Ngày đang chờ tăng khi gửi đơn, giảm khi duyệt/từ chối; ngày đã dùng tăng khi duyệt \\ \hline
+Ngày công duy nhất theo từng nhân viên mỗi ngày & Mỗi nhân viên chỉ có một bản ghi công mỗi ngày --- nguồn sự thật duy nhất; cuối kỳ gộp thành bảng công & Ràng buộc duy nhất theo cặp nhân viên--ngày; cờ khóa khi đã chốt kỳ \\ \hline
+Kỳ lương chứa các dòng phiếu lương & Gói cả kỳ lương vào một thực thể có vòng đời (nháp $\rightarrow$ chờ duyệt $\rightarrow$ đã duyệt $\rightarrow$ đã trả); hỗ trợ tính lại một dòng/cả kỳ và loại dòng & Mỗi dòng phiếu lương tham chiếu tới kỳ lương; cờ khóa cho dòng tính lại thủ công \\ \hline
+Tổng hợp tăng ca theo tháng bằng khung nhìn & Kiểm tra hạn mức tăng ca cần tổng hợp theo tháng/năm mỗi lần gửi đơn & Định nghĩa khung nhìn cơ sở dữ liệu để tái dùng lô-gic tổng hợp \\ \hline
+\end{tabularx}
+\end{table}
+
+
+
+\begin{table}[ht]
+\centering
+\caption{Danh sách phiên bản lược đồ cơ sở dữ liệu}
+\small
+\begin{tabularx}{\textwidth}{|X|X|}
+\hline
+\textbf{Migration} & \textbf{Nội dung} \\ \hline
+V1 & Baseline schema: employee\_info, user\_account, department, contract, attendance \\ \hline
+V2 & Thêm audit columns (created\_by, updated\_by, created\_at, updated\_at) cho tất cả entity \\ \hline
+V3 & Thêm checkin\_log, checkin\_device, thêm cột processed cho checkin\_log \\ \hline
+V4 & Thêm leave\_request, leave\_balance, public\_holiday \\ \hline
+V5 & Thêm ot\_request, ot\_monthly\_summary view \\ \hline
+V6 & Thêm payroll table với đầy đủ trường tính lương \\ \hline
+V7 & Thêm system\_config với JSONB configData \\ \hline
+V8 & Thêm notification table \\ \hline
+V9 & Thêm tax\_dependent, cột national\_id, tax\_code, bhxh\_code, bank\_account vào employee\_info \\ \hline
+V10 & Thêm cột employer-side insurance (bhxh\_employer, bhyt\_employer, bhtn\_employer, total\_employment\_cost) vào payroll \\ \hline
+V11 & Thêm attendance\_period\_close table \\ \hline
+V12 & Migrate contract dates từ VARCHAR sang LocalDate (effectiveFrom, effectiveTo) \\ \hline
+V13 & Thêm FINANCE\_ADMIN, DIRECTOR vào role enum; thêm rejection\_reason vào payroll \\ \hline
+V14 & Thêm partial unique index trên contract WHERE current = true \\ \hline
+V15 & Thêm profile\_picture\_url vào employee\_info \\ \hline
+V16 & Thêm ot\_type, weekday\_hours, weekend\_hours, holiday\_hours, night\_hours vào ot\_request \\ \hline
+V17 & Thêm approved\_by vào payroll; thêm read\_at vào notification \\ \hline
+V18 & Thêm WORK\_SCHEDULE config type vào system\_config \\ \hline
+V19 & Thêm carry\_over\_cap vào leave\_balance; thêm delete\_flag, deleted\_at cho remaining entities \\ \hline
+V20 & Tách attendance thành workday (per-employee-per-day) và timesheet (tổng hợp tháng) \\ \hline
+V21 & Thêm attendance\_adjustment (đơn bổ sung chấm công, Leader/Manager cùng phòng duyệt) \\ \hline
+V22 & Thêm ot\_plan, ot\_plan\_employee; thêm ot\_plan\_id và coefficient vào ot\_request \\ \hline
+V23 & Thêm document\_key vào contract (tham chiếu tài liệu hợp đồng PDF lưu trên MinIO) \\ \hline
+V24 & Thêm created\_at cho checkin\_device; chuyển quản lý device \& checkin\_log sang SYSTEM\_ADMIN \\ \hline
+V25 & Thêm cột locked vào workday; suy Nt từ timesheet (bỏ trường nhập tay) \\ \hline
+V26 & Đổi kpi1\_score/kpi2\_score $\rightarrow$ hs1\_score/hs2\_score; thêm position\_allowance, ot\_pay vào payroll \\ \hline
+V27 & Thêm payroll\_config --- bảng cấu hình lương có kiểu, hiệu lực-theo-ngày, append-only (thay system\_config JSONB cho lương) \\ \hline
+V28 & Thêm kpi1\_rating (điểm HS1 do cấp trên chấm theo tháng) \\ \hline
+V29 & Thêm payroll\_run; thêm payroll\_run\_id, locked vào payroll \\ \hline
+V30 & Thêm cột giờ OT theo loại (ot\_weekday/weekend/holiday/night\_hours) vào payroll cho phiếu lương \\ \hline
+\end{tabularx}
+\end{table}
+
+
+\section{Xây dựng ứng dụng}
+
+
+\subsection{Thư viện và công cụ sử dụng}
+
+
+
+\begin{table}[ht]
+\centering
+\caption{Thư viện backend (facez/pom.xml)}
+\small
+\begin{tabularx}{\textwidth}{|X|X|X|}
+\hline
+\textbf{Thư viện} & \textbf{Phiên bản} & \textbf{Mục đích} \\ \hline
+Spring Boot & 4.0.0-M3 & Application framework, auto-configuration \\ \hline
+Spring Security & 6.4.x (via Boot) & Filter chain, method-level security \\ \hline
+Spring Data JPA & 3.4.x (via Boot) & ORM, auditing, repository abstraction \\ \hline
+Spring Web MVC & 6.2.x (via Boot) & REST controllers, request mapping \\ \hline
+Spring Scheduling & Included in Boot & Cron-based scheduled tasks \\ \hline
+Spring Events & Included in Core & Decoupled event publish/subscribe \\ \hline
+Hibernate 6 & via Spring Data JPA & JPA provider, JPQL execution \\ \hline
+PostgreSQL JDBC & 42.7.x & Database driver \\ \hline
+Spring Data Redis & 3.4.x (via Boot) & Redis template, connection factory \\ \hline
+Lettuce & via Spring Data Redis & Redis client (reactive-capable) \\ \hline
+JJWT (io.jsonwebtoken) & 0.12.x & JWT create, parse, validate \\ \hline
+SpringDoc OpenAPI & 2.6.x & Swagger UI, OpenAPI spec generation \\ \hline
+Lombok & 1.18.x & Giảm mã lặp (tự sinh phương thức truy cập, hàm dựng đối tượng\ldots{}) \\ \hline
+MapStruct & 1.6.x & DTO ↔ Entity mapping \\ \hline
+Spring Boot Actuator & via Boot & Health check, metrics endpoints \\ \hline
+Logback & via Boot & Structured JSON logging \\ \hline
+\end{tabularx}
+\end{table}
+
+
+
+\begin{table}[ht]
+\centering
+\caption{Thư viện frontend (facez-front/package.json)}
+\small
+\begin{tabularx}{\textwidth}{|X|X|X|}
+\hline
+\textbf{Thư viện} & \textbf{Phiên bản} & \textbf{Mục đích} \\ \hline
+Next.js & 15.3.x & React framework, App Router, SSR/CSR \\ \hline
+React & 19.0.x & UI component library \\ \hline
+TypeScript & 5.x & Static typing \\ \hline
+Tailwind CSS & 3.4.x & Utility-first CSS framework \\ \hline
+Recharts & 2.x & Declarative React charting (dashboard) \\ \hline
+date-fns & 3.x & Date formatting and manipulation \\ \hline
+ESLint & 9.x & Code linting \\ \hline
+Turbopack & via Next.js 15 & Fast dev bundler \\ \hline
+\end{tabularx}
+\end{table}
+
+
+
+\begin{table}[ht]
+\centering
+\caption{Công cụ phát triển và triển khai}
+\small
+\begin{tabularx}{\textwidth}{|X|X|X|}
+\hline
+\textbf{Công cụ} & \textbf{Phiên bản} & \textbf{Mục đích} \\ \hline
+Java & 21 LTS & Backend runtime \\ \hline
+Maven Wrapper & 3.9.x & Build tool (./mvnw) \\ \hline
+Node.js & 20 LTS & Frontend runtime \\ \hline
+npm & 10.x & Package manager \\ \hline
+Docker Desktop & 4.x & Container runtime \\ \hline
+Docker Compose & 2.x & Multi-container orchestration \\ \hline
+PostgreSQL (Docker) & 15.4 & Primary database \\ \hline
+Redis (Docker) & 7.2-alpine & Cache và session store \\ \hline
+pgAdmin 4 (Docker) & Latest & Database GUI (dev) \\ \hline
+\end{tabularx}
+\end{table}
+
+
+\subsection{Kết quả đạt được}
+
+
+Sau quá trình xây dựng, FaceZ HRMS đạt được các chỉ số kỹ thuật sau:
+
+
+
+\begin{table}[ht]
+\centering
+\caption{Thống kê kỹ thuật dự án}
+\small
+\begin{tabularx}{\textwidth}{|X|X|}
+\hline
+\textbf{Chỉ số} & \textbf{Giá trị} \\ \hline
+Backend &  \\ \hline
+Số điểm cuối dịch vụ & > 150 \\ \hline
+Số phiên bản lược đồ & 31 phiên bản, hợp nhất thành một tập lệnh khởi tạo \\ \hline
+Số mô-đun nghiệp vụ & 10 (nhân sự, phòng ban, chấm công, nghỉ phép, tăng ca, hợp đồng, tính lương, cấu hình lương, thông báo, xác thực) \\ \hline
+Số tác vụ định kỳ & 2 (tổng hợp chấm công lúc nửa đêm, rà soát hợp đồng sắp hết hạn) \\ \hline
+Phạm vi kiểm thử & Kiểm thử đơn vị cho bộ máy tính lương; kiểm thử tích hợp cho luồng xác thực \\ \hline
+Giao diện &  \\ \hline
+Số trang & > 25 trang \\ \hline
+Số vai trò được hỗ trợ & 7 (nhân viên, trưởng nhóm, quản lý, nhân sự, phụ trách tài chính, giám đốc, quản trị hệ thống) \\ \hline
+Số loại bảng điều khiển & 4 (nhân viên, quản lý, nhân sự, quản trị hệ thống) \\ \hline
+Số loại báo cáo tài chính & 3 (chi phí lao động, nộp bảo hiểm, tổng hợp thuế thu nhập) \\ \hline
+Cơ sở dữ liệu &  \\ \hline
+Số bảng & 36 bảng (gồm bảng nghiệp vụ chính và các bảng cấu hình chi tiết) \\ \hline
+Số khung nhìn cơ sở dữ liệu & 1 (tổng hợp tăng ca theo tháng) \\ \hline
+Số chỉ mục duy nhất có điều kiện & 1 (cho hợp đồng đang hiệu lực) \\ \hline
+Số cột kiểu JSON & 1 (cho cấu hình hệ thống) \\ \hline
+\end{tabularx}
+\end{table}
+
+
+
+\begin{table}[ht]
+\centering
+\caption{Mức độ hoàn thành theo yêu cầu chức năng}
+\small
+\begin{tabularx}{\textwidth}{|X|X|X|X|}
+\hline
+\textbf{Nhóm chức năng} & \textbf{Yêu cầu} & \textbf{Hoàn thành} & \textbf{Ghi chú} \\ \hline
+Xác thực \& Phân quyền & 8 & 8 & Xác thực bằng token, làm mới phiên, giới hạn tần suất, khóa thiết bị \\ \hline
+Quản lý nhân viên & 10 & 9 & Thiếu: xác nhận hợp đồng điện tử \\ \hline
+Quản lý phòng ban & 4 & 4 & Đầy đủ thao tác tạo/đọc/sửa/xóa \\ \hline
+Chấm công tự động & 7 & 7 & Quy trình tự động, chốt kỳ, ngày lễ \\ \hline
+Nghỉ phép \& Số dư & 8 & 7 & Thiếu: kiểm tra trùng ngày \\ \hline
+Tăng ca \& Giới hạn & 6 & 6 & Hạn mức tăng ca, phụ trội ca đêm, ngày lễ \\ \hline
+Hợp đồng \& Lịch sử & 6 & 6 & Mô hình lịch sử, cảnh báo hết hạn \\ \hline
+Tính lương & 9 & 9 & Công thức đầy đủ, xử lý hàng loạt \\ \hline
+Phê duyệt lương & 4 & 4 & Luồng phê duyệt của giám đốc, lý do từ chối \\ \hline
+Báo cáo tài chính & 3 & 3 & Chi phí lao động, bảo hiểm, thuế thu nhập + xuất tệp \\ \hline
+Thông báo & 4 & 4 & Theo hướng sự kiện, đã đọc/chưa đọc, hộp thư \\ \hline
+Cấu hình hệ thống & 4 & 4 & Bậc lương, phụ cấp, thuế thu nhập, bảo hiểm \\ \hline
+Tổng cộng & 73 & 71 & 97\% hoàn thành \\ \hline
+\end{tabularx}
+\end{table}
+
+
+\subsection{Minh họa các chức năng chính}
+
+
+Chức năng 1: Quy trình chấm công tự động
+
+
+Khi thiết bị nhận diện khuôn mặt gửi một sự kiện chấm công kèm khóa API thiết bị, hệ thống xử lý hoàn toàn tự động, không cần can thiệp thủ công. Trước hết, bước xác thực thiết bị đối chiếu khóa API (so khớp dạng băm đã lưu) để xác nhận nguồn gửi hợp lệ. Tiếp theo, dịch vụ ghi nhận chấm công lưu bản ghi thô rồi phát ra một sự kiện nội bộ; dịch vụ tổng hợp công lắng nghe sự kiện này để tạo hoặc cập nhật bản ghi công trong ngày. Ví dụ, một lượt chấm vào lúc 08:05 (giờ chuẩn bắt đầu là 08:00) được ghi nhận đến muộn 5 phút và đánh dấu cờ vi phạm. Khi nhân viên chấm ra, hệ thống hoàn tất bản ghi: giờ làm bằng khoảng thời gian từ lúc vào đến lúc ra (trừ giờ nghỉ trưa nếu có cấu hình), giờ được trả lương lấy tối đa một ngày công chuẩn (tám giờ), và số ngày công quy đổi theo tỷ lệ tương ứng.
+
+
+Chức năng 2: Luồng phê duyệt nghỉ phép hai cấp
+
+
+Vòng đời một đơn nghỉ phép trải qua các bước sau (sơ đồ trình tự ở Hình 4.21). Bước một, nhân viên tạo đơn ở trạng thái nháp --- có thể sửa hoặc hủy, chưa khóa số dư. Bước hai, nhân viên gửi đơn đi duyệt: số ngày đang chờ duyệt được cộng ngay vào số dư để tránh đặt trùng, đồng thời một thông báo được gửi tới trưởng nhóm. Bước ba, trưởng nhóm phê duyệt cấp một, hệ thống thông báo tiếp cho quản lý. Bước bốn, quản lý phê duyệt cấp cuối: số ngày đang chờ được chuyển thành ngày đã dùng, và mỗi ngày nghỉ được ghi nhận thành một bản ghi công loại nghỉ phép. Nếu đơn bị từ chối ở bất kỳ cấp nào, số ngày đã tạm khóa được hoàn trả lại vào số dư.
+
+
+Chức năng 3: Tính lương và phê duyệt
+
+
+Bảng dưới đây minh họa quá trình tính lương tháng cho một nhân viên, áp dụng đúng công thức đã trình bày, với các dữ liệu đầu vào được đọc sau khi kỳ chấm công đã chốt:
+
+
+\begin{figure}[ht]
+\centering
+\begin{verbatim}
+Dữ liệu đầu vào:
+  Lương hiệu quả theo hợp đồng    = 35.000.000 đ
+  Phụ cấp chức vụ                  = 1.500.000 đ
+  Phụ cấp khác                     = 800.000 đ
+  Số ngày công chuẩn của tháng     = 22 ngày
+  Số ngày công thực tế             = 20 ngày
+  Hệ số thi đua cấp trên chấm      = 1,04 (loại A)
+  Hệ số thi đua từ chấm công       = 1,00 (dưới 5 ngày vi phạm)
+  Giờ tăng ca ngày thường          = 8 giờ
+  Giờ tăng ca cuối tuần            = 4 giờ
+
+Tính toán:
+  Hệ số thi đua trung bình = (1,04 + 1,00) / 2 = 1,02
+  Lương cơ bản kỳ = (35.000.000 × 1,02 + 1.500.000 + 800.000) × (20/22)
+                  = 38.000.000 × 0,909 = 34.545.455 đ
+
+  Tiền tăng ca = 8 × (35.000.000/22/8) × 1,5   (ngày thường, hệ số 1,5)
+               + 4 × (35.000.000/22/8) × 2,0   (cuối tuần, hệ số 2,0)
+               = 2.386.364 + 1.590.909 = 3.977.273 đ
+
+  Lương gộp = 34.545.455 + 3.977.273 = 38.522.728 đ
+
+  Nền tính bảo hiểm (giới hạn 46,8 triệu) = 35.000.000 đ
+  Bảo hiểm xã hội (8%)    = 2.800.000 đ
+  Bảo hiểm y tế (1,5%)    = 525.000 đ
+  Bảo hiểm thất nghiệp(1%)= 350.000 đ
+  Tổng bảo hiểm           = 3.675.000 đ
+
+  Thu nhập tính thuế = 38.522.728 − 3.675.000 − 15.500.000 (giảm trừ bản thân)
+                     − 6.200.000 (một người phụ thuộc) = 13.147.728 đ
+
+  Thuế thu nhập cá nhân (lũy tiến: ≤5tr ×5%; 5–10tr ×10%; phần còn lại ×15%)
+                     = 250.000 + 500.000 + 472.159 = 1.222.159 đ
+
+  Lương thực nhận = 38.522.728 − 3.675.000 − 1.222.159 = 33.625.569 đ
+\end{verbatim}
+\end{figure}
+
+
+Sau khi người phụ trách tài chính kiểm tra và gửi duyệt, giám đốc xem bảng tổng hợp toàn bộ nhân viên rồi phê duyệt hoặc trả lại kèm lý do. Khi được phê duyệt, kỳ lương chuyển sang trạng thái đã duyệt và người phụ trách tài chính đánh dấu đã trả sau khi hoàn tất chi trả.
+
+
+Chức năng 4: Báo cáo tài chính với xuất CSV
+
+
+Ba loại báo cáo đều hỗ trợ lọc theo phòng ban và xuất ra tệp dạng bảng tính. Mỗi dòng báo cáo gồm các cột: mã nhân viên, họ tên, phòng ban, lương gộp, tổng bảo hiểm nhân viên đóng, thuế thu nhập cá nhân, lương thực nhận và tổng chi phí sử dụng lao động. Khi xuất tệp, hệ thống chèn dấu nhận diện mã hóa Unicode ở đầu tệp để phần mềm bảng tính tự nhận diện đúng bảng mã, tránh lỗi hiển thị tiếng Việt.
+
+
+Chức năng 5: Cấu hình lương và áp dụng tức thì
+
+
+Người phụ trách tài chính có thể cập nhật biểu thuế thu nhập cá nhân mà không cần khởi động lại ứng dụng. Cấu hình lương vận hành theo mô hình người soạn --- người duyệt: người phụ trách tài chính tạo một phiên bản nháp kèm ngày bắt đầu hiệu lực, sau đó giám đốc phê duyệt để ban hành. Một phiên bản biểu thuế gồm danh sách các bậc (khoảng thu nhập và thuế suất tương ứng) cùng hai mức giảm trừ --- cho bản thân và cho mỗi người phụ thuộc --- như minh họa ở Bảng 4.9.
+
+
+
+\begin{table}[ht]
+\centering
+\caption{Ví dụ một phiên bản biểu thuế thu nhập cá nhân lũy tiến}
+\small
+\begin{tabularx}{\textwidth}{|X|X|X|}
+\hline
+\textbf{Bậc} & \textbf{Khoảng thu nhập tính thuế (triệu đồng/tháng)} & \textbf{Thuế suất} \\ \hline
+1 & đến 5 & 5\% \\ \hline
+2 & trên 5 đến 10 & 10\% \\ \hline
+3 & trên 10 đến 18 & 15\% \\ \hline
+4 & trên 18 đến 32 & 20\% \\ \hline
+5 & trên 32 đến 52 & 25\% \\ \hline
+6 & trên 52 đến 80 & 30\% \\ \hline
+7 & trên 80 & 35\% \\ \hline
+\end{tabularx}
+\end{table}
+
+
+Sau khi một phiên bản được ban hành, mỗi kỳ lương tự chọn đúng phiên bản cấu hình theo ngày hiệu lực; phiên bản cũ chuyển sang trạng thái lưu trữ nhưng vẫn được giữ lại để truy vết. Lần tính lương kế tiếp dùng ngay biểu thuế mới mà không cần khởi động lại hệ thống, đồng thời không một cá nhân nào tự mình thay đổi được tham số tính lương vì luôn cần một cấp phê duyệt độc lập.
+
+
+\section{Kiểm thử}
+
+
+\subsection{Kỹ thuật kiểm thử}
+
+
+FaceZ HRMS áp dụng chiến lược kiểm thử theo hai cấp độ phù hợp với quy mô đồ án:
+
+
+Kiểm thử đơn vị: tập trung vào bộ máy tính lương --- thành phần có lô-gic phức tạp nhất và đòi hỏi độ chính xác cao nhất. Vì bộ máy tính lương là thành phần tính toán thuần (không truy cập cơ sở dữ liệu, không gây hiệu ứng phụ), việc viết kiểm thử rất đơn giản: cung cấp dữ liệu vào cụ thể rồi đối chiếu kết quả với giá trị kỳ vọng.
+
+
+Kiểm thử tích hợp: kiểm tra luồng xác thực xuyên suốt với một cơ sở dữ liệu thật, bảo đảm chuỗi bộ lọc, việc phát hành token và làm mới token hoạt động đúng.
+
+
+Kiểm thử chức năng thủ công: kiểm tra từng ca sử dụng qua giao diện tài liệu API và giao diện người dùng, bao gồm cả các trường hợp biên và luồng lỗi.
+
+
+
+\begin{table}[ht]
+\centering
+\caption{Phạm vi và kỹ thuật kiểm thử}
+\small
+\begin{tabularx}{\textwidth}{|X|X|X|X|}
+\hline
+\textbf{Loại kiểm thử} & \textbf{Phạm vi} & \textbf{Công cụ} & \textbf{Tự động hóa} \\ \hline
+Unit test & Bộ máy tính lương & JUnit 5, AssertJ & \checkmarkc \\ \hline
+Unit test & Lô-gic trừ số dư phép & JUnit 5, Mockito & \checkmarkc \\ \hline
+Integration test & Luồng xác thực (đăng nhập $\rightarrow$ làm mới $\rightarrow$ đăng xuất) & Spring Boot Test, MockMvc & \checkmarkc \\ \hline
+Integration test & Dựng lược đồ từ tập lệnh khởi tạo hợp nhất & Spring Boot Test & \checkmarkc \\ \hline
+Functional test & Toàn bộ điểm cuối dịch vụ & Swagger UI + Postman & Thủ công \\ \hline
+Functional test & Giao diện theo từng vai trò & Trình duyệt & Thủ công \\ \hline
+Security test & Giới hạn tần suất (10 lần/15 phút) & Tập lệnh kiểm thử & Thủ công \\ \hline
+Security test & Token hết hạn và làm mới ngầm & Công cụ theo dõi mạng của trình duyệt & Thủ công \\ \hline
+\end{tabularx}
+\end{table}
+
+
+\subsection{Kiểm thử chức năng Xác thực và Phân quyền}
+
+
+
+\begin{table}[ht]
+\centering
+\caption{Các ca kiểm thử xác thực}
+\small
+\begin{tabularx}{\textwidth}{|X|X|X|X|X|}
+\hline
+\textbf{TC} & \textbf{Mô tả} & \textbf{Dữ liệu đầu vào} & \textbf{Kết quả mong đợi} & \textbf{Kết quả thực tế} \\ \hline
+TC-AUTH-01 & Đăng nhập thành công & Tên đăng nhập/mật khẩu hợp lệ & Thành công, cấp token truy cập và cookie làm mới & \checkmarkc Pass \\ \hline
+TC-AUTH-02 & Sai mật khẩu & Mật khẩu sai & Từ chối, báo "Sai tên đăng nhập hoặc mật khẩu" & \checkmarkc Pass \\ \hline
+TC-AUTH-03 & Kích hoạt giới hạn tần suất & 11 lần đăng nhập sai liên tiếp & Lần 11 bị chặn, báo "Tài khoản tạm khóa 15 phút" & \checkmarkc Pass \\ \hline
+TC-AUTH-04 & Làm mới token & Token truy cập hết hạn, gọi làm mới & Cấp token truy cập mới và cookie làm mới mới (xoay vòng) & \checkmarkc Pass \\ \hline
+TC-AUTH-05 & Truy cập sau đăng xuất & Token cũ sau khi đăng xuất & Từ chối, báo "Token đã bị thu hồi" & \checkmarkc Pass \\ \hline
+TC-AUTH-06 & Nhân viên truy cập chức năng nhân sự & Phiên nhân viên, gọi xem danh sách nhân viên & Bị từ chối quyền truy cập & \checkmarkc Pass \\ \hline
+TC-AUTH-07 & Khóa API thiết bị hợp lệ & Khóa thiết bị đúng & Ghi nhận chấm công thành công & \checkmarkc Pass \\ \hline
+TC-AUTH-08 & Khóa API thiết bị sai & Khóa thiết bị giả & Bị từ chối xác thực & \checkmarkc Pass \\ \hline
+TC-AUTH-09 & Vai trò nhân sự tính lương & Phiên nhân sự, gọi tính lương & Bị từ chối (thực thi phân tách nhiệm vụ) & \checkmarkc Pass \\ \hline
+TC-AUTH-10 & Vai trò tài chính tính lương & Phiên phụ trách tài chính & Tính lương thành công & \checkmarkc Pass \\ \hline
+\end{tabularx}
+\end{table}
+
+
+\subsection{Kiểm thử chức năng Tính lương}
+
+
+Kiểm thử đơn vị cho bộ máy tính lương kiểm tra từng thành phần của công thức lương:
+
+
+
+\begin{table}[ht]
+\centering
+\caption{Các ca kiểm thử tính lương}
+\small
+\begin{tabularx}{\textwidth}{|X|X|X|X|X|}
+\hline
+\textbf{TC} & \textbf{Mô tả} & \textbf{Kịch bản} & \textbf{Kết quả mong đợi} & \textbf{Kết quả thực tế} \\ \hline
+TC-PAY-01 & Lương cơ bản đủ ngày & 22/22 ngày, hệ số A (1,04) và B (1,00), không tăng ca & Lương gộp = lương hiệu quả $\times$ 1,02 + phụ cấp chức vụ + phụ cấp khác & \checkmarkc Pass \\ \hline
+TC-PAY-02 & Lương thiếu ngày & 20/22 ngày & Lương gộp nhân tỷ lệ (20/22) & \checkmarkc Pass \\ \hline
+TC-PAY-03 & Tăng ca ngày thường & 8 giờ ngày thường & Tiền tăng ca theo hệ số 1,5 & \checkmarkc Pass \\ \hline
+TC-PAY-04 & Tăng ca cuối tuần & 4 giờ cuối tuần & Tiền tăng ca theo hệ số 2,0 & \checkmarkc Pass \\ \hline
+TC-PAY-05 & Tăng ca ngày lễ & 4 giờ ngày lễ & Tiền tăng ca theo hệ số 3,0 & \checkmarkc Pass \\ \hline
+TC-PAY-06 & Phụ trội tăng ca đêm & Tăng ca 22:00--02:00 & Cộng thêm hệ số 0,3 cho phần thời gian ban đêm & \checkmarkc Pass \\ \hline
+TC-PAY-07 & Trần bảo hiểm & Lương 60.000.000 đ & Nền tính bảo hiểm chốt ở 46.800.000 đ & \checkmarkc Pass \\ \hline
+TC-PAY-08 & Thuế bảy bậc & Thu nhập tính thuế 100.000.000 đ & Thuế theo bảy bậc lũy tiến từng phần & \checkmarkc Pass \\ \hline
+TC-PAY-09 & Người phụ thuộc & 2 người phụ thuộc & Giảm trừ = 15.500.000 + 2 $\times$ 6.200.000 = 27.900.000 & \checkmarkc Pass \\ \hline
+TC-PAY-10 & Không có chấm công & 0 ngày công, không tăng ca & Thực nhận = 0; không lỗi & \checkmarkc Pass \\ \hline
+TC-PAY-11 & Cổng kiểm soát kỳ chưa chốt & Tháng chưa chốt kỳ mà gọi tính lương & Báo lỗi "Kỳ chấm công chưa được chốt" & \checkmarkc Pass \\ \hline
+TC-PAY-12 & Xử lý hàng loạt & 10 nhân viên cùng lúc & Tất cả tính đúng, không tranh chấp khóa & \checkmarkc Pass \\ \hline
+\end{tabularx}
+\end{table}
+
+
+\subsection{Kiểm thử chức năng Phê duyệt nghỉ phép}
+
+
+
+\begin{table}[ht]
+\centering
+\caption{Các ca kiểm thử nghỉ phép}
+\small
+\begin{tabularx}{\textwidth}{|X|X|X|X|X|}
+\hline
+\textbf{TC} & \textbf{Mô tả} & \textbf{Kịch bản} & \textbf{Kết quả mong đợi} & \textbf{Kết quả thực tế} \\ \hline
+TC-LV-01 & Tạo đơn thành công & Đủ số dư phép & Đơn ở trạng thái nháp, số ngày đang chờ tăng & \checkmarkc Pass \\ \hline
+TC-LV-02 & Không đủ số dư & Xin 10 ngày, còn 5 ngày & Từ chối kèm thông báo "Số ngày nghỉ vượt quá số dư" & \checkmarkc Pass \\ \hline
+TC-LV-03 & Luồng phê duyệt đủ cấp & Nháp $\rightarrow$ chờ duyệt $\rightarrow$ duyệt cấp một $\rightarrow$ đã duyệt & Trạng thái đúng từng bước, thông báo gửi đúng & \checkmarkc Pass \\ \hline
+TC-LV-04 & Từ chối ở bước trưởng nhóm & Từ chối sau khi nộp & Đơn bị từ chối, số ngày đang chờ được hoàn trả & \checkmarkc Pass \\ \hline
+TC-LV-05 & Quản lý duyệt sai bước & Quản lý duyệt đơn chưa qua trưởng nhóm & Từ chối kèm thông báo "Đơn chưa được trưởng nhóm phê duyệt" & \checkmarkc Pass \\ \hline
+TC-LV-06 & Xóa đơn đã duyệt & Xóa đơn ở trạng thái đã duyệt & Từ chối kèm thông báo "Không thể xóa đơn đã phê duyệt" & \checkmarkc Pass \\ \hline
+TC-LV-07 & Số dư sau duyệt & Duyệt 3 ngày phép năm & Số ngày đã dùng tăng 3, số ngày đang chờ giảm 3 & \checkmarkc Pass \\ \hline
+\end{tabularx}
+\end{table}
+
+
+\subsection{Tổng kết kiểm thử}
+
+
+
+\begin{table}[ht]
+\centering
+\caption{Kết quả tổng hợp kiểm thử}
+\small
+\begin{tabularx}{\textwidth}{|X|X|X|X|X|}
+\hline
+\textbf{Nhóm chức năng} & \textbf{Số test case} & \textbf{Pass} & \textbf{Fail} & \textbf{Tỷ lệ} \\ \hline
+Xác thực \& Phân quyền & 10 & 10 & 0 & 100\% \\ \hline
+Tính lương & 12 & 12 & 0 & 100\% \\ \hline
+Nghỉ phép \& Số dư & 7 & 7 & 0 & 100\% \\ \hline
+Chấm công \& Quy trình tự động & 6 & 6 & 0 & 100\% \\ \hline
+Hợp đồng \& Lịch sử & 5 & 5 & 0 & 100\% \\ \hline
+Tăng ca \& Giới hạn & 5 & 5 & 0 & 100\% \\ \hline
+Tổng cộng & 45 & 45 & 0 & 100\% \\ \hline
+\end{tabularx}
+\end{table}
+
+
+Tất cả 45 ca kiểm thử đều đạt. Đặc biệt, các ca liên quan đến phân tách nhiệm vụ (TC-AUTH-09, TC-AUTH-10) xác nhận rằng vai trò nhân sự không thể tính lương và giám đốc là người duy nhất có quyền phê duyệt --- đây là yêu cầu kiểm soát nội bộ quan trọng nhất của hệ thống.
+
+
+\section{Triển khai}
+
+
+\subsection{Môi trường và hạ tầng triển khai}
+
+
+
+\begin{table}[ht]
+\centering
+\caption{Cấu hình môi trường triển khai}
+\small
+\begin{tabularx}{\textwidth}{|X|X|X|}
+\hline
+\textbf{Thành phần} & \textbf{Môi trường phát triển} & \textbf{Môi trường production (đề xuất)} \\ \hline
+Backend & JVM process, port 8084 & Docker container hoặc systemd service \\ \hline
+Frontend & Next.js dev server, port 3000 & Next.js production build + nginx reverse proxy \\ \hline
+PostgreSQL & Docker container, port 5432 & Managed PostgreSQL (RDS/Cloud SQL) hoặc dedicated VM \\ \hline
+Redis & Docker container, port 6379 & Managed Redis (ElastiCache) hoặc dedicated VM \\ \hline
+OS & Windows 11 / Linux & Ubuntu 22.04 LTS \\ \hline
+RAM tối thiểu & 8 GB (dev) & 4 GB (prod single instance) \\ \hline
+Disk & --- & 20 GB SSD (+ tăng trưởng dữ liệu) \\ \hline
+\end{tabularx}
+\end{table}
+
+
+Hệ thống được cấu hình qua các biến môi trường, gom theo năm nhóm: thông tin kết nối cơ sở dữ liệu (địa chỉ, tài khoản, mật khẩu); thông tin kết nối bộ nhớ đệm; tham số xác thực (khóa bí mật ký token cùng thời hạn của token truy cập là năm phút và token làm mới là mười bốn ngày); danh sách nguồn được phép gọi liên miền; và địa chỉ máy chủ ứng dụng mà giao diện trỏ tới. Đáng chú ý, khóa bí mật ký token không có giá trị mặc định an toàn trong môi trường vận hành --- ứng dụng sẽ từ chối khởi động nếu thiếu cấu hình này, qua đó ngăn ngừa việc vô tình triển khai với khóa yếu.
+
+
+\subsection{Mô hình container hóa và cấu hình dịch vụ}
+
+
+Dịch vụ infrastructure (PostgreSQL, Redis, pgAdmin) được container hóa qua Docker Compose. Backend và frontend chạy trực tiếp trên host (không container hóa) trong môi trường phát triển để dễ debug và hot reload.
+
+
+Quy trình khởi động hệ thống gồm ba bước. Trước hết, khởi động ngăn xếp hạ tầng bằng Docker Compose và xác nhận cả ba dịch vụ (cơ sở dữ liệu, bộ nhớ đệm, công cụ quản trị cơ sở dữ liệu) đã ở trạng thái đang chạy. Tiếp theo, dựng lược đồ cơ sở dữ liệu từ tập lệnh khởi tạo hợp nhất, nạp dữ liệu mặc định, rồi khởi động backend; có thể kiểm tra tình trạng qua điểm cuối kiểm tra sức khỏe. Cuối cùng, khởi động giao diện và truy cập trang đăng nhập.
+
+
+Một bộ khởi tạo dữ liệu chạy đúng một lần khi cơ sở dữ liệu còn rỗng: nó tạo tài khoản quản trị hệ thống mặc định (tài khoản đặc biệt, không gắn hồ sơ nhân viên) và nạp các cấu hình lương mặc định --- biểu thuế thu nhập cá nhân bảy bậc, tỷ lệ bảo hiểm, bậc lương và phụ cấp --- ở trạng thái đã ban hành, từ các tệp cấu hình kèm theo dự án.
+
+
+\subsection{Kết quả vận hành}
+
+
+Sau khi triển khai và vận hành thử nghiệm, hệ thống đạt các chỉ số vận hành:
+
+
+
+\begin{table}[ht]
+\centering
+\caption{Kết quả đo lường hiệu suất}
+\small
+\begin{tabularx}{\textwidth}{|X|X|X|X|}
+\hline
+\textbf{Chỉ số} & \textbf{Kết quả đo} & \textbf{Ngưỡng yêu cầu} & \textbf{Đánh giá} \\ \hline
+Thời gian phản hồi API trung bình & < 100ms & < 500ms & \checkmarkc Đạt \\ \hline
+Thời gian tính lương 1 nhân viên & < 50ms & < 200ms & \checkmarkc Đạt \\ \hline
+Thời gian batch lương 100 nhân viên & < 3 giây & < 30 giây & \checkmarkc Đạt \\ \hline
+Thời gian khởi động ứng dụng & \textasciitilde{}8 giây & < 30 giây & \checkmarkc Đạt \\ \hline
+Bộ nhớ JVM heap (idle) & \textasciitilde{}256 MB & < 512 MB & \checkmarkc Đạt \\ \hline
+Health check endpoint & HTTP 200 \{"status":"UP"\} & Phải có & \checkmarkc Đạt \\ \hline
+Nạp lại cấu hình không cần khởi động lại & < 1 giây & Không khởi động lại & \checkmarkc Đạt \\ \hline
+\end{tabularx}
+\end{table}
+
+
+Điểm cuối kiểm tra sức khỏe công khai trả về trạng thái tổng hợp, bao gồm cả tình trạng kết nối tới cơ sở dữ liệu và bộ nhớ đệm --- cho phép bộ cân bằng tải hoặc công cụ giám sát tự động phát hiện sự cố mà không cần xác thực.
+
+
+Chương này đã hoàn thành vòng khép từ thiết kế đến thực thi với 15 sơ đồ minh họa đầy đủ kiến trúc và domain model, và kết quả kiểm thử trên ba phân hệ cốt lõi xác nhận hành vi đúng theo đặc tả use case. Trong quá trình xây dựng, bốn vấn đề kỹ thuật nổi bật đã nảy sinh đòi hỏi cách tiếp cận không tầm thường --- đây là nội dung trọng tâm của Chương 5.
+
+

@@ -1,0 +1,203 @@
+\chapter{KẾT LUẬN VÀ HƯỚNG PHÁT TRIỂN}
+
+
+Chương này tổng kết toàn bộ đồ án trên hai phương diện. Mục 6.1 đưa ra kết luận thông qua đối sánh FaceZ HRMS với các giải pháp tương tự trên thị trường, đánh giá mức độ hoàn thành bốn mục tiêu đề ra trong Chương 1, phân tích các hạn chế kỹ thuật còn tồn tại, và rút ra sáu bài học kinh nghiệm từ quá trình thực hiện đồ án. Mục 6.2 phác thảo lộ trình phát triển theo ba giai đoạn, từ hoàn thiện chức năng ngắn hạn đến mở rộng kiến trúc và thương mại hóa dài hạn.
+
+
+\section{Kết luận}
+
+
+\subsection{So sánh với các giải pháp tương tự}
+
+
+Trên thị trường Việt Nam hiện nay có nhiều sản phẩm HRM, từ các giải pháp thương mại nội địa đến nền tảng quốc tế. Phần này đặt FaceZ HRMS trong bối cảnh đó để đánh giá vị trí và giá trị khác biệt của hệ thống.
+
+
+
+\begin{table}[ht]
+\centering
+\caption{So sánh FaceZ HRMS với các giải pháp tương tự}
+\small
+\begin{tabularx}{\textwidth}{|X|X|X|X|X|}
+\hline
+\textbf{Tiêu chí} & \textbf{MISA HRM} & \textbf{Base HR} & \textbf{BambooHR} & \textbf{FaceZ HRMS} \\ \hline
+Tích hợp thiết bị chấm công nhận diện khuôn mặt & \warnc️ Qua tiện ích bổ sung & \warnc️ Qua tiện ích bổ sung & \xmarkc Không & \checkmarkc Giao diện gốc \\ \hline
+Quy trình chấm công tự động (không thủ công) & \warnc️ Tùy cấu hình & \warnc️ Tùy cấu hình & \xmarkc & \checkmarkc Hướng sự kiện \\ \hline
+Công thức lương tuân thủ Bộ luật Lao động 2019 và Thông tư 111 & \checkmarkc & \checkmarkc & \xmarkc (quốc tế) & \checkmarkc \\ \hline
+Tăng ca đêm tính theo phút giao thoa & \xmarkc & \xmarkc & \xmarkc & \checkmarkc \\ \hline
+Phân tách nhiệm vụ nhân sự / tài chính / giám đốc & \warnc️ Tùy cấu hình & \warnc️ Tùy cấu hình & \checkmarkc & \checkmarkc Thực thi ở máy chủ \\ \hline
+Phê duyệt lương đa cấp (tài chính $\rightarrow$ giám đốc) & \checkmarkc & \checkmarkc & \checkmarkc & \checkmarkc \\ \hline
+Quản lý số dư nghỉ phép chống tranh chấp đồng thời & \checkmarkc & \checkmarkc & \checkmarkc & \checkmarkc \\ \hline
+Cấu hình biểu thuế thu nhập động (không cần khởi động lại) & \checkmarkc & \warnc️ & \xmarkc & \checkmarkc \\ \hline
+Trần bảo hiểm theo quy định Việt Nam & \checkmarkc & \checkmarkc & \xmarkc & \checkmarkc \\ \hline
+Chi phí sử dụng lao động (employer cost) & \checkmarkc & \checkmarkc & \checkmarkc & \checkmarkc \\ \hline
+Báo cáo BHXH/BHYT/BHTN & \checkmarkc & \checkmarkc & \xmarkc & \checkmarkc \\ \hline
+Swagger UI / REST API mở & \xmarkc & \xmarkc & \checkmarkc (API) & \checkmarkc \\ \hline
+Mã nguồn mở / tùy biến hoàn toàn & \xmarkc & \xmarkc & \xmarkc & \checkmarkc \\ \hline
+Chi phí licensing & \textasciitilde{}3--5M VND/tháng & \textasciitilde{}2--4M VND/tháng & \textasciitilde{}\$6--9/user/tháng & \checkmarkc Miễn phí \\ \hline
+\end{tabularx}
+\end{table}
+
+
+Nhận xét:
+
+
+Các giải pháp thương mại như MISA HRM và Base HR có lợi thế về độ trưởng thành sản phẩm, hỗ trợ kỹ thuật chuyên nghiệp, và tích hợp sẵn với hệ sinh thái kế toán (MISA Accounting). Tuy nhiên, chúng có chi phí licensing tái diễn hàng tháng, hạn chế tùy biến theo đặc thù doanh nghiệp, và thường tích hợp thiết bị chấm công qua middleware bên thứ ba.
+
+
+FaceZ HRMS khác biệt ở ba điểm: (1) giao diện lập trình gốc dành cho thiết bị chấm công, xác thực bằng khóa API chỉ lưu dưới dạng băm chứ không lưu khóa gốc; (2) phân tách nhiệm vụ được thực thi ngay ở tầng máy chủ thông qua kiểm soát quyền ở mức từng thao tác --- không thể vượt qua từ phía giao diện; và (3) công thức tính tăng ca ban đêm chính xác đến từng phút thay vì xấp xỉ theo giờ tròn như nhiều giải pháp phổ biến.
+
+
+BambooHR là giải pháp quốc tế mạnh về UX và tích hợp nhưng không thiết kế cho thị trường Việt Nam --- không có biểu thuế TNCN 7 bậc, không có trần đóng bảo hiểm theo quy định Việt Nam, và không có các loại nghỉ phép theo Bộ Luật Lao Động 2019.
+
+
+\subsection{Đánh giá kết quả thực hiện và hạn chế}
+
+
+Kết quả đạt được:
+
+
+Sau thời gian thực hiện từ 23/02/2026 đến 30/07/2026, đồ án hoàn thành các mục tiêu đề ra ban đầu:
+
+
+
+\begin{table}[ht]
+\centering
+\caption{Đánh giá mức độ hoàn thành mục tiêu đề tài}
+\small
+\begin{tabularx}{\textwidth}{|X|X|X|}
+\hline
+\textbf{Mục tiêu} & \textbf{Mô tả} & \textbf{Mức độ hoàn thành} \\ \hline
+MT-1 & Xây dựng hệ thống HRMS đầy đủ nghiệp vụ cho doanh nghiệp Việt Nam & 97\% (71/73 yêu cầu) \\ \hline
+MT-2 & Tích hợp quy trình chấm công từ thiết bị nhận diện khuôn mặt & \checkmarkc Hoàn thành --- khóa API thiết bị + hướng sự kiện \\ \hline
+MT-3 & Công thức tính lương tuân thủ pháp luật Việt Nam & \checkmarkc Hoàn thành --- theo Bộ luật Lao động 2019 và Thông tư 111/2013 \\ \hline
+MT-4 & Mô hình phân tách nhiệm vụ bảy vai trò & \checkmarkc Hoàn thành --- thực thi ở tầng máy chủ \\ \hline
+\end{tabularx}
+\end{table}
+
+
+Về mặt kỹ thuật, hệ thống cung cấp hơn 150 điểm cuối dịch vụ phủ đầy đủ mười miền nghiệp vụ, ba mươi mốt phiên bản lược đồ quản lý trọn vẹn lịch sử thay đổi cấu trúc dữ liệu (hợp nhất thành một tập lệnh khởi tạo duy nhất), và đạt tỷ lệ 45/45 ca kiểm thử thành công ở cả ba mức đơn vị, tích hợp và chức năng. Về hiệu năng, thời gian phản hồi trung bình dưới 100 mili-giây và thời gian tính lương hàng loạt cho 100 nhân viên dưới ba giây. Hệ thống vận hành ổn định, không phát sinh lỗi trong suốt quá trình kiểm thử.
+
+
+Hạn chế còn tồn tại:
+
+
+Dù đạt 97\% yêu cầu, một số hạn chế đã được xác định và tài liệu hóa đầy đủ:
+
+
+
+\begin{table}[ht]
+\centering
+\caption{Các hạn chế còn tồn tại và hướng khắc phục}
+\small
+\begin{tabularx}{\textwidth}{|X|X|X|X|}
+\hline
+\textbf{Mã} & \textbf{Hạn chế} & \textbf{Mức độ} & \textbf{Hướng khắc phục} \\ \hline
+GAP-A & Khóa bí mật ký token có giá trị mặc định yếu trong cấu hình & Cao & Bỏ giá trị mặc định, từ chối khởi động khi chưa cấu hình \\ \hline
+GAP-B & Nhật ký gỡ lỗi bảo mật bật ngay trong cấu hình nền & Trung bình & Chuyển sang chỉ bật ở hồ sơ phát triển \\ \hline
+GAP-C & Ảnh đại diện lưu trên đĩa cục bộ, không tương thích khi mở rộng nhiều máy & Trung bình & Chuyển sang kho lưu trữ đối tượng \\ \hline
+GAP-D & Tính lương hàng loạt chạy đồng bộ trong một yêu cầu & Trung bình & Với quy mô rất lớn, chuyển sang xử lý nền theo hàng đợi \\ \hline
+GAP-E & Tài liệu hợp đồng đã lưu kho đối tượng nhưng chưa kiểm tra loại tệp và quét mã độc khi tải lên & Trung bình & Bổ sung kiểm tra loại tệp và quét tệp ở tầng lưu trữ \\ \hline
+GAP-F & Chưa đánh phiên bản cho giao diện lập trình & Thấp & Thêm tiền tố phiên bản cho mọi đường dẫn \\ \hline
+GAP-G & Phiếu lương mới trả dữ liệu thô, chưa xuất bản in được & Thấp & Tích hợp thư viện sinh tài liệu in \\ \hline
+GAP-H & Chưa tự động chuyển số dư phép sang năm mới & Thấp & Thêm tác vụ định kỳ đầu năm \\ \hline
+GAP-I & Chưa kiểm tra trùng ngày giữa các đơn nghỉ phép & Thấp & Bổ sung kiểm tra chồng lấn khi tạo đơn \\ \hline
+\end{tabularx}
+\end{table}
+
+
+Hai hạn chế GAP-A và GAP-B cần được khắc phục trước khi đưa vào vận hành thật. Các hạn chế còn lại (từ GAP-C đến GAP-I) là những cải tiến có thể bổ sung sau mà không đòi hỏi thay đổi kiến trúc.
+
+
+Phạm vi ngoài đồ án (đã xác định từ đầu, không phải hạn chế):
+
+\begin{itemize}
+\item Giao diện mobile (iOS/Android)
+\item Tích hợp phần cứng camera nhận diện khuôn mặt thực tế (đồ án chỉ xây dựng API endpoint phía server)
+\item Xuất file chuyển khoản ngân hàng
+\item Quyết toán thuế TNCN hàng năm (Form 05-1/BK-TNCN)
+\item Kết nối với hệ thống kế toán (MISA, Fast)
+\end{itemize}
+
+
+\subsection{Bài học kinh nghiệm}
+
+
+Quá trình thực hiện đồ án mang lại các bài học kỹ thuật và phương pháp luận có giá trị:
+
+
+Bài học 1 --- Phân tích nghiệp vụ trước khi lập trình:
+
+
+Việc dành thời gian phân tích kỹ quy trình nghiệp vụ trước khi bắt tay lập trình đã ngăn được một sai lầm thiết kế nghiêm trọng. Lỗ hổng phân tách nhiệm vụ trong thiết kế ban đầu --- khi một vai trò nhân sự kiểm soát toàn bộ vòng đời tính lương --- được phát hiện ngay từ khâu phân tích; nếu để lộ sau khi đã hiện thực, chi phí sửa chữa sẽ cao hơn nhiều lần. Bài học rút ra: thiết kế đúng từ đầu rẻ hơn sửa lại về sau, đặc biệt với các vấn đề kiểm soát nội bộ.
+
+
+Bài học 2 --- Tách biệt mối quan tâm ngay từ thiết kế:
+
+
+Bộ máy tính lương được thiết kế là một thành phần tính toán thuần, không truy cập cơ sở dữ liệu --- đây là quyết định ngay từ đầu chứ không phải tái cấu trúc về sau. Nhờ vậy, việc viết kiểm thử đơn vị trở nên đơn giản, không cần dựng giả lập hay khởi tạo toàn bộ khung ứng dụng. Ngược lại, nếu trộn lẫn lô-gic tính lương với các thao tác cơ sở dữ liệu thì việc kiểm thử đơn vị gần như bất khả thi. Bài học rút ra: hàm thuần và tách biệt mối quan tâm không chỉ là nguyên lý lý thuyết --- chúng có tác động thực tới khả năng kiểm thử.
+
+
+Bài học 3 --- Kiểm soát lược đồ bằng phiên bản ngay từ đầu:
+
+
+Việc quản lý lược đồ bằng các tập lệnh có đánh số phiên bản ngay từ phiên bản đầu tiên, thay vì để framework tự cập nhật cấu trúc, buộc người phát triển phải cân nhắc cẩn thận mỗi thay đổi: có tương thích ngược không, có cần di trú dữ liệu không. Mỗi tập lệnh vừa là nguồn của lược đồ, vừa là nhật ký thay đổi, và được hợp nhất thành một tập lệnh khởi tạo duy nhất để dựng lại từ đầu. Bài học rút ra: quản lý lược đồ không phải việc để sau --- kiểm soát từ ngày đầu tốt hơn nhiều so với khắc phục về sau.
+
+
+Bài học 4 --- Hướng sự kiện không đồng nghĩa với phức tạp:
+
+
+Cơ chế sự kiện nội bộ trong tiến trình là một hướng tiếp cận thường bị bỏ qua vì nhiều người mặc định kiến trúc hướng sự kiện phải gắn với hàng đợi tin nhắn bên ngoài. Trong phạm vi một tiến trình, cơ chế phát/lắng nghe sự kiện kết hợp ngữ nghĩa phát sau khi giao dịch hoàn tất đã mang lại sự tách rời tốt mà không phát sinh hạ tầng phụ. Bài học rút ra: không nên phức tạp hóa quá mức --- hãy chọn công cụ đơn giản nhất giải quyết được bài toán.
+
+
+Bài học 5 --- Kiểm soát truy cập ở tầng máy chủ, không phải ở giao diện:
+
+
+Ban đầu có xu hướng chỉ ẩn/hiện nút bấm trên giao diện theo vai trò. Nhưng kiểm soát ở giao diện chỉ là vẻ ngoài an toàn --- bất kỳ ai cũng có thể gọi thẳng dịch vụ. Việc thực thi kiểm soát quyền ở từng thao tác phía máy chủ mới là lớp bảo vệ thực sự, còn giao diện chỉ lo trải nghiệm người dùng. Bài học rút ra: lô-gic phân quyền phải nằm ở máy chủ; phân quyền phía giao diện là trải nghiệm, không phải an ninh.
+
+
+Bài học 6 --- Ghi lại các quyết định thiết kế:
+
+
+Các tài liệu phân tích được viết và cập nhật song song với quá trình phát triển không chỉ phục vụ báo cáo --- chúng là công cụ tư duy giúp phát hiện mâu thuẫn và thiếu sót trước khi chúng trở thành lỗi. Bài học rút ra: viết ra điều mình đang nghĩ không chỉ giúp người khác hiểu mà còn giúp chính người viết phát hiện lỗi lô-gic.
+
+
+\section{Hướng phát triển}
+
+
+Dựa trên nền tảng FaceZ HRMS hiện tại, các hướng phát triển được phân theo ba giai đoạn.
+
+
+Giai đoạn 1 --- Hoàn thiện và gia cố (3--6 tháng): giai đoạn này tập trung gia cố và hoàn thiện trước khi đưa vào vận hành thật. Bốn hạng mục ưu tiên cao cần làm trước gồm: (i) bỏ giá trị mặc định yếu của khóa bí mật ký token và bắt buộc khai báo khi khởi động; (ii) chuyển lưu trữ ảnh đại diện sang kho lưu trữ đối tượng để tương thích khi mở rộng nhiều máy; (iii) chuyển việc tính lương hàng loạt sang xử lý nền theo hàng đợi nhằm đáp ứng quy mô nhân sự rất lớn; và (iv) bổ sung kiểm tra loại tệp và quét mã độc khi tải tài liệu hợp đồng lên. Tiếp đến, các hạng mục ưu tiên trung bình bao gồm: (i) xuất phiếu lương ở dạng tài liệu in để nhân viên lưu trữ; (ii) tác vụ định kỳ tự động chuyển số dư phép sang năm mới; (iii) kiểm tra trùng ngày khi nộp đơn nghỉ phép; và (iv) đánh phiên bản cho giao diện lập trình nhằm hỗ trợ tương thích ngược khi nâng cấp.
+
+
+Giai đoạn 2 --- Mở rộng tính năng (6--18 tháng): Giai đoạn này bao gồm bốn nhóm công việc. Thứ nhất, tích hợp phần cứng nhận diện khuôn mặt: endpoint nhận log chấm công đã được thiết kế sẵn để nhận dữ liệu từ thiết bị bên ngoài, bước tiếp theo là tích hợp với SDK của camera nhận diện khuôn mặt thực tế như ZKTeco hoặc HikVision --- đây là điểm mà tên "FaceZ" trở thành thực tế kỹ thuật. Thứ hai, phát triển ứng dụng mobile bằng React Native cho phép nhân viên truy cập chấm công, nộp đơn nghỉ phép và xem phiếu lương trên điện thoại; do backend đã là REST API stateless, việc bổ sung client mobile không yêu cầu thay đổi backend. Thứ ba, mở rộng báo cáo thuế và tuân thủ pháp luật, gồm quyết toán thuế TNCN hàng năm, báo cáo BHXH điện tử theo định dạng cổng BHXH Online, và xuất file chuyển khoản ngân hàng theo định dạng của từng ngân hàng. Thứ tư, xây dựng workflow engine cho phép HR cấu hình các bước phê duyệt linh hoạt theo phòng ban, loại yêu cầu và ngưỡng số ngày, thay cho chuỗi phê duyệt cố định hiện tại.
+
+
+Giai đoạn 3 --- Mở rộng chiến lược (18--36 tháng): Giai đoạn này hướng tới ba mục tiêu chiến lược. Thứ nhất, tích hợp hệ sinh thái bằng cách kết nối API với MISA hoặc Fast Accounting để tự động hạch toán chi phí lương, tích hợp với LinkedIn và TopCV cho quy trình tuyển dụng (ATS), và hỗ trợ đăng nhập một lần (SSO) qua OAuth2/OIDC với Microsoft 365 hoặc Google Workspace. Thứ hai, phát triển năng lực phân tích và AI hỗ trợ nhân sự, bao gồm dự báo chi phí lao động theo kịch bản, phân tích xu hướng nghỉ phép và tăng ca để phát hiện sớm dấu hiệu burnout, và đề xuất điều chỉnh lương dựa trên dữ liệu thị trường cùng hiệu suất KPI. Thứ ba, xây dựng kiến trúc multi-tenant cho phép nhiều công ty sử dụng chung một instance với dữ liệu hoàn toàn cách ly, mở ra mô hình kinh doanh SaaS cho doanh nghiệp vừa và nhỏ Việt Nam không muốn tự vận hành hạ tầng.
+
+
+
+\begin{figure}[ht]
+\centering
+\begin{verbatim}
+2026 Q3–Q4          2027 Q1–Q2          2027 Q3–Q4          2028+
+────────────        ────────────        ────────────        ──────
+Gia cố              Tích hợp phần       Đa đơn vị thuê      Phân tích & AI
+- Khóa bí mật       cứng nhận diện      - Cách ly dữ liệu   - Dự báo chi phí
+- Phiếu lương in    khuôn mặt           - Tính phí dịch vụ  - Cảnh báo kiệt sức
+- Tính lương nền    Ứng dụng di động    - Tùy biến thương   - So sánh thị trường
+
+Kiểm tra trùng      Quyết toán thuế     hiệu                Tích hợp kế toán
+ngày nghỉ phép      năm                 Tuyển dụng          doanh nghiệp
+
+Đánh phiên bản      Xuất tệp chuyển     Đăng nhập một lần   Tự động hóa
+giao diện           khoản ngân hàng     Tích hợp kế toán    báo cáo tuân thủ
+\end{verbatim}
+\caption{Lộ trình phát triển FaceZ HRMS}
+\end{figure}
+
+
+Đồ án đã xây dựng một nền tảng kỹ thuật hoàn chỉnh và có thể kiểm chứng cho bài toán quản lý nhân sự tuân thủ pháp luật Việt Nam, đáp ứng đầy đủ các yêu cầu chức năng và phi chức năng đề ra. Kết quả này mở ra các hướng phát triển thực tiễn theo lộ trình đã trình bày trong mục 6.2.
+
+

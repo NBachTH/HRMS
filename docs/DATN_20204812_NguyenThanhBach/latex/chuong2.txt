@@ -1,0 +1,484 @@
+\chapter{KHẢO SÁT VÀ PHÂN TÍCH YÊU CẦU}
+
+
+Chương này xác lập nền tảng yêu cầu cho FaceZ HRMS từ ba góc độ: người dùng, nghiệp vụ, và kỹ thuật. Mục 2.1 khảo sát hiện trạng thông qua phân tích các nhóm người dùng cốt lõi, đánh giá hạn chế của các giải pháp thương mại hiện có, và xác định bảy phân hệ cần xây dựng. Mục 2.2 và 2.3 mô tả tổng quan chức năng qua biểu đồ use case phân rã theo sáu nhóm nghiệp vụ, ba quy trình nghiệp vụ trọng tâm, và đặc tả chi tiết năm ca sử dụng quan trọng nhất. Chương kết thúc bằng Mục 2.4 với các yêu cầu phi chức năng về hiệu năng, bảo mật và khả năng bảo trì.
+
+
+\section{Khảo sát hiện trạng và xác định nhu cầu hệ thống}
+
+
+\subsection{Xác định các nhóm người dùng}
+
+
+Để xây dựng yêu cầu hệ thống một cách toàn diện, đồ án tiến hành khảo sát từ góc độ của từng nhóm người dùng thực tế trong chuỗi quy trình nhân sự của doanh nghiệp công nghệ. Có năm nhóm người dùng cốt lõi với nhu cầu và đặc thù nghiệp vụ riêng biệt:
+
+
+Nhân viên (Employee): Đây là nhóm người dùng đông nhất. Nhu cầu chính là tra cứu thông tin cá nhân, theo dõi chấm công của bản thân, đăng ký nghỉ phép hoặc tăng ca, và xem phiếu lương. Nhóm này không cần giao diện phức tạp nhưng đòi hỏi thông tin rõ ràng, cập nhật real-time (số ngày nghỉ còn lại, lịch sử check-in trong tháng) và luồng thao tác đơn giản nhất có thể.
+
+
+Cấp quản lý trực tiếp (Trưởng nhóm, Quản lý): nhóm này chịu trách nhiệm phê duyệt các yêu cầu từ nhân viên trong nhóm của mình. Nhu cầu chính là bảng điều khiển hiển thị các yêu cầu chờ xử lý, xem tổng quan tình trạng nhân sự của bộ phận, và phê duyệt hoặc từ chối nhanh chóng có ghi chú lý do. Trưởng nhóm phê duyệt cấp một, quản lý phê duyệt cấp cuối. Riêng đơn bổ sung chấm công của nhân viên do trưởng nhóm hoặc quản lý cùng phòng ban duyệt.
+
+
+Bộ phận Nhân sự: đây là nhóm người dùng có quyền rộng nhất trên dữ liệu nhân viên. Nhu cầu gồm quản lý toàn bộ vòng đời nhân viên (tuyển dụng, điều chỉnh hợp đồng, nghỉ việc), giám sát tổng thể chấm công của toàn công ty, chốt kỳ chấm công cuối tháng (qua đó sinh bảng công tổng hợp) trước khi bàn giao cho kế toán, và quản lý số dư nghỉ phép. Bộ phận nhân sự không tham gia luồng phê duyệt nghỉ phép/tăng ca và không sửa trực tiếp bản ghi chấm công --- mọi điều chỉnh đều đi qua đơn bổ sung của nhân viên.
+
+
+Bộ phận Kế toán/Tài chính --- Finance Admin: Nhóm này tiếp nhận dữ liệu đầu vào đã được HR chuẩn bị và thực hiện tính toán tài chính. Nhu cầu gồm: tính lương cá nhân và hàng loạt với đầy đủ tham số (KPI, phụ cấp, thưởng), quản lý cấu hình thông số tính lương (bảng lương, biểu thuế, tỷ lệ bảo hiểm), trình bảng lương lên Ban Giám đốc phê duyệt, và xuất các báo cáo tài chính định kỳ (chi phí lao động, nộp BHXH, PIT summary).
+
+
+Ban Giám đốc --- Director: Vai trò phê duyệt cuối trong quy trình chi trả lương. Nhu cầu chính là xem tổng quan chi phí lao động, phê duyệt hoặc từ chối bảng lương đã được Kế toán chuẩn bị (có ghi lý do khi từ chối), và xem báo cáo chi phí nhân sự theo bộ phận.
+
+
+Ngoài các nhóm người dùng, hệ thống còn tương tác với một tác nhân ngoài quan trọng: Thiết bị chấm công nhận diện khuôn mặt. Thiết bị gửi sự kiện check-in/check-out theo thời gian thực qua REST API với xác thực API key, hoặc tải lên theo lô (batch) khi mất kết nối.
+
+
+\subsection{Phân tích các giải pháp hiện có và khoảng trống}
+
+
+Để xác định rõ yêu cầu hệ thống, đồ án tiến hành phân tích so sánh bốn nhóm giải pháp đang được sử dụng phổ biến tại thị trường Việt Nam:
+
+
+MISA HRM là sản phẩm được phát triển bởi MISA JSC, phủ rộng phân khúc doanh nghiệp vừa và nhỏ. Điểm mạnh: am hiểu thị trường Việt Nam, hỗ trợ đầy đủ biểu mẫu pháp lý theo quy định Bộ Lao Động, và tích hợp sẵn với hệ sinh thái kế toán MISA. Điểm yếu: API tích hợp được thiết kế theo hướng xuất dữ liệu định kỳ thay vì nhận sự kiện thời gian thực từ thiết bị; kiến trúc SaaS đóng hạn chế tùy biến quy trình phê duyệt và công thức tính lương theo đặc thù doanh nghiệp; thiếu cơ chế phân tách nhiệm vụ HR/Finance/Director được thực thi ở tầng ứng dụng.
+
+
+Base HR (Base.vn) có giao diện hiện đại và hỗ trợ tích hợp đa công cụ. Điểm mạnh: trải nghiệm người dùng tốt, hỗ trợ API và tích hợp thiết bị chấm công. Điểm yếu: không có cơ chế phân tách nhiệm vụ giữa HR và Finance trong luồng tính lương được thực thi ở tầng server; mô hình giá theo số lượng tài khoản leo thang nhanh khi doanh nghiệp tăng trưởng, trở thành gánh nặng chi phí với doanh nghiệp đang mở rộng quy mô.
+
+
+BambooHR là giải pháp quốc tế phổ biến, được dùng rộng rãi tại các công ty công nghệ nước ngoài có văn phòng tại Việt Nam. Điểm mạnh: kiến trúc kỹ thuật tốt, API phong phú, UX xuất sắc. Điểm yếu quyết định: không hỗ trợ biểu thuế TNCN Việt Nam, không có tích hợp sẵn cho BHXH/BHYT/BHTN theo tỷ lệ và trần đóng của Luật BHXH Việt Nam; mọi tùy chỉnh pháp luật phải tự phát triển bằng các webhook và integration.
+
+
+Excel/quy trình thủ công: Vẫn là thực tế phổ biến nhất tại các doanh nghiệp công nghệ dưới 100 nhân viên. Điểm mạnh duy nhất là chi phí gần như bằng không. Điểm yếu về cấu trúc đã được phân tích chi tiết trong Mục 1.1.
+
+
+Bảng 2.1 tổng hợp so sánh theo các tiêu chí quan trọng nhất:
+
+
+
+\begin{table}[ht]
+\centering
+\caption{So sánh FaceZ HRMS với các giải pháp hiện có}
+\small
+\begin{tabularx}{\textwidth}{|X|X|X|X|X|X|}
+\hline
+\textbf{Tiêu chí so sánh} & \textbf{MISA HRM} & \textbf{Base HR} & \textbf{BambooHR} & \textbf{Excel} & \textbf{FaceZ HRMS} \\ \hline
+Tính lương đúng luật VN (TNCN 7 bậc, BHXH) & Có & Cơ bản & Không & Thủ công & Có, đầy đủ \\ \hline
+Tích hợp thiết bị chấm công qua giao diện dịch vụ & Không & Một phần & Không & Không & Có (xác thực bằng khóa API) \\ \hline
+Phân tách nhiệm vụ HR / Finance / Director & Không & Không & Không & Không & Có (7 vai trò) \\ \hline
+Phê duyệt đa cấp tùy chỉnh & Cứng nhắc & Cơ bản & Có & Không & Có (trưởng nhóm $\rightarrow$ quản lý) \\ \hline
+Lịch sử hợp đồng đầy đủ & Một phần & Không & Có & Không & Có (mô hình lịch sử) \\ \hline
+Ghi vết kiểm toán tự động & Một phần & Một phần & Có & Không & Có (người tạo/người sửa) \\ \hline
+Quản lý lược đồ có kiểm soát & N/A & N/A & N/A & N/A & Có (31 phiên bản lược đồ) \\ \hline
+Giới hạn OT theo Bộ Luật Lao Động 2019 & Không & Không & Không & Thủ công & Có (40h/tháng, 200h/năm) \\ \hline
+Chi phí triển khai & Thuê bao SaaS & Thuê bao SaaS & Thuê bao SaaS & \textasciitilde{}0 & Tự triển khai \\ \hline
+Khả năng tùy biến & Thấp & Trung bình & Cao & Cao & Cao (mã nguồn mở) \\ \hline
+\end{tabularx}
+\end{table}
+
+
+Qua phân tích, khoảng trống rõ ràng nhất là: chưa có giải pháp nào đồng thời đáp ứng cả ba yêu cầu: (1) tính lương đúng pháp luật Việt Nam đầy đủ, (2) tích hợp thiết bị chấm công nhận diện khuôn mặt qua REST, và (3) có kiến trúc phân tách nhiệm vụ đúng chuẩn với chi phí triển khai phù hợp doanh nghiệp vừa.
+
+
+\subsection{Xác định các phân hệ cốt lõi}
+
+
+Từ phân tích nhu cầu người dùng và khoảng trống thị trường, đồ án xác định sáu phân hệ cốt lõi cần phát triển. Thứ nhất, phân hệ Quản lý nhân viên và Tổ chức quản lý đầy đủ thông tin cá nhân, pháp lý và nghề nghiệp của nhân viên, cùng cấu trúc phòng ban, phân công quản lý, ảnh đại diện và người phụ thuộc thuế. Thứ hai, phân hệ Chấm công và Quản lý thời gian tích hợp thiết bị nhận diện khuôn mặt qua API key, xử lý tự động sự kiện check-in/check-out, tính toán giờ công và giờ đến muộn, chốt kỳ hằng tháng và quản lý ngày lễ công. Thứ ba, phân hệ Nghỉ phép và Tăng ca hỗ trợ chín loại nghỉ phép, theo dõi số dư thời gian thực với cơ chế trừ hai giai đoạn, phê duyệt đa cấp, giới hạn giờ OT theo pháp luật và phân loại ca đêm. Thứ tư, phân hệ Hợp đồng lao động quản lý vòng đời hợp đồng với lịch sử đầy đủ, cảnh báo hết hạn trước 30 ngày và liên kết với dữ liệu tính lương. Thứ năm, phân hệ Tính lương và Phê duyệt thực hiện tính lương cá nhân và hàng loạt với công thức đầy đủ (hệ số bậc lương, hệ số thi đua, tăng ca, các khoản bảo hiểm, thuế thu nhập cá nhân bảy bậc), luồng phê duyệt tài chính $\rightarrow$ giám đốc và ba báo cáo tài chính định kỳ. Thứ sáu, phân hệ Cấu hình hệ thống và Thông báo quản lý phiên bản bốn nhóm thông số tính lương (bậc lương, phụ cấp, thuế thu nhập cá nhân, bảo hiểm) và phát thông báo trong ứng dụng cho các sự kiện nghiệp vụ.
+
+
+\section{Tổng quan chức năng}
+
+
+Hệ thống phục vụ bảy tác nhân người dùng và một tác nhân thiết bị. Toàn bộ chức năng được tổ chức thành sáu nhóm use case, mỗi nhóm tương ứng với một phân hệ nghiệp vụ. Phần này trình bày các nhóm chức năng đó thông qua biểu đồ use case tổng quát và các biểu đồ phân rã tương ứng.
+
+
+\subsection{Biểu đồ use case tổng quát}
+
+
+Hệ thống có bảy tác nhân người dùng --- nhân viên, trưởng nhóm, quản lý, nhân sự, phụ trách tài chính, giám đốc, quản trị hệ thống --- với mức quyền hạn tăng dần. Ngoài ra còn có một tác nhân ngoài là thiết bị chấm công. Toàn bộ chức năng được phân thành sáu nhóm use case tổng quan.
+
+
+
+\begin{figure}[ht]
+\centering
+\fbox{\parbox{0.85\textwidth}{\centering\vspace{2em}
+[\textit{Sơ đồ — chèn hình vẽ tương ứng tại đây}]\vspace{2em}}}
+\caption{Biểu đồ use case tổng quan}
+\end{figure}
+
+
+
+\subsection{Biểu đồ use case phân rã}
+
+
+\subsubsection{Use case Quản lý nhân viên \& Tổ chức}
+
+
+Phân hệ này quản lý toàn bộ vòng đời dữ liệu nhân viên. Bộ phận nhân sự và quản trị hệ thống có quyền tạo, cập nhật và vô hiệu hóa tài khoản nhân viên. Mỗi nhân viên được liên kết bắt buộc với một tài khoản đăng nhập và có thể được gán vào một phòng ban.
+
+
+
+\begin{figure}[ht]
+\centering
+\fbox{\parbox{0.85\textwidth}{\centering\vspace{2em}
+[\textit{Sơ đồ — chèn hình vẽ tương ứng tại đây}]\vspace{2em}}}
+\caption{Use case Quản lý nhân viên \& Tổ chức}
+\end{figure}
+
+
+
+Điểm đặc biệt trong nghiệp vụ: mỗi nhân viên khi được tạo luôn đồng thời có một tài khoản đăng nhập tương ứng --- hệ thống bảo đảm không tồn tại nhân viên không có tài khoản hay tài khoản không gắn nhân viên. Nhân viên không thể tự đăng ký; tài khoản do bộ phận nhân sự tạo và mật khẩu ban đầu được truyền đạt ngoài hệ thống. Thiết kế kỹ thuật bảo đảm tính nhất quán của thao tác tạo đồng thời này được trình bày trong mục 4.2.2.
+
+
+\subsubsection{Use case Chấm công \& Quản lý thời gian}
+
+
+Đây là phân hệ trung tâm kết nối thiết bị vật lý với quy trình nghiệp vụ. Hai luồng xử lý song song: real-time (thiết bị gửi từng sự kiện) và batch upload (thiết bị tải lên khi mạng phục hồi).
+
+
+
+\begin{figure}[ht]
+\centering
+\fbox{\parbox{0.85\textwidth}{\centering\vspace{2em}
+[\textit{Sơ đồ — chèn hình vẽ tương ứng tại đây}]\vspace{2em}}}
+\caption{Use case Chấm công \& Quản lý thời gian}
+\end{figure}
+
+
+
+Mỗi sự kiện vào/ra được tổng hợp vào một bản ghi ngày công --- nguồn sự thật theo từng ngày của mỗi nhân viên (xem Mục 5.2). Bộ phận nhân sự không sửa trực tiếp bản ghi chấm công; thay vào đó nhân viên nộp đơn bổ sung và trưởng nhóm hoặc quản lý cùng phòng ban duyệt (khi duyệt sẽ ghi vào bản ghi ngày công). Việc chốt kỳ chấm công là bước kiểm soát bắt buộc trước khi tính lương: thao tác chốt kỳ điền nốt các ngày còn thiếu (vắng mặt, ngày lễ), khóa toàn bộ bản ghi ngày công và sinh bảng công tổng hợp tháng cho từng nhân viên. Một kỳ đã chốt chỉ có thể mở lại qua can thiệp trực tiếp vào cơ sở dữ liệu.
+
+
+\subsubsection{Use case Nghỉ phép \& Tăng ca}
+
+
+Phân hệ này quản lý toàn bộ vòng đời yêu cầu nghỉ phép và tăng ca, với cơ chế phê duyệt đa cấp và kiểm soát số dư.
+
+
+
+\begin{figure}[ht]
+\centering
+\fbox{\parbox{0.85\textwidth}{\centering\vspace{2em}
+[\textit{Sơ đồ — chèn hình vẽ tương ứng tại đây}]\vspace{2em}}}
+\caption{Use case Nghỉ phép \& Tăng ca}
+\end{figure}
+
+
+
+Hai ràng buộc quan trọng: (1) đơn nghỉ phép phải qua đúng thứ tự cấp phê duyệt (trưởng nhóm rồi quản lý) --- không thể bỏ cấp, và quản lý là cấp duyệt cuối; (2) khi nộp đơn, số ngày xin nghỉ lập tức bị trừ vào phần "đang chờ duyệt" của số dư, ngăn nhân viên nộp nhiều đơn trùng thời gian vượt quá số ngày còn lại. Đơn chỉ được sửa hoặc hủy khi còn ở trạng thái nháp.
+
+
+Khác với nghỉ phép, \textbf{tăng ca đi theo quy trình kế hoạch}: trưởng nhóm lập kế hoạch tăng ca và phân công nhân viên, quản lý duyệt kế hoạch; sau đó nhân viên ghi nhận phiên tăng ca thực tế theo kế hoạch. Hệ thống chạy bốn bước kiểm tra (đúng kế hoạch đã duyệt $\rightarrow$ khớp bản ghi chấm công ngày đó $\rightarrow$ trong giới hạn pháp luật 40 giờ/tháng và 200 giờ/năm $\rightarrow$ không trùng phiên tăng ca khác) và \textbf{tự động phê duyệt} khi đạt --- vì kế hoạch đã được quản lý duyệt và dữ liệu chấm công từ thiết bị là bằng chứng khách quan, không cần thêm vòng duyệt. Mỗi phiên tăng ca được gắn hệ số lương theo ngày thường ($\times$1,5), cuối tuần ($\times$2,0) hoặc ngày lễ ($\times$3,0).
+
+
+\subsubsection{Use case Vòng đời hợp đồng}
+
+
+
+\begin{figure}[ht]
+\centering
+\fbox{\parbox{0.85\textwidth}{\centering\vspace{2em}
+[\textit{Sơ đồ — chèn hình vẽ tương ứng tại đây}]\vspace{2em}}}
+\caption{Use case Vòng đời hợp đồng}
+\end{figure}
+
+
+
+Mô hình lịch sử hợp đồng bảo đảm không dữ liệu cũ nào bị ghi đè: mỗi lần cập nhật tạo ra một bản ghi mới có hiệu lực từ ngày cập nhật, đồng thời đánh dấu bản ghi cũ là đã hết hiệu lực. Toàn bộ lịch sử điều kiện làm việc của nhân viên được bảo tồn đầy đủ.
+
+
+\subsubsection{Use case Tính lương \& Phê duyệt}
+
+
+
+\begin{figure}[ht]
+\centering
+\fbox{\parbox{0.85\textwidth}{\centering\vspace{2em}
+[\textit{Sơ đồ — chèn hình vẽ tương ứng tại đây}]\vspace{2em}}}
+\caption{Use case Tính lương \& Phê duyệt}
+\end{figure}
+
+
+
+Tính lương được tổ chức theo \textbf{kỳ lương bền vững}: người phụ trách tài chính tạo kỳ cho một tháng, hệ thống tính tất cả dòng lương ở trạng thái nháp. Người phụ trách tài chính có thể tính lại một nhân viên (dòng đó bị khóa, trở thành ngoại lệ và được giữ nguyên khi tính lại cả kỳ) hoặc loại một dòng khỏi kỳ mà không chặn cả lô. Hai cổng kiểm soát quan trọng: (1) chỉ tạo kỳ lương sau khi bộ phận nhân sự đã chốt kỳ chấm công; (2) \textbf{không cho trình duyệt cả kỳ nếu còn nhân viên thiếu điểm hệ số thi đua} --- bảo đảm lương không dựa trên dữ liệu chấm công chưa kiểm tra hoặc đánh giá hiệu quả còn thiếu. Sau khi giám đốc duyệt cả kỳ, nhân viên mới thấy phiếu lương.
+
+
+\subsubsection{Use case Cấu hình hệ thống \& Báo cáo}
+
+
+
+\begin{figure}[ht]
+\centering
+\fbox{\parbox{0.85\textwidth}{\centering\vspace{2em}
+[\textit{Sơ đồ — chèn hình vẽ tương ứng tại đây}]\vspace{2em}}}
+\caption{Use case Cấu hình hệ thống \& Báo cáo}
+\end{figure}
+
+
+
+Cấu hình tính lương được quản lý theo phiên bản có hiệu lực theo ngày trong các nhóm bảng riêng (bậc lương, thuế thu nhập cá nhân, bảo hiểm, phụ cấp), theo mô hình người soạn --- người duyệt: \textbf{người phụ trách tài chính tạo phiên bản nháp, giám đốc phát hành}; phiên bản đã phát hành là bất biến và được chọn theo ngày hiệu lực. Việc tách quyền soạn và phát hành cấu hình giúp ngăn một người đơn phương thay đổi tham số tính lương. Quản trị hệ thống là tài khoản đặc biệt --- không phải nhân viên thực và không tính lương --- chỉ phụ trách quản lý tài khoản, thiết bị chấm công và xem nhật ký chấm công.
+
+
+\subsection{Quy trình nghiệp vụ}
+
+
+Phần này mô tả chi tiết ba quy trình nghiệp vụ quan trọng nhất của hệ thống.
+
+
+\subsubsection{Quy trình chấm công và xử lý Attendance}
+
+
+Quy trình này mô tả hành trình từ khi nhân viên đặt khuôn mặt trước thiết bị đến khi bản ghi chấm công được tạo trong hệ thống và sẵn sàng cho tính lương.
+
+
+
+\begin{figure}[ht]
+\centering
+\fbox{\parbox{0.85\textwidth}{\centering\vspace{2em}
+[\textit{Sơ đồ — chèn hình vẽ tương ứng tại đây}]\vspace{2em}}}
+\caption{Quy trình chấm công và xử lý Attendance}
+\end{figure}
+
+
+
+Quy trình chấm công được thiết kế theo hướng sự kiện: bản ghi chấm công thô được lưu trước, sau đó hệ thống mới tạo bản ghi chấm công đã xử lý. Nhờ đó, dù khâu xử lý gặp lỗi, dữ liệu thô vẫn được bảo toàn và tác vụ định kỳ lúc nửa đêm sẽ tự động bù đắp. Chi tiết kiến trúc và lý do lựa chọn được trình bày trong mục 5.2.
+
+
+\subsubsection{Quy trình phê duyệt nghỉ phép đa cấp}
+
+
+
+\begin{figure}[ht]
+\centering
+\fbox{\parbox{0.85\textwidth}{\centering\vspace{2em}
+[\textit{Sơ đồ — chèn hình vẽ tương ứng tại đây}]\vspace{2em}}}
+\caption{Quy trình phê duyệt nghỉ phép đa cấp}
+\end{figure}
+
+
+
+Về mặt nghiệp vụ, khi nhân viên nộp yêu cầu, số ngày nghỉ được tạm giữ ngay để ngăn việc đăng ký trùng vượt quá số dư; chỉ khi yêu cầu được phê duyệt cuối, số ngày này mới được tính là đã sử dụng, còn khi bị từ chối hoặc hủy thì được hoàn trả đầy đủ. Cơ chế trừ hai giai đoạn và cách chống tranh chấp đồng thời được trình bày chi tiết trong Mục 5.4.
+
+
+\subsubsection{Quy trình tính lương và phê duyệt chi trả}
+
+
+
+\begin{figure}[ht]
+\centering
+\fbox{\parbox{0.85\textwidth}{\centering\vspace{2em}
+[\textit{Sơ đồ — chèn hình vẽ tương ứng tại đây}]\vspace{2em}}}
+\caption{Quy trình tính lương và phê duyệt chi trả}
+\end{figure}
+
+
+
+Quy trình tính lương có một điểm gate quan trọng về mặt nghiệp vụ: bộ phận Kế toán chỉ có thể tính lương sau khi kỳ chấm công đã được HR chốt, và bảng lương phải qua phê duyệt của Ban Giám đốc trước khi được đánh dấu chi trả. Thiết kế kỹ thuật của bộ máy tính lương và công thức tuân thủ pháp luật được trình bày chi tiết trong mục 5.3.
+
+
+\section{Đặc tả chức năng}
+
+
+Phần này đặc tả chi tiết năm ca sử dụng quan trọng nhất của hệ thống.
+
+
+\subsection{Đặc tả use case Chấm công \& Chốt kỳ}
+
+
+
+\begin{table}[ht]
+\centering
+\caption{Đặc tả ca sử dụng Chấm công \& Chốt kỳ}
+\small
+\begin{tabularx}{\textwidth}{|X|X|}
+\hline
+\textbf{Trường} & \textbf{Nội dung} \\ \hline
+Tên use case & Chấm công và chốt kỳ \\ \hline
+Mã use case & UC-ATT-01 \\ \hline
+Tác nhân chính & Thiết bị chấm công nhận diện khuôn mặt \\ \hline
+Tác nhân phụ & Nhân sự (chốt kỳ) \\ \hline
+Mô tả & Thiết bị gửi sự kiện check-in/check-out; hệ thống tự động tạo và cập nhật bản ghi chấm công; cuối tháng HR chốt kỳ để cho phép tính lương \\ \hline
+Điều kiện tiên quyết & Thiết bị đã được đăng ký với API key hợp lệ; nhân viên tồn tại trong hệ thống \\ \hline
+Luồng chính & 1. Thiết bị gửi sự kiện check-in (logType=IN) kèm khóa API xác thực của thiết bị \\ \hline
+ & 2. Hệ thống xác thực khóa API của thiết bị; nếu không hợp lệ, từ chối yêu cầu \\ \hline
+ & 3. Hệ thống lưu bản ghi chấm công thô và phát sự kiện xử lý nội bộ \\ \hline
+ & 4. Sau khi lưu thành công, hệ thống tạo bản ghi chấm công mới cho ngày (đảm bảo không trùng lặp) \\ \hline
+ & 5. Cuối ngày: thiết bị gửi sự kiện check-out; hệ thống đóng bản ghi, tính giờ công, giờ đến muộn, giờ được trả lương và ngày công, đánh dấu vi phạm nếu đến muộn \\ \hline
+ & 6. Cuối tháng: bộ phận nhân sự thực hiện chốt kỳ ở chế độ thử (không ép buộc) \\ \hline
+ & 7. Hệ thống quét vắng mặt không giải thích, trả về danh sách nếu có \\ \hline
+ & 8. HR xử lý từng trường hợp bất thường rồi chốt kỳ ở chế độ ép buộc nếu cần \\ \hline
+ & 9. Bản ghi chốt kỳ được tạo; kỳ chấm công bị khóa \\ \hline
+Luồng thay thế & 3a. Thiết bị mất mạng: tải lên lô bản ghi chấm công khi mạng phục hồi \\ \hline
+ & 4a. Nhân viên quên check-out: tác vụ định kỳ lúc nửa đêm backfill từ log ngày hôm trước \\ \hline
+ & 7a. Không có vắng mặt bất thường: kỳ được chốt ngay lập tức \\ \hline
+Luồng ngoại lệ & 2a. API key đã bị vô hiệu hóa: trả 401 \\ \hline
+ & 6a. Kỳ đã chốt trước đó: trả 400 \\ \hline
+Điều kiện kết thúc & Bản ghi chốt kỳ tồn tại; người phụ trách tài chính có thể bắt đầu tính lương \\ \hline
+\end{tabularx}
+\end{table}
+
+
+\subsection{Đặc tả use case Phê duyệt nghỉ phép}
+
+
+
+\begin{table}[ht]
+\centering
+\caption{Đặc tả ca sử dụng Phê duyệt nghỉ phép}
+\small
+\begin{tabularx}{\textwidth}{|X|X|}
+\hline
+\textbf{Trường} & \textbf{Nội dung} \\ \hline
+Tên use case & Phê duyệt nghỉ phép đa cấp \\ \hline
+Mã use case & UC-LV-01 \\ \hline
+Tác nhân chính & Nhân viên (nộp), trưởng nhóm (cấp một), quản lý (cấp cuối) \\ \hline
+Mô tả & Nhân viên nộp yêu cầu nghỉ phép; hệ thống kiểm tra số dư và tạm giữ ngay; yêu cầu đi qua hai cấp phê duyệt (trưởng nhóm rồi quản lý) \\ \hline
+Điều kiện tiên quyết & Nhân viên đã đăng nhập; số dư phép đã được khởi tạo cho năm hiện tại; ngày kết thúc không trước ngày bắt đầu \\ \hline
+Luồng chính & 1. Nhân viên chọn loại nghỉ phép, ngày bắt đầu, ngày kết thúc, lý do \\ \hline
+ & 2. Hệ thống kiểm tra loại phép không phải ngày lễ hay nghỉ bù \\ \hline
+ & 3. Hệ thống so sánh số ngày xin nghỉ với số dư còn lại \\ \hline
+ & 4. Hệ thống tạm giữ số ngày xin nghỉ vào phần đang chờ duyệt; lưu yêu cầu ở trạng thái chờ duyệt \\ \hline
+ & 5. Hệ thống gửi thông báo cho trưởng nhóm của nhân viên \\ \hline
+ & 6. Trưởng nhóm phê duyệt $\rightarrow$ đã duyệt cấp một \\ \hline
+ & 7. Quản lý phê duyệt cuối $\rightarrow$ đã duyệt; hệ thống chuyển số ngày đang chờ thành đã dùng \\ \hline
+Luồng thay thế & 6a--7a. Trưởng nhóm hoặc quản lý từ chối: yêu cầu bị từ chối; số ngày tạm giữ được hoàn trả \\ \hline
+ & 4a. Nhân viên hủy/sửa khi còn ở trạng thái nháp: số ngày tạm giữ được hoàn trả (chỉ sửa/hủy được khi còn nháp) \\ \hline
+Luồng ngoại lệ & 3a. Số dư còn lại nhỏ hơn số ngày xin nghỉ: từ chối, báo số ngày còn lại \\ \hline
+ & 2a. Loại phép là ngày lễ hoặc nghỉ bù: từ chối \\ \hline
+Điều kiện kết thúc & Yêu cầu ở trạng thái đã duyệt (tăng số ngày đã dùng) hoặc bị từ chối (hoàn trả số dư) \\ \hline
+Yêu cầu đặc biệt & Cơ chế tạm giữ hai giai đoạn phải nguyên tử để tránh tranh chấp khi nhiều yêu cầu nộp đồng thời \\ \hline
+\end{tabularx}
+\end{table}
+
+
+\subsection{Đặc tả use case Tính lương}
+
+
+
+\begin{table}[ht]
+\centering
+\caption{Đặc tả ca sử dụng Tính lương}
+\small
+\begin{tabularx}{\textwidth}{|X|X|}
+\hline
+\textbf{Trường} & \textbf{Nội dung} \\ \hline
+Tên use case & Tính lương cá nhân \\ \hline
+Mã use case & UC-PAY-01 \\ \hline
+Tác nhân chính & Phụ trách tài chính \\ \hline
+Mô tả & Tính toán lương đầy đủ cho một nhân viên trong một kỳ, dựa trên chấm công, hợp đồng và cấu hình hệ thống \\ \hline
+Điều kiện tiên quyết & Kỳ chấm công đã chốt (đã sinh bảng công); nhân viên có hợp đồng đang hiệu lực; cấu hình lương đã ban hành và còn hiệu lực cho đủ bốn nhóm (bậc lương, phụ cấp, thuế thu nhập, bảo hiểm) \\ \hline
+Luồng chính & 1. Người phụ trách tài chính yêu cầu tính lương cho một nhân viên trong kỳ (kèm các khoản thưởng/phụ cấp tùy chọn) \\ \hline
+ & 2. Hệ thống kiểm tra kỳ chấm công đã được chốt; nếu chưa, từ chối yêu cầu \\ \hline
+ & 3. Hệ thống nạp hợp đồng đang hiệu lực và cấu hình tính lương đang áp dụng \\ \hline
+ & 4. Tính hệ số thi đua trung bình HStb = (HS1 + HS2) / 2: HS1 lấy từ điểm cấp trên chấm (mặc định loại B nếu chưa có), HS2 suy từ mức chuyên cần. Với cấp quản lý, hai hệ số lấy theo trung bình của đơn vị; với giám đốc lấy theo trung bình toàn công ty \\ \hline
+ & 5. Lương cơ bản kỳ = [(Lhq $\times$ HStb) + Li + HTi] $\times$ (NCtt / Nt), trong đó số ngày công chuẩn tự suy từ bảng công đã chốt, số ngày công thực tế lấy từ bản ghi ngày công \\ \hline
+ & 6. Cộng tiền tăng ca theo hệ số ngày thường/cuối tuần/ngày lễ và phụ trội ca đêm theo tỷ lệ thời gian chồng lấp khung 22:00--06:00 \\ \hline
+ & 7. Tính nền đóng bảo hiểm bằng giá trị nhỏ hơn giữa lương gộp và mức trần theo quy định \\ \hline
+ & 8. Khấu trừ các khoản bảo hiểm nhân viên đóng; tính thuế thu nhập cá nhân lũy tiến bảy bậc \\ \hline
+ & 9. Tính chi phí phía người sử dụng lao động (các khoản bảo hiểm chủ đóng và bảo hiểm tai nạn lao động) \\ \hline
+ & 10. Lưu dòng phiếu lương ở trạng thái nháp \\ \hline
+Luồng thay thế & 1a. Tính lương hàng loạt cho toàn bộ nhân viên trong kỳ \\ \hline
+Luồng ngoại lệ & 2a. Kỳ chưa chốt: từ chối yêu cầu \\ \hline
+ & 3a. Không có hợp đồng hiệu lực: từ chối yêu cầu \\ \hline
+ & 3b. Đã tồn tại phiếu lương cho nhân viên trong kỳ: từ chối để tránh trùng lặp \\ \hline
+Điều kiện kết thúc & Dòng phiếu lương ở trạng thái nháp, sẵn sàng cho người phụ trách tài chính xem xét và trình duyệt \\ \hline
+Yêu cầu đặc biệt & Bộ máy tính lương là một thành phần tính toán thuần, không truy cập cơ sở dữ liệu, để dễ kiểm thử đơn vị \\ \hline
+\end{tabularx}
+\end{table}
+
+
+\subsection{Đặc tả use case Phê duyệt bảng lương}
+
+
+
+\begin{table}[ht]
+\centering
+\caption{Đặc tả ca sử dụng Phê duyệt bảng lương}
+\small
+\begin{tabularx}{\textwidth}{|X|X|}
+\hline
+\textbf{Trường} & \textbf{Nội dung} \\ \hline
+Tên use case & Phê duyệt bảng lương \\ \hline
+Mã use case & UC-PAY-02 \\ \hline
+Tác nhân chính & Phụ trách tài chính (trình duyệt, đánh dấu đã trả), giám đốc (phê duyệt/từ chối) \\ \hline
+Mô tả & Người phụ trách tài chính trình bảng lương lên giám đốc; giám đốc phê duyệt hoặc từ chối; người phụ trách tài chính đánh dấu đã chi trả sau phê duyệt \\ \hline
+Điều kiện tiên quyết & Kỳ lương đang ở trạng thái nháp \\ \hline
+Luồng chính & 1. Người phụ trách tài chính xem xét chi tiết kỳ lương ở trạng thái nháp; có thể xóa và tính lại nếu cần \\ \hline
+ & 2. Trình bảng lương $\rightarrow$ chờ duyệt; hệ thống gửi thông báo cho giám đốc \\ \hline
+ & 3. Giám đốc xem tổng quan chi phí lao động và chi tiết từng dòng lương \\ \hline
+ & 4. Giám đốc phê duyệt $\rightarrow$ đã duyệt; thông báo cho người phụ trách tài chính và nhân viên \\ \hline
+ & 5. Người phụ trách tài chính xác nhận đã chi trả lương qua ngân hàng \\ \hline
+ & 6. Đánh dấu đã chi trả $\rightarrow$ đã trả (trạng thái cuối) \\ \hline
+Luồng thay thế & 4a. Giám đốc từ chối kèm lý do $\rightarrow$ bị từ chối; người phụ trách tài chính nhận thông báo kèm lý do \\ \hline
+ & 4b. Sau khi bị từ chối: xóa kỳ lương đó và tính lại từ đầu \\ \hline
+Luồng ngoại lệ & 4a. Vai trò khác cố gắng phê duyệt: bị từ chối (chỉ giám đốc mới có quyền) \\ \hline
+ & 6a. Đánh dấu đã trả khi trạng thái chưa phải đã duyệt: từ chối thao tác \\ \hline
+Điều kiện kết thúc & Kỳ lương ở trạng thái đã trả (không thể thay đổi) hoặc bị từ chối (xử lý lại) \\ \hline
+Yêu cầu đặc biệt & Lý do từ chối là bắt buộc; được lưu trên bản ghi và trả về qua thông báo \\ \hline
+\end{tabularx}
+\end{table}
+
+
+\subsection{Đặc tả use case Báo cáo tài chính}
+
+
+
+\begin{table}[ht]
+\centering
+\caption{Đặc tả ca sử dụng Báo cáo tài chính}
+\small
+\begin{tabularx}{\textwidth}{|X|X|}
+\hline
+\textbf{Trường} & \textbf{Nội dung} \\ \hline
+Tên use case & Xuất báo cáo tài chính \\ \hline
+Mã use case & UC-RPT-01 \\ \hline
+Tác nhân chính & Phụ trách tài chính, giám đốc \\ \hline
+Mô tả & Hệ thống tổng hợp dữ liệu lương đã phê duyệt thành ba loại báo cáo phục vụ kế toán và tuân thủ pháp luật \\ \hline
+Điều kiện tiên quyết & Tồn tại ít nhất một phiếu lương ở trạng thái đã duyệt hoặc đã trả trong kỳ truy vấn \\ \hline
+Luồng chính --- Báo cáo chi phí lao động & Tổng hợp lương gộp, lương thực nhận, tổng bảo hiểm, thuế thu nhập, tăng ca và tổng chi phí sử dụng lao động theo từng nhân viên và bộ phận \\ \hline
+Luồng chính --- Báo cáo nộp bảo hiểm & Tổng hợp mã bảo hiểm xã hội, mức lương đóng (sau khi áp trần) và tất cả khoản bảo hiểm phía người lao động và người sử dụng lao động \\ \hline
+Luồng chính --- Báo cáo thuế thu nhập & Tổng hợp mã số thuế, số người phụ thuộc, thu nhập tính thuế và thuế thu nhập theo từng nhân viên \\ \hline
+Luồng ngoại lệ & Không có phiếu lương được phê duyệt trong kỳ: trả về kết quả rỗng \\ \hline
+Điều kiện kết thúc & Dữ liệu được trả về và hỗ trợ xuất ra tệp bảng tính với bảng mã Unicode \\ \hline
+Yêu cầu đặc biệt & Chỉ tính trên phiếu lương đã duyệt hoặc đã trả; các phiếu còn ở trạng thái nháp, chờ duyệt hoặc bị từ chối không được tính vào \\ \hline
+\end{tabularx}
+\end{table}
+
+
+\section{Yêu cầu phi chức năng}
+
+
+Ngoài các yêu cầu chức năng, hệ thống FaceZ HRMS phải đáp ứng các yêu cầu phi chức năng sau.
+
+
+
+\begin{table}[ht]
+\centering
+\caption{Các yêu cầu phi chức năng}
+\small
+\begin{tabularx}{\textwidth}{|X|X|X|X|X|}
+\hline
+\textbf{\#} & \textbf{Nhóm} & \textbf{Yêu cầu} & \textbf{Ưu tiên} & \textbf{Cách đáp ứng} \\ \hline
+PF-01 & Hiệu năng & Thời gian phản hồi dưới 500ms cho 95\% yêu cầu trong điều kiện bình thường ($\le$ 50 người dùng đồng thời) & Cao & Bể kết nối cơ sở dữ liệu; bộ nhớ đệm cho việc kiểm tra token; lập chỉ mục đúng trên các cột thường truy vấn \\ \hline
+PF-02 & Hiệu năng & Tính lương hàng loạt cho 200 nhân viên hoàn thành trong dưới 60 giây & Trung bình & Bộ máy tính lương là thành phần tính toán thuần, không chờ vào/ra \\ \hline
+PF-03 & Hiệu năng & Xử lý sự kiện chấm công thời gian thực dưới 500ms toàn trình & Cao & Bước xác thực thiết bị nhẹ; việc tổng hợp công chạy sau khi giao dịch hoàn tất, không chặn phản hồi \\ \hline
+RC-01 & Độ tin cậy & Lược đồ cơ sở dữ liệu quản lý bằng các phiên bản có đánh số; ứng dụng không tự sửa lược đồ & Cao & Ba mươi mốt phiên bản lược đồ, hợp nhất thành một tập lệnh khởi tạo \\ \hline
+RC-02 & Độ tin cậy & Toàn bộ thay đổi dữ liệu nghiệp vụ đều có vết kiểm toán & Cao & Lớp thực thể cơ sở dùng chung tự động ghi vết người tạo/người sửa \\ \hline
+RC-03 & Độ tin cậy & Bản ghi chấm công không bị mất khi kết nối thiết bị gián đoạn & Cao & Lưu bản ghi thô trước; tác vụ định kỳ lúc nửa đêm điền bù dữ liệu thiếu \\ \hline
+RC-04 & Độ tin cậy & Xóa mềm trên mọi thực thể; không xóa vật lý dữ liệu lịch sử & Trung bình & Cờ đánh dấu đã xóa kèm thời điểm xóa trên mọi thực thể \\ \hline
+SC-01 & Bảo mật & Xác thực bằng token: token truy cập 5 phút, token làm mới 14 ngày trong cookie chỉ truy cập từ máy chủ & Cao & Danh sách thu hồi token trên bộ nhớ đệm; xoay vòng token mỗi lần làm mới \\ \hline
+SC-02 & Bảo mật & Chống dò mật khẩu đăng nhập: tối đa 10 lần trong 15 phút cho mỗi địa chỉ IP & Cao & Bộ đếm trên bộ nhớ đệm, phân biệt theo địa chỉ IP của người gọi \\ \hline
+SC-03 & Bảo mật & Thiết bị chấm công xác thực bằng khóa API; không lưu khóa gốc & Cao & Chỉ lưu dạng băm của khóa; cấp khóa mới sẽ vô hiệu hóa khóa cũ \\ \hline
+SC-04 & Bảo mật & Phân quyền chi tiết theo vai trò và phương thức HTTP & Cao & Kiểm soát quyền ở mức từng thao tác kết hợp luật phân quyền theo đường dẫn \\ \hline
+SC-05 & Bảo mật & Không nhúng cứng thông tin bí mật trong mã & Cao & Nạp thông tin bí mật qua biến môi trường \\ \hline
+US-01 & Khả năng sử dụng & Giao diện tự điều chỉnh menu theo vai trò đăng nhập & Cao & Lớp bảo vệ theo vai trò và thanh điều hướng thay đổi theo vai trò \\ \hline
+US-02 & Khả năng sử dụng & Thông báo lỗi rõ ràng bằng tiếng Việt khi thao tác không hợp lệ & Trung bình & Phản hồi từ máy chủ kèm thông điệp lỗi; hiển thị dưới dạng thông báo nổi \\ \hline
+US-03 & Khả năng sử dụng & Phiên làm việc tự động gia hạn trong suốt thời gian sử dụng & Cao & Làm mới ngầm: tự gọi điểm làm mới phiên khi token hết hạn rồi thực hiện lại yêu cầu \\ \hline
+MT-01 & Khả năng bảo trì & Mọi thay đổi lược đồ phải qua phiên bản có đánh số & Cao & Quy ước đánh số phiên bản; áp thủ công theo thứ tự \\ \hline
+MT-02 & Khả năng bảo trì & Tài liệu giao diện lập trình tự động cập nhật & Trung bình & Sinh tài liệu tự động từ mã nguồn theo chuẩn mở \\ \hline
+MT-03 & Khả năng bảo trì & Nhật ký có cấu trúc khi vận hành, có màu khi phát triển & Trung bình & Cấu hình nhật ký thay đổi theo hồ sơ môi trường \\ \hline
+MT-04 & Khả năng bảo trì & Điểm cuối kiểm tra sức khỏe công khai để giám sát vận hành & Thấp & Điểm cuối kiểm tra sức khỏe công khai; các điểm cuối khác yêu cầu quyền quản trị hệ thống \\ \hline
+\end{tabularx}
+\end{table}
+
+
+Chương này đã hoàn thành việc xác định yêu cầu hệ thống từ cả góc độ chức năng lẫn phi chức năng. Phân tích cho thấy khoảng trống thị trường rõ ràng: chưa có giải pháp nào đồng thời đáp ứng ba yêu cầu là tính lương đúng pháp luật Việt Nam, tích hợp thiết bị nhận diện khuôn mặt qua REST, và kiến trúc phân tách nhiệm vụ kiểm soát nội bộ. Tập yêu cầu và đặc tả use case đã xây dựng trong chương này trở thành hợp đồng chức năng cho giai đoạn lựa chọn công nghệ được trình bày trong Chương 3.
+
+

@@ -1,0 +1,12 @@
+\chapter*{TÓM TẮT NỘI DUNG ĐỒ ÁN}
+\addcontentsline{toc}{chapter}{TÓM TẮT NỘI DUNG ĐỒ ÁN}
+
+
+Quản lý nhân sự trong doanh nghiệp công nghệ Việt Nam hiện nay vẫn phụ thuộc nhiều vào bảng tính và quy trình thủ công, dẫn đến sai sót trong tính lương, thiếu kiểm soát nội bộ và khó truy vết khi xảy ra tranh chấp. Các phần mềm thương mại như MISA HRM, Base HR hay Bamboo HR hoặc thiếu tính năng phù hợp với đặc thù pháp luật Việt Nam, hoặc không hỗ trợ tích hợp thiết bị chấm công nhận diện khuôn mặt, hoặc có chi phí bản quyền vượt khả năng đầu tư của các doanh nghiệp quy mô vừa và nhỏ.
+
+
+Xuất phát từ thực tế đó, đồ án xây dựng hệ thống quản lý nhân sự tích hợp chấm công nhận diện khuôn mặt mang tên FaceZ HRMS, nhằm số hóa toàn bộ vòng đời quản lý nhân viên trong một nền tảng tập trung, duy nhất. Hướng tiếp cận là xây dựng ứng dụng web theo kiến trúc client--server, với backend Spring Boot 4.0.0-M3 (Java 21) và frontend Next.js 15 (TypeScript, React 19). Trọng tâm kỹ thuật của đồ án nằm ở ba điểm: (1) quy trình chấm công tự động kết nối thiết bị nhận diện khuôn mặt với bản ghi chấm công qua cơ chế sự kiện ứng dụng nội bộ; (2) công thức tính lương tuân thủ đầy đủ quy định pháp luật Việt Nam (biểu thuế thu nhập cá nhân 7 bậc theo Thông tư 111/2013/TT-BTC, trần đóng bảo hiểm 46,8 triệu đồng, hệ số thi đua song phần); và (3) mô hình phân tách nhiệm vụ 7 vai trò nhằm khôi phục kiểm soát tài chính nội bộ mà quy trình giấy tờ truyền thống thực hiện qua chữ ký vật lý.
+
+
+Sản phẩm cuối cùng là một hệ thống hoàn chỉnh, bao gồm backend cung cấp giao diện dịch vụ với lược đồ quản lý bằng 31 phiên bản có đánh số, và giao diện đa vai trò phù hợp từng nhóm người dùng. FaceZ HRMS bao phủ đầy đủ các nghiệp vụ cốt lõi: quản lý nhân viên và phòng ban, vòng đời hợp đồng, chấm công tự động và chốt kỳ, phê duyệt nghỉ phép/tăng ca đa cấp, tính lương và báo cáo tài chính. Hệ thống là nền tảng để tiếp tục mở rộng theo hướng tích hợp giải pháp nhận diện khuôn mặt thực tế và triển khai thương mại trong tương lai.
+

@@ -1,0 +1,507 @@
+\chapter{CÁC GIẢI PHÁP VÀ ĐÓNG GÓP NỔI BẬT}
+
+
+Chương này trình bày bốn đóng góp kỹ thuật và nghiệp vụ nổi bật nhất của đồ án --- những điểm khác biệt FaceZ HRMS so với giải pháp thông thường. Mỗi đóng góp được phân tích theo ba góc độ: bài toán gốc rễ, giải pháp kỹ thuật được chọn, và kết quả đạt được có thể kiểm chứng.
+
+
+\section{Phân tách nhiệm vụ trong kiểm soát tài chính nội bộ}
+
+
+\subsection{Bài toán}
+
+
+Trong quá trình phân tích yêu cầu, một vấn đề kiểm soát nội bộ nghiêm trọng được phát hiện trong thiết kế ban đầu của hệ thống (phiên bản đầu): toàn bộ vòng đời bảng lương được thực hiện bởi một vai trò duy nhất --- vai trò nhân sự.
+
+
+Cụ thể, vai trò nhân sự trong thiết kế ban đầu có thể:
+
+\begin{enumerate}
+\item Tạo và chỉnh sửa hồ sơ nhân viên (kể cả mức lương)
+\item Ghi nhận và chỉnh sửa dữ liệu chấm công
+\item Chốt kỳ chấm công
+\item Tính toán bảng lương (trách nhiệm của Kế toán/Tài chính)
+\item Phê duyệt bảng lương để thanh toán (trách nhiệm của Giám đốc)
+\end{enumerate}
+
+
+Đây là vi phạm nghiêm trọng nguyên tắc Phân tách nhiệm vụ (Separation of Duties --- SoD) --- một nguyên tắc kiểm soát nội bộ căn bản trong kế toán và quản lý tài chính. Vấn đề không chỉ là lý thuyết: một người giữ vai trò nhân sự duy nhất có thể tạo nhân viên ma, gán mức lương cao, và tự phê duyệt thanh toán --- toàn bộ quy trình gian lận trong một tài khoản, không cần ai phê duyệt hay kiểm tra.
+
+
+
+\begin{figure}[ht]
+\centering
+\begin{verbatim}
+HR_ADMIN (v1.0) — một tài khoản kiểm soát toàn bộ:
+┌─────────────────────────────────────────────────────┐
+│  v Tạo nhân viên (tạo nhân viên ma)                │
+│  v Chỉnh sửa chấm công (tăng ngày công ảo)         │
+│  v Tính lương (không ai kiểm tra)                   │
+│  v Phê duyệt bảng lương (tự ký thanh toán)         │
+│                                                     │
+│  → Gian lận hoàn toàn không để lại dấu vết nào     │
+│    cần sự đồng thuận của người thứ hai              │
+└─────────────────────────────────────────────────────┘
+\end{verbatim}
+\caption{Lỗ hổng kiểm soát nội bộ trong thiết kế v1.0}
+\end{figure}
+
+
+Trong thực tế doanh nghiệp Việt Nam, quy trình lương giấy tờ truyền thống ngăn chặn vấn đề này bằng chữ ký vật lý: bảng chấm công phải có chữ ký của nhân viên và trưởng phòng, bảng lương phải có chữ ký của kế toán và giám đốc. Khi số hóa quy trình, nếu không tái tạo lại các "hàng rào chữ ký" này trong phần mềm, hệ thống thực ra kém an toàn hơn giấy tờ.
+
+
+\subsection{Giải pháp}
+
+
+Thiết kế lại mô hình vai trò từ 5 vai trò ban đầu thành 7 vai trò, trong đó hai vai trò mới được giới thiệu đặc biệt để giải quyết vấn đề phân tách nhiệm vụ:
+
+
+
+\begin{figure}[ht]
+\centering
+\begin{verbatim}
+Quy trình lương — 3 actor, 3 chữ ký
+
+HR_ADMIN                   FINANCE_ADMIN              DIRECTOR
+────────                   ────────────               ────────
+Quản lý nhân viên          Soạn cấu hình lương   →   Phê duyệt cấu hình
+Quản lý hợp đồng           (thuế/BH/bậc lương)        lương (xuất bản)
+Chốt kỳ chấm công          ở trạng thái nháp          Xem báo cáo chi phí
+(sinh bảng công)                │                     Phê duyệt kỳ lương
+       │                   Tạo & tính kỳ lương         (chờ duyệt → đã duyệt)
+       │              →    Tính lương từ dữ liệu  →        ↓
+       ▼                   đã chốt kỳ                 FINANCE_ADMIN
+[sinh bảng công]           Trình duyệt                Đánh dấu đã trả
+                           (nháp → chờ duyệt)         (đã duyệt → đã trả)
+
+[Không tính lương]    [Không tự duyệt cấu hình]   [Không tính lương]
+[Không phê duyệt]     [Không chốt kỳ]             [Không chốt kỳ]
+[Không tính lương]    [Không tự duyệt cấu hình]   [Không tính lương]
+[Không phê duyệt]     [Không chốt kỳ]             [Không chốt kỳ]
+\end{verbatim}
+\caption{Sơ đồ phân tách nhiệm vụ trong quy trình lương v2.0}
+\end{figure}
+
+
+Lưu ý: cấu hình lương (biểu thuế, tỷ lệ bảo hiểm, bậc lương, phụ cấp) cũng tuân theo mô hình người soạn --- người duyệt: người phụ trách tài chính soạn phiên bản nháp, giám đốc phê duyệt để ban hành thì mới có hiệu lực. Quản trị hệ thống không còn quản lý cấu hình lương (chỉ quản lý tài khoản đăng nhập, thiết bị chấm công và nhật ký chấm công), khép kín thêm một lỗ hổng phân tách nhiệm vụ: người quản trị hệ thống không thể tự thay đổi tham số tính lương.
+
+
+Điểm cốt lõi là sự phân tách này \textbf{không chỉ nằm ở giao diện} mà được \textbf{thực thi ở tầng máy chủ} bằng cơ chế phân quyền theo từng thao tác (method-level authorization). Mỗi thao tác nhạy cảm chỉ chấp nhận đúng vai trò được phép: \textit{tính lương} và \textit{đánh dấu đã trả} thuộc Tài chính; \textit{phê duyệt} và \textit{trả lại} kỳ lương thuộc Giám đốc; \textit{chốt kỳ chấm công} thuộc Nhân sự. Vì việc kiểm tra diễn ra ở máy chủ --- độc lập với giao diện --- nên ngay cả khi một người cố gọi thẳng API bằng phiên đăng nhập sai vai trò, yêu cầu vẫn bị từ chối (mã lỗi 403). Nói cách khác, phân quyền ở đây là một cơ chế an ninh thực thụ, không phải chỉ là việc ẩn/hiện nút bấm trên màn hình.
+
+
+Vòng đời của một kỳ lương phản ánh từng bước chuyển giao trách nhiệm giữa các vai trò, được mô hình hóa bằng một máy trạng thái như sau:
+
+
+\begin{figure}[ht]
+\centering
+\begin{verbatim}
+   Nháp  ── trình duyệt (Tài chính) ──▶  Chờ duyệt
+                                          │
+                       ┌──────────────────┴───────────────────┐
+            phê duyệt (Giám đốc)                     trả lại (Giám đốc)
+                       ▼                                       ▼
+                   Đã duyệt  ── đánh dấu đã trả (Tài chính) ──▶  Đã trả
+                                                              (quay lại Nháp)
+\end{verbatim}
+\end{figure}
+
+
+Mỗi lần chuyển trạng thái đều được ghi lại \textbf{người thực hiện và thời điểm} một cách tự động (mọi thực thể nghiệp vụ kế thừa một lớp cơ sở có chức năng ghi vết) --- tạo ra nhật ký kiểm toán (audit trail) đầy đủ cho toàn bộ chuỗi hành động.
+
+
+Bên cạnh đó, hệ thống đặt một \textbf{cổng kiểm soát "kỳ đã chốt"}: trước khi cho phép tính lương cho một tháng, hệ thống kiểm tra kỳ chấm công của tháng đó đã được Nhân sự chốt hay chưa; nếu chưa, yêu cầu bị từ chối kèm thông báo đề nghị chốt kỳ trước. Cổng này tái tạo đúng bước "Nhân sự ký xác nhận bảng chấm công trước khi chuyển cho Kế toán" trong quy trình giấy tờ --- bảo đảm Tài chính chỉ tính lương trên dữ liệu đã được xác nhận.
+
+
+\subsection{Kết quả đạt được}
+
+
+Sau khi triển khai mô hình phân tách nhiệm vụ bảy vai trò, hệ thống đạt được:
+
+
+
+\begin{table}[ht]
+\centering
+\caption{So sánh kiểm soát nội bộ trước và sau giải pháp phân tách nhiệm vụ}
+\small
+\begin{tabularx}{\textwidth}{|X|X|X|}
+\hline
+\textbf{Kịch bản gian lận} & \textbf{Thiết kế ban đầu (một vai trò)} & \textbf{Thiết kế mới (bảy vai trò)} \\ \hline
+Tạo nhân viên ma và tính lương & \checkmarkc Có thể (một tài khoản) & \xmarkc Không thể (cần nhân sự và tài chính) \\ \hline
+Tự phê duyệt bảng lương mình tính & \checkmarkc Có thể (một tài khoản) & \xmarkc Không thể (tài chính tính, giám đốc duyệt) \\ \hline
+Tăng ngày công rồi tính lương cao & \checkmarkc Có thể (một tài khoản) & \xmarkc Không thể (nhân sự chốt kỳ, tài chính tính) \\ \hline
+Xem lương của nhân viên khác & \checkmarkc Không kiểm soát & \xmarkc Chỉ truy được dữ liệu của chính mình \\ \hline
+Gọi dịch vụ tính lương bằng phiên sai vai trò & \checkmarkc Có thể & \xmarkc Bị từ chối (thực thi ở máy chủ) \\ \hline
+\end{tabularx}
+\end{table}
+
+
+Mô hình bảy vai trò này tương đương với kiểm soát nội bộ mà các doanh nghiệp áp dụng trong quy trình giấy tờ: không một cá nhân nào có thể hoàn thành toàn bộ vòng đời thanh toán lương một mình. Đây là yêu cầu của các chuẩn kiểm toán như ISO 27001 (kiểm soát truy cập) và khung kiểm soát nội bộ COSO.
+
+
+\section{Quy trình chấm công tự động theo hướng sự kiện}
+
+
+\subsection{Bài toán}
+
+
+Thiết bị nhận diện khuôn mặt sinh ra các bản ghi chấm công thô (ai, lúc nào, vào hay ra). Để tính lương, cần biến chúng thành bản ghi có cấu trúc (ngày, giờ vào, giờ ra, số giờ làm, đi muộn bao nhiêu). Trong thiết kế, dữ liệu chấm công đi qua ba lớp, mỗi lớp một mục đích:
+
+
+\begin{itemize}
+\item \textbf{Bản ghi chấm công thô}: sự kiện gốc, bất biến, dùng để gỡ lỗi và đối chiếu (audit).
+\item \textbf{Bản ghi ngày công}: bản dẫn xuất theo từng nhân viên $\times$ từng ngày --- nguồn sự thật duy nhất cho ngày công, tổng hợp từ các bản ghi thô trong ngày.
+\item \textbf{Bảng công tổng hợp tháng}: sinh ra khi chốt kỳ công, gộp toàn bộ ngày công của tháng thành các chỉ số phục vụ tính lương (số ngày công thực tế NCtt, số ngày công chuẩn Nt, tổng giờ đi muộn\ldots{}).
+\end{itemize}
+
+
+Nhân viên không được sửa trực tiếp bản ghi ngày công; muốn điều chỉnh phải nộp \textbf{đơn bổ sung chấm công} để cấp quản lý cùng phòng phê duyệt --- giữ cho dữ liệu luôn truy vết được.
+
+
+Bài toán kỹ thuật đặt ra: làm thế nào để tự động chuyển bản ghi thô thành bản ghi ngày công mà đồng thời (1) không tạo phụ thuộc vòng giữa hai mô-đun xử lý chấm công thô và xử lý ngày công; (2) bảo đảm nhất quán --- chỉ sinh bản ghi ngày công khi bản ghi thô đã được lưu thành công; (3) không cần đến hàng đợi thông điệp bên ngoài (Kafka, RabbitMQ) vì quy mô hệ thống chưa đòi hỏi; và (4) hỗ trợ phục hồi --- nếu xử lý thời gian thực thất bại thì có cơ chế bù trừ.
+
+
+Cách tiếp cận trực tiếp (mô-đun chấm công thô gọi thẳng mô-đun ngày công, và ngược lại để tra cứu) tạo ra \textbf{phụ thuộc vòng}: khung Spring không thể khởi tạo được các thành phần khi A phụ thuộc B còn B lại phụ thuộc A, dẫn đến lỗi ngay khi khởi động ứng dụng. Đây chính là vấn đề cần một kiến trúc tách rời để giải quyết.
+
+
+\subsection{Giải pháp}
+
+
+Đồ án sử dụng cơ chế \textbf{sự kiện ứng dụng (Application Events)} của Spring với ngữ nghĩa \textbf{phát sự kiện sau khi giao dịch đã cam kết} (after-commit) để giải quyết đồng thời cả bốn yêu cầu. Kiến trúc tổng quát được trình bày ở Hình 5.3.
+
+
+
+\begin{figure}[ht]
+\centering
+\begin{verbatim}
+   Dịch vụ chấm công thô                 Dịch vụ ngày công
+   ─────────────────────                 ─────────────────
+   Lưu bản ghi check-in thô              Lắng nghe sự kiện (sau commit)
+        │                                    │
+        │  phát sự kiện chấm công            ├─ Vào ca: tìm/tạo bản ghi ngày,
+        │  {mã NV, thời điểm, vào/ra}        │           ghi giờ vào, tính đi muộn
+        ▼                                    └─ Ra ca: ghi giờ ra, tính giờ làm,
+   Cam kết giao dịch                                   giờ công, quy đổi ngày công
+        │
+        ▼  (sau cam kết) → bên xử lý chạy trong một giao dịch mới
+\end{verbatim}
+\caption{Kiến trúc hướng sự kiện cho pipeline chấm công}
+\end{figure}
+
+
+\textbf{Phát sự kiện sau khi cam kết.} Khi một bản ghi chấm công thô được lưu thành công, dịch vụ chấm công thô phát đi một sự kiện mang thông tin (mã nhân viên, thời điểm, loại vào/ra). Sự kiện chỉ được chuyển tới bên xử lý \textbf{sau khi} giao dịch lưu bản ghi thô đã cam kết. Nhờ vậy, nếu giao dịch bị hoàn tác (rollback), sự kiện không bao giờ được phát --- loại bỏ hoàn toàn khả năng sinh bản ghi ngày công cho một bản ghi thô không tồn tại. Đây là khác biệt then chốt so với sự kiện thông thường (phát ngay khi gọi, trước khi cam kết), vốn có thể tạo dữ liệu mồ côi nếu giao dịch sau đó bị hoàn tác.
+
+
+\textbf{Bảo đảm bất biến trước trùng lặp (idempotency).} Bên xử lý áp dụng nguyên tắc "tìm-hoặc-tạo" theo cặp (nhân viên, ngày): nếu bản ghi ngày công của ngày đó đã tồn tại thì chỉ cập nhật, không tạo mới. Do đó dù một sự kiện "vào ca" bị gửi lại nhiều lần do lỗi mạng, mỗi nhân viên vẫn chỉ có đúng một bản ghi cho mỗi ngày.
+
+
+\textbf{Lớp bù trừ định kỳ (backfill).} Một tác vụ định kỳ chạy lúc nửa đêm quét lại toàn bộ bản ghi thô của ngày hôm trước chưa được xử lý và xử lý lại chúng. Cơ chế hai lớp --- xử lý thời gian thực ngay khi thiết bị gửi log, cộng với bù trừ định kỳ cho các log bị bỏ sót do thiết bị mất kết nối hoặc máy chủ khởi động lại --- bảo đảm không có ngày công nào bị thất lạc.
+
+
+\textbf{Chốt kỳ --- sinh bảng công tổng hợp.} Cuối tháng, Nhân sự thực hiện thao tác chốt kỳ. Khi đó hệ thống gộp toàn bộ bản ghi ngày công của từng nhân viên trong tháng thành một bảng công tổng hợp gồm các chỉ số phục vụ tính lương: số ngày công thực tế (NCtt), số ngày công chuẩn của tháng (Nt), tổng giờ đi muộn, số ngày nghỉ có phép\ldots{} Đây chính là đầu vào cho khâu tính lương: Nt được suy ra tự động từ bảng công thay vì nhập tay, còn NCtt lấy trực tiếp từ các ngày công đã chốt. Sau khi chốt, các bản ghi ngày công của kỳ bị khóa; mọi điều chỉnh phải đi qua đơn bổ sung chấm công có phê duyệt, giữ cho dữ liệu tính lương luôn truy vết được.
+
+
+\textbf{Tính tự động các chỉ số ngày công.} Khi ghép cặp vào/ra trong ngày, hệ thống tính: số giờ đi muộn (so với giờ bắt đầu ca chuẩn), tổng giờ làm (từ giờ vào đến giờ ra), số giờ được tính công (tối đa 8 giờ/ngày --- phần vượt được tính tăng ca riêng), quy đổi ra ngày công (8 giờ tương ứng 1 ngày công) và cờ vi phạm (bật khi có đi muộn). Các chỉ số này là đầu vào trực tiếp cho hệ số chuyên cần (HS2) và công thức tính lương.
+
+
+\subsection{Kết quả đạt được}
+
+
+Giải pháp dựa trên cơ chế sự kiện ứng dụng nội bộ mang lại ba lợi ích đồng thời:
+
+
+Lợi ích thứ nhất --- \textbf{tách biệt hoàn toàn hai mô-đun}: mô-đun xử lý chấm công thô và mô-đun ngày công không tham chiếu trực tiếp lẫn nhau mà chỉ liên lạc qua sự kiện. Hai mô-đun có thể phát triển và kiểm thử độc lập; nếu sau này cần tách thành dịch vụ riêng (microservice) thì chỉ việc thay cơ chế phát sự kiện nội bộ bằng một hàng đợi thông điệp, không phải sửa logic.
+
+
+Lợi ích thứ hai --- \textbf{tính nhất quán dữ liệu}: nhờ phát sự kiện sau khi cam kết, không bao giờ tồn tại bản ghi ngày công "mồ côi" (không có bản ghi thô tương ứng); chuỗi từ sự kiện gốc đến bản ghi dẫn xuất luôn truy vết được.
+
+
+Lợi ích thứ ba --- \textbf{không phát sinh hạ tầng}: cơ chế sự kiện nội bộ của Spring chạy trong tiến trình, không độ trễ và không cần cấu hình thêm, nên không cần đến hàng đợi thông điệp bên ngoài. Với quy mô dưới 1000 nhân viên, đây là lựa chọn tối ưu về chi phí vận hành.
+
+
+
+\begin{table}[ht]
+\centering
+\caption{So sánh các phương án thiết kế pipeline chấm công}
+\small
+\begin{tabularx}{\textwidth}{|X|X|X|X|}
+\hline
+\textbf{Phương án} & \textbf{Ưu điểm} & \textbf{Nhược điểm} & \textbf{Phù hợp} \\ \hline
+Sự kiện ứng dụng nội bộ (được chọn) & Không thêm hạ tầng, tách biệt mô-đun, an toàn nhờ phát sau cam kết & Trong tiến trình, không mở rộng ngang & < 10K sự kiện/ngày \\ \hline
+Gọi trực tiếp giữa hai mô-đun & Đơn giản & Phụ thuộc vòng, ràng buộc chặt & Không phù hợp \\ \hline
+Hàng đợi thông điệp (Kafka/RabbitMQ) & Mở rộng ngang, có retry, hàng đợi lỗi & Cần thêm hạ tầng, chi phí vận hành & > 100K sự kiện/ngày \\ \hline
+Quét định kỳ (chỉ cron) & Đơn giản & Trễ tới 24h, không thời gian thực & Không phù hợp cho HRMS \\ \hline
+\end{tabularx}
+\end{table}
+
+
+\section{Công thức tính lương tuân thủ pháp luật Việt Nam}
+
+
+\subsection{Bài toán}
+
+
+Tính lương không chỉ là phép nhân đơn giản. Pháp luật lao động và thuế Việt Nam quy định nhiều thành phần phức tạp:
+
+
+\begin{enumerate}
+\item Công thức lương cơ bản (Nghị định 74/2024/NĐ-CP và thỏa ước lao động):
+\end{enumerate}
+
+
+Lương không chỉ tỷ lệ với ngày công --- còn phụ thuộc vào hai hệ số đánh giá (HS1 hiệu suất do cấp trên chấm, HS2 chuyên cần suy từ chấm công), phụ cấp chức vụ, và hệ số bậc lương. Công thức phải phản ánh đúng thỏa ước lao động mà doanh nghiệp ký với nhân viên.
+
+
+\begin{enumerate}
+\item Tăng ca với nhiều mức lương (Bộ Luật Lao Động 2019, Điều 98):
+\end{enumerate}
+
+
+\begin{itemize}
+\item OT ngày thường: ít nhất $\times$1.5
+\item OT ngày nghỉ tuần (thứ 7, CN): ít nhất $\times$2.0
+\item OT ngày lễ, ngày nghỉ có hưởng lương: ít nhất $\times$3.0
+\item Làm việc vào ban đêm (22:00--06:00): thêm ít nhất 30\% so với ban ngày
+\item OT ban đêm: tổng hợp cả hai hệ số
+\end{itemize}
+
+
+Điểm phức tạp: một ca OT có thể bắt đầu ban ngày và kết thúc ban đêm. Phần trăm phụ trội 30\% chỉ áp dụng cho phần thời gian thực sự trong khoảng 22:00--06:00, không phải toàn bộ ca.
+
+
+\begin{enumerate}
+\item Bảo hiểm xã hội (Luật BHXH 2014, tỷ lệ từ 2024):
+\end{enumerate}
+
+
+Đóng bảo hiểm dựa trên lương đóng bảo hiểm, không phải lương tổng. Đối với BHXH và BHYT, lương đóng bị giới hạn trần bằng 20 lần mức lương cơ sở --- với mức lương cơ sở 2.340.000 VND áp dụng từ 01/07/2024, trần này là 46.800.000 VND/tháng. Riêng BHTN có trần đóng xác định theo 20 lần mức lương tối thiểu vùng. Nếu lương cao hơn trần, vẫn chỉ đóng bảo hiểm trên trần.
+
+
+\begin{enumerate}
+\item Thuế TNCN --- 7 bậc lũy tiến (Thông tư 111/2013/TT-BTC):
+\end{enumerate}
+
+
+Thuế tính trên thu nhập tính thuế (thu nhập chịu thuế trừ các khoản giảm trừ). Mỗi phần thu nhập nằm trong bậc nào thì chịu thuế suất của bậc đó --- không phải toàn bộ thu nhập chịu mức thuế của bậc cao nhất.
+
+
+\subsection{Giải pháp}
+
+
+\textbf{Thiết kế "bộ máy tính lương thuần".} Quyết định quan trọng nhất ở khâu này là tách toàn bộ logic tính toán thành một \textbf{thành phần tính thuần} (pure computation): nó nhận vào bộ dữ liệu đã chuẩn bị sẵn (hợp đồng, ngày công, yêu cầu tăng ca đã duyệt, các hệ số, cấu hình lương) và trả về kết quả, \textbf{không truy cập cơ sở dữ liệu và không gây tác dụng phụ}. Việc đọc/ghi dữ liệu được đẩy sang tầng dịch vụ riêng. Thiết kế này đem lại ba lợi ích: (1) \textbf{kiểm thử đơn vị} dễ dàng --- chỉ cần dựng bộ dữ liệu vào rồi gọi hàm tính, không cần cơ sở dữ liệu hay khung ứng dụng; (2) \textbf{tái sử dụng} --- cả tính lương đơn lẻ lẫn tính hàng loạt cho cả kỳ đều dùng chung một bộ máy, tránh trùng lặp logic; (3) \textbf{tất định} --- cùng đầu vào luôn cho cùng kết quả, thuận tiện kiểm chứng tính đúng đắn.
+
+
+Công thức lương tổng quát được trình bày như sau:
+
+
+\begin{figure}[ht]
+\centering
+\begin{verbatim}
+Lương gộp = Lương cơ bản kỳ + Tiền tăng ca
+
+Lương cơ bản kỳ = [(Lhq × HStb) + Li + HTi] × (NCtt / Nt)
+
+Trong đó:
+  Lhq  = lương cơ bản ghi trên hợp đồng đang hiệu lực trong tháng
+  HStb = (HS1 + HS2) / 2  — trung bình cộng hai hệ số đánh giá
+  HS1  = hệ số hiệu suất do cấp trên chấm (A = 1,04; B = 1,00; C = 0,98),
+         mặc định B nếu chưa chấm. Quản lý đơn vị lấy trung bình HS1
+         của đơn vị mình; Giám đốc lấy trung bình HS1 toàn công ty.
+  HS2  = hệ số chuyên cần, suy tự động (theo quy chế 01/2020/QC-VTI):
+         A = 1,04 (không vi phạm và không nghỉ trong tháng);
+         B = 1,02 (không vi phạm nhưng có nghỉ ít nhất một lần);
+         C = 1,00 (có ít nhất một vi phạm: đi muộn/về sớm, làm < 8h,
+         vắng không thông báo). Quản lý/Giám đốc lấy trung bình đơn vị/công ty.
+  Li   = phụ cấp chức vụ (xác định theo ngạch – bậc lương)
+  HTi  = các khoản phụ cấp khác
+  NCtt = số ngày công thực tế (lấy từ bảng công đã chốt)
+  Nt   = số ngày công chuẩn của tháng (suy tự động từ bảng công)
+\end{verbatim}
+\end{figure}
+
+
+\textbf{Tiền tăng ca và phụ trội đêm.} Đơn giá một giờ làm được tính bằng lương cơ bản chia cho (Nt $\times$ 8 giờ). Tiền tăng ca cộng dồn theo từng loại ngày với hệ số luật định: ngày thường $\times$1,5; ngày nghỉ tuần $\times$2,0; ngày lễ $\times$3,0. Riêng phần giờ rơi vào khung đêm (22:00--06:00) được cộng thêm 30\%, và điểm tinh tế là \textbf{phụ trội đêm chỉ áp cho đúng số phút thực sự nằm trong khung đêm}, không phải toàn bộ ca. Số phút đêm được xác định bằng độ giao thoa giữa khoảng thời gian của ca tăng ca và khung [22:00, 06:00].
+
+
+Ví dụ minh họa: một ca tăng ca ngày thường từ 21:00 đến 01:00 (tổng 4 giờ) có 3 giờ rơi vào khung đêm; khi đó tiền tăng ca = đơn giá $\times$ 4 $\times$ 1,5 (hệ số ngày thường) + đơn giá $\times$ 3 $\times$ 0,3 (phụ trội đêm).
+
+
+\textbf{Bảo hiểm bắt buộc.} Mức đóng dựa trên lương đóng bảo hiểm, lấy bằng giá trị nhỏ hơn giữa lương ghi trên hợp đồng và trần đóng. Trần BHXH/BHYT bằng 20 lần mức lương cơ sở (với mức 2.340.000đ áp dụng từ 01/7/2024, trần là 46.800.000đ/tháng). Phần người lao động đóng gồm BHXH 8\% + BHYT 1,5\% + BHTN 1\%; phần doanh nghiệp đóng gồm BHXH 17\% + BHYT 3\% + BHTN 1\% + bảo hiểm tai nạn lao động 0,5\%. Tổng chi phí sử dụng lao động bằng lương gộp cộng toàn bộ phần doanh nghiệp đóng --- chỉ số này hiển thị cho Tài chính/Giám đốc phục vụ hoạch định ngân sách.
+
+
+\textbf{Thuế thu nhập cá nhân (lũy tiến 7 bậc).} Thu nhập tính thuế = lương gộp $-$ bảo hiểm người lao động đóng $-$ giảm trừ bản thân $-$ giảm trừ người phụ thuộc (theo số người phụ thuộc). Thuế được tính \textbf{lũy tiến từng phần}: mỗi phần thu nhập rơi vào bậc nào thì chịu thuế suất của bậc đó, chứ không phải toàn bộ thu nhập chịu mức thuế của bậc cao nhất. Các mốc bậc, thuế suất và mức giảm trừ đều lấy từ biểu thuế đang hiệu lực trong kỳ.
+
+
+Biểu thuế cùng các tham số (trần bảo hiểm, tỷ lệ, mức giảm trừ) nằm trong hệ thống cấu hình lương có hiệu lực-theo-ngày: Tài chính soạn phiên bản mới ở trạng thái nháp, Giám đốc phê duyệt để xuất bản thì phiên bản đó được áp dụng theo ngày hiệu lực. Nhờ vậy, khi Nhà nước thay đổi chính sách (mức lương cơ sở, biểu thuế), hệ thống cập nhật được mà không cần sửa mã nguồn (xem 5.1).
+
+
+\subsection{Kết quả đạt được}
+
+
+Kiểm chứng tính đúng đắn bằng ví dụ thực tế:
+
+
+Lấy trường hợp nhân viên Senior Developer với các thông số:
+
+\begin{itemize}
+\item Lương hợp đồng: 40,000,000 VND
+\item Lương đóng bảo hiểm: 40,000,000 VND (dưới trần 46.8M)
+\item Phụ cấp chức vụ: 2,000,000 VND
+\item Tháng 6/2026: 22 ngày làm việc, thực tế 21 ngày
+\item HS1 = A (1.04) do cấp trên chấm; không vi phạm chấm công và không nghỉ trong tháng $\rightarrow$ HS2 = A (1.04)
+\item OT: 10h weekday, 5h weekend, không đêm
+\item 1 người phụ thuộc
+\end{itemize}
+
+
+
+\begin{table}[ht]
+\centering
+\caption{Kiểm chứng tính lương mẫu}
+\small
+\begin{tabularx}{\textwidth}{|X|X|X|}
+\hline
+\textbf{Thành phần} & \textbf{Công thức} & \textbf{Kết quả} \\ \hline
+Hệ số thi đua trung bình & (HS1 1,04 + HS2 1,04) / 2 & 1,04 \\ \hline
+Lương cơ bản kỳ (đủ tháng) & (40.000.000 $\times$ 1,04 + 2.000.000) & 43.600.000 \\ \hline
+Lương cơ bản kỳ (theo tỷ lệ 21/22) & 43.600.000 $\times$ (21/22) & 41.618.182 \\ \hline
+Đơn giá giờ & 40.000.000 / (22 $\times$ 8) & 227.273/giờ \\ \hline
+Tăng ca ngày thường & 10 giờ $\times$ 227.273 $\times$ 1,5 & 3.409.091 \\ \hline
+Tăng ca cuối tuần & 5 giờ $\times$ 227.273 $\times$ 2,0 & 2.272.727 \\ \hline
+Lương gộp & 41.618.182 + 5.681.818 & 47.300.000 \\ \hline
+Nền tính bảo hiểm & min(40.000.000; 46.800.000) & 40.000.000 \\ \hline
+Bảo hiểm xã hội nhân viên (8\%) & 40.000.000 $\times$ 8\% & 3.200.000 \\ \hline
+Bảo hiểm y tế nhân viên (1,5\%) & 40.000.000 $\times$ 1,5\% & 600.000 \\ \hline
+Bảo hiểm thất nghiệp nhân viên (1\%) & 40.000.000 $\times$ 1\% & 400.000 \\ \hline
+Tổng bảo hiểm nhân viên đóng &  & 4.200.000 \\ \hline
+Thu nhập chịu thuế & 47.300.000 $-$ 4.200.000 & 43.100.000 \\ \hline
+Giảm trừ bản thân &  & 15.500.000 \\ \hline
+Giảm trừ một người phụ thuộc &  & 6.200.000 \\ \hline
+Thu nhập tính thuế & 43.100.000 $-$ 21.700.000 & 21.400.000 \\ \hline
+Thuế bậc 1 (0--5tr $\times$ 5\%) & 5.000.000 $\times$ 5\% & 250.000 \\ \hline
+Thuế bậc 2 (5--10tr $\times$ 10\%) & 5.000.000 $\times$ 10\% & 500.000 \\ \hline
+Thuế bậc 3 (10--18tr $\times$ 15\%) & 8.000.000 $\times$ 15\% & 1.200.000 \\ \hline
+Thuế bậc 4 (18--32tr $\times$ 20\%) & 3.400.000 $\times$ 20\% & 680.000 \\ \hline
+Thuế thu nhập cá nhân &  & 2.630.000 \\ \hline
+Lương thực nhận & 47.300.000 $-$ 4.200.000 $-$ 2.630.000 & 40.470.000 \\ \hline
+Bảo hiểm xã hội chủ đóng (17\%) & 40.000.000 $\times$ 17\% & 6.800.000 \\ \hline
+Bảo hiểm y tế chủ đóng (3\%) & 40.000.000 $\times$ 3\% & 1.200.000 \\ \hline
+Bảo hiểm thất nghiệp chủ đóng (1\%) & 40.000.000 $\times$ 1\% & 400.000 \\ \hline
+Bảo hiểm tai nạn lao động chủ đóng (0,5\%) & 40.000.000 $\times$ 0,5\% & 200.000 \\ \hline
+Tổng chi phí sử dụng lao động & 47.300.000 + 8.600.000 & 55.900.000 \\ \hline
+\end{tabularx}
+\end{table}
+
+
+Kết quả được kiểm chứng bằng cách tính tay theo đúng quy định pháp luật --- không có sai số.
+
+
+Lợi ích của cấu hình động qua các bảng có hiệu lực theo ngày: khi Nhà nước điều chỉnh lương tối thiểu vùng (ảnh hưởng trần bảo hiểm) hoặc sửa đổi biểu thuế thu nhập cá nhân, người phụ trách tài chính chỉ cần tạo một phiên bản cấu hình mới ở trạng thái nháp với giá trị và ngày hiệu lực cập nhật; sau khi giám đốc phê duyệt và ban hành, hệ thống tự chọn đúng phiên bản theo ngày hiệu lực của từng kỳ lương mà không cần sửa mã nguồn hay khởi động lại. Các phiên bản đã ban hành là bất biến, giữ lại lịch sử để truy vết.
+
+
+\section{Cơ chế quản lý số dư nghỉ phép chống tranh chấp đồng thời}
+
+
+\subsection{Bài toán}
+
+
+Quản lý số dư nghỉ phép tưởng đơn giản nhưng ẩn chứa một vấn đề tranh chấp đồng thời (concurrency) kinh điển, minh họa bằng kịch bản sau:
+
+
+\begin{figure}[ht]
+\centering
+\begin{verbatim}
+Nhân viên A còn 5 ngày phép năm.
+A gửi gần như cùng lúc hai đơn, mỗi đơn xin nghỉ 3 ngày.
+
+Luồng thực thi KHÔNG an toàn (hai luồng xử lý song song):
+  Luồng 1: đọc số dư còn lại = 5 → hợp lệ (5 ≥ 3)
+  Luồng 2: đọc số dư còn lại = 5 → hợp lệ (5 ≥ 3)
+  Luồng 1: ghi nhận đơn, trừ 3 → số dư còn lại = 2
+  Luồng 2: ghi nhận đơn, trừ 3 → số dư còn lại = −1  (sai!)
+
+Kết quả: A có hai đơn đang chờ duyệt tổng 6 ngày trong khi chỉ có 5 ngày số dư.
+\end{verbatim}
+\end{figure}
+
+
+Ngoài tranh chấp đồng thời, còn có bài toán về thời điểm trừ số dư:
+
+
+Phương án A --- Trừ khi duyệt xong:
+
+\begin{itemize}
+\item Ưu: Đơn chưa duyệt không chiếm số dư
+\item Nhược: Nhân viên có thể gửi 10 đơn chồng nhau, tất cả đều được duyệt lần lượt cho đến khi vượt quá số dư
+\end{itemize}
+
+
+Phương án B --- Trừ khi submit:
+
+\begin{itemize}
+\item Ưu: Số dư bị "khóa" ngay, tránh overdraft
+\item Nhược: Nếu đơn bị từ chối, số dư bị giữ cho đến khi reject --- trải nghiệm xấu
+\item Nhược: Nhân viên không thể gửi đơn khác trong khi đơn cũ chờ duyệt
+\end{itemize}
+
+
+\subsection{Giải pháp}
+
+
+Đồ án triển khai cơ chế \textbf{trừ hai giai đoạn} (two-stage deduction), dựa trên việc tách số dư nghỉ phép của mỗi nhân viên thành các thành phần riêng và tính số dư còn lại theo công thức:
+
+
+\begin{figure}[ht]
+\centering
+\begin{verbatim}
+Số dư còn lại = Quota năm + Ngày chuyển từ năm trước
+                − Ngày đang chờ duyệt − Ngày đã nghỉ
+\end{verbatim}
+\end{figure}
+
+
+trong đó \textit{Ngày đang chờ duyệt} là phần tạm giữ cho các đơn chưa có quyết định cuối, còn \textit{Ngày đã nghỉ} là phần đã thực sự sử dụng.
+
+
+\textbf{Hai giai đoạn} vận hành như sau. Khi nhân viên \textbf{nộp} một đơn nghỉ N ngày, hệ thống kiểm tra số dư còn lại có đủ không; nếu đủ thì \textbf{tạm giữ} ngay N ngày vào phần "đang chờ duyệt" --- số dư còn lại giảm tức thì, qua đó ngăn việc đăng ký trùng vượt quá số dư. Khi đơn được \textbf{phê duyệt cuối} (ở cấp Quản lý), N ngày được chuyển từ "đang chờ duyệt" sang "đã nghỉ" --- số dư còn lại không đổi. Khi đơn bị \textbf{từ chối hoặc hủy} ở bất kỳ bước nào, N ngày được \textbf{hoàn trả} khỏi "đang chờ duyệt" --- số dư trở lại như trước khi nộp. Nhờ tách bạch "đang chờ" và "đã nghỉ", số dư luôn phản ánh đúng cả đơn đang treo lẫn đơn đã dùng, và việc hoàn trả khi từ chối là tức thời.
+
+
+\textbf{Chống tranh chấp đồng thời.} Vấn đề kinh điển: hai đơn nộp gần như cùng lúc cùng đọc một số dư cũ, cùng thấy "đủ" rồi cùng ghi --- dẫn đến vượt số dư (overdraft). Đồ án giải quyết bằng \textbf{khóa bi quan ở mức dòng dữ liệu} (pessimistic lock): khi một giao dịch nộp đơn bắt đầu, nó khóa đúng dòng số dư của nhân viên đó cho tới khi giao dịch cam kết; mọi giao dịch khác trên cùng dòng số dư phải xếp hàng chờ. Nhờ đó chuỗi "đọc số dư $\rightarrow$ kiểm tra $\rightarrow$ tạm giữ" diễn ra tuần tự, loại bỏ hoàn toàn khả năng hai đơn cùng ghi đè. So với các phương án thay thế (khóa lạc quan có thử lại, hoặc khóa ở tầng ứng dụng bằng Redis), khóa bi quan ở mức dòng là đủ và đơn giản nhất cho quy mô bài toán này.
+
+
+
+\begin{table}[ht]
+\centering
+\caption{So sánh các phương án quản lý số dư nghỉ phép}
+\small
+\begin{tabularx}{\textwidth}{|X|X|X|X|X|}
+\hline
+\textbf{Phương án} & \textbf{Race condition} & \textbf{Overdraft} & \textbf{UX khi bị từ chối} & \textbf{Độ phức tạp} \\ \hline
+Trừ khi duyệt & \xmarkc Có & \xmarkc Có & Tốt & Thấp \\ \hline
+Trừ khi submit & \xmarkc Có & \checkmarkc Không & Trung bình & Thấp \\ \hline
+Two-stage + DB lock (được chọn) & \checkmarkc Không & \checkmarkc Không & \checkmarkc Số dư hoàn trả ngay khi reject & Trung bình \\ \hline
+Optimistic locking & \checkmarkc Không (retry) & \checkmarkc Không & \checkmarkc & Trung bình \\ \hline
+Application-level mutex (Redis) & \checkmarkc Không & \checkmarkc Không & \checkmarkc & Cao \\ \hline
+\end{tabularx}
+\end{table}
+
+
+\subsection{Kết quả đạt được}
+
+
+Cơ chế trừ hai giai đoạn mang lại ba đảm bảo đồng thời:
+
+
+Đảm bảo thứ nhất --- \textbf{không vượt số dư (overdraft)}: tại mọi thời điểm, tổng số ngày đang chờ duyệt và đã nghỉ không bao giờ vượt quá tổng quota năm và ngày chuyển từ năm trước. Nhân viên không thể nghỉ nhiều hơn quota, dù gửi bao nhiêu đơn cùng lúc.
+
+
+Đảm bảo thứ hai --- \textbf{không tranh chấp đồng thời}: khóa ghi bi quan bảo đảm các thao tác trên cùng một số dư diễn ra tuần tự; không xảy ra cảnh hai đơn cùng đọc một số dư rồi cùng vượt qua bước kiểm tra.
+
+
+Đảm bảo thứ ba --- \textbf{số dư luôn phản ánh trạng thái thực}: con số hiển thị cho nhân viên luôn là số ngày họ thực sự có thể dùng thêm tại thời điểm hiện tại, đã tính cả các đơn đang chờ duyệt.
+
+
+Ví dụ về trải nghiệm: nhân viên còn 5 ngày phép, đã gửi một đơn nghỉ 3 ngày (đang chờ duyệt); khi muốn gửi tiếp đơn 4 ngày, hệ thống báo "Số ngày nghỉ vượt quá số dư còn lại: 2 ngày" --- chính xác vì 5 $-$ 3 (đang chờ) = 2 ngày thực sự còn lại.
+
+
+Bốn đóng góp trong chương này xuất phát từ các bài toán thực tế phát sinh trong quá trình xây dựng hệ thống và được giải quyết bằng lập luận kỹ thuật có căn cứ. Phân tách nhiệm vụ và cơ chế trừ hai giai đoạn đảm bảo tính toàn vẹn tài chính từ hai phía tổ chức và đồng thời. Quy trình chấm công theo hướng sự kiện và công thức tính lương tuân thủ pháp luật cung cấp hai nền tảng tự động hóa và tuân thủ cốt lõi của một hệ thống quản lý nhân sự chuyên nghiệp. Tổng kết toàn bộ đồ án --- kết quả đạt được, hạn chế còn tồn tại và lộ trình phát triển tiếp theo --- được trình bày trong Chương 6.
+
+

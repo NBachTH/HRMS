@@ -1,0 +1,330 @@
+\chapter{NỀN TẢNG LÝ THUYẾT VÀ CÔNG NGHỆ SỬ DỤNG}
+
+
+Xuất phát từ các yêu cầu đã xác định trong Chương 2, chương này phân tích nền tảng lý luận cho từng quyết định công nghệ của FaceZ HRMS. Với mỗi bài toán kỹ thuật, chương liệt kê các hướng tiếp cận hiện có, đánh giá ưu nhược điểm, và lý giải quyết định cuối cùng trong ngữ cảnh cụ thể của đồ án. Các công nghệ được tổ chức theo sáu nhóm: framework backend và ngôn ngữ lập trình (Mục 3.2), cơ sở dữ liệu và bộ nhớ đệm (Mục 3.3), cơ chế xác thực JWT và bảo mật (Mục 3.4), framework frontend (Mục 3.5), và hạ tầng tài liệu API (Mục 3.6).
+
+
+\section{Tổng quan các lựa chọn công nghệ}
+
+
+Mỗi quyết định công nghệ trong đồ án được đưa ra dựa trên một bài toán cụ thể cần giải quyết, chứ không phải dựa trên mức độ phổ biến hay sở thích cá nhân. Phần này trước tiên trình bày bức tranh tổng thể các lựa chọn và lý do căn bản, trước khi đi sâu vào từng công nghệ ở các mục tiếp theo.
+
+
+
+\begin{table}[ht]
+\centering
+\caption{Tóm tắt các lựa chọn công nghệ}
+\small
+\begin{tabularx}{\textwidth}{|X|X|X|X|}
+\hline
+\textbf{Tầng} & \textbf{Công nghệ được chọn} & \textbf{Các lựa chọn thay thế đã xem xét} & \textbf{Lý do lựa chọn} \\ \hline
+Backend Runtime & Java 21 + Spring Boot 4.0.0-M3 & Node.js/Express, Python/Django, Go/Gin & Hệ sinh thái doanh nghiệp trưởng thành; Spring Security, JPA, Events sẵn có; Virtual Threads cho I/O-bound workload \\ \hline
+Bảo mật & Spring Security + JWT & OAuth2/Keycloak, Session-based & Kiểm soát hoàn toàn luồng xác thực; không phụ thuộc dịch vụ ngoài; JWT phù hợp SPA stateless \\ \hline
+Quản lý lược đồ & Script SQL có phiên bản & Liquibase, để framework tự cập nhật lược đồ & Quy ước đơn giản, áp thủ công khi triển khai; chế độ ứng dụng không tự sửa lược đồ an toàn hơn để framework tự cập nhật; không phụ thuộc công cụ di trú lúc chạy \\ \hline
+ORM & Spring Data JPA (Hibernate) & JOOQ, MyBatis, JDBC Template & Giảm mã lặp; tích hợp sẵn cơ chế ghi vết kiểm toán và xóa mềm \\ \hline
+Cơ sở dữ liệu chính & PostgreSQL 15 & MySQL 8, MongoDB, MariaDB & Cột kiểu JSON có thể truy vấn cho cấu hình lương; chỉ mục duy nhất có điều kiện cho hợp đồng; khung nhìn cơ sở dữ liệu cho truy vấn tăng ca \\ \hline
+Cache \& Session Store & Redis 7 & Memcached, Hazelcast, bộ nhớ trong tiến trình & Thời gian sống tự hết hạn cho danh sách thu hồi token; bộ đếm nguyên tử cho giới hạn tần suất; chia sẻ giữa nhiều tiến trình \\ \hline
+Lưu trữ đối tượng & MinIO (tương thích S3) & AWS S3, lưu file hệ thống, lưu nhị phân trong CSDL & Lưu tài liệu hợp đồng PDF; giao diện tương thích S3 nên dễ chuyển sang đám mây; tách tệp nhị phân khỏi cơ sở dữ liệu \\ \hline
+Frontend Framework & Next.js 15 (App Router) & Create React App, Vite+React, Vue 3 & SSR cho hiệu suất; App Router cho nested layouts theo role; TypeScript first-class \\ \hline
+UI Styling & Tailwind CSS 3 & Bootstrap, MUI, Chakra UI & Utility-first phù hợp dashboard phức tạp; không bị ràng buộc design system bên thứ ba \\ \hline
+Charts & Recharts & Chart.js, ApexCharts, D3.js & Tích hợp native với React; declarative API; hỗ trợ ResponsiveContainer tốt \\ \hline
+Containerization & Docker + Docker Compose & Kubernetes, bare metal & Docker Compose đủ cho single-host deployment; Kubernetes quá phức tạp cho quy mô hiện tại \\ \hline
+API Documentation & SpringDoc OpenAPI (Swagger) & Postman Collection, API Blueprint & Tự động sinh từ annotation; luôn đồng bộ với code; UI test trực tiếp trên browser \\ \hline
+\end{tabularx}
+\end{table}
+
+
+\section{Nhóm xử lý nghiệp vụ --- Backend}
+
+
+\subsection{Spring Boot và Java 21}
+
+
+Bài toán cần giải quyết: hệ thống HRMS có độ phức tạp nghiệp vụ cao --- nhiều thực thể với vòng đời phức tạp, giao dịch lồng nhau, xử lý theo hướng sự kiện, tác vụ định kỳ và xử lý hàng loạt. Cần một nền tảng có hệ sinh thái đủ trưởng thành để không phải tự xây dựng các thành phần cơ sở từ đầu.
+
+
+Lý do chọn Java 21 và Spring Boot 4.0.0-M3:
+
+
+Java 21 là phiên bản LTS (Long-Term Support) mới nhất, mang hai cải tiến quan trọng cho dự án này. Thứ nhất, luồng ảo (ổn định từ Java 21): mỗi yêu cầu được xử lý trên một luồng ảo thay vì luồng hệ điều hành, cho phép hàng nghìn kết nối đồng thời với bộ nhớ tối thiểu mà không phải viết mã bất đồng bộ phức tạp. Điều này đặc biệt hữu ích với các tác vụ thiên về vào/ra (đọc dữ liệu từ cơ sở dữ liệu) khi nhiều yêu cầu chạy đồng thời. Thứ hai, kiểu bản ghi và lớp niêm phong giúp viết đối tượng truyền dữ liệu an toàn kiểu hơn, giảm mã lặp.
+
+
+Spring Boot 4.0.0-M3 được chọn vì hệ sinh thái tích hợp sẵn:
+
+
+\begin{itemize}
+\item Mô-đun bảo mật: cung cấp chuỗi bộ lọc có thể cấu hình để đặt bước xác thực thiết bị (qua khóa API) trước bước xác thực người dùng (qua token), phân quyền chi tiết theo mẫu đường dẫn và phương thức HTTP, đồng thời hỗ trợ kiểm soát quyền ở mức từng phương thức nghiệp vụ.
+\item Mô-đun truy cập dữ liệu: giảm mã lặp khi thao tác cơ sở dữ liệu; tự động ghi vết người tạo/người sửa và thời điểm; chạy ở chế độ không để framework tự sửa lược đồ, nhường quyền kiểm soát lược đồ cho các script SQL có phiên bản.
+\item Cơ chế sự kiện nội bộ: mô hình phát hành/đăng ký trong tiến trình, kích hoạt sau khi giao dịch hoàn tất, cho phép tách rời nghiệp vụ ghi nhận chấm công khỏi nghiệp vụ tổng hợp công mà không tạo phụ thuộc vòng và không cần hàng đợi tin nhắn bên ngoài.
+\item Cơ chế tác vụ định kỳ: lập lịch theo biểu thức thời gian cho việc tổng hợp chấm công và rà soát hợp đồng sắp hết hạn.
+\item Cơ chế xử lý bất đồng bộ: phục vụ việc phát thông báo nghiệp vụ mà không chiếm dụng luồng xử lý của yêu cầu chính.
+\end{itemize}
+
+
+So sánh với lựa chọn thay thế:
+
+
+\textit{Node.js/Express} có ưu điểm về tốc độ phát triển nhưng hệ sinh thái doanh nghiệp (bảo mật, ghi vết kiểm toán, quản lý lược đồ) kém trưởng thành hơn, khiến phần xử lý phân quyền và giao dịch phải viết thủ công nhiều hơn. \textit{Python/Django} có thư viện ánh xạ quan hệ - đối tượng mạnh nhưng hiệu năng đa luồng hạn chế do khóa thông dịch toàn cục, và không có cơ chế sự kiện nội bộ tương đương. \textit{Go/Gin} nhanh nhưng thiếu hệ sinh thái ánh xạ dữ liệu và bảo mật cho nghiệp vụ phức tạp.
+
+
+Mã nguồn backend được tổ chức theo \textbf{miền nghiệp vụ} thay vì theo tầng kỹ thuật. Mỗi miền --- nhân sự, phòng ban, chấm công, nghỉ phép, tăng ca, hợp đồng, tính lương, thông báo --- là một mô-đun tự chứa, gom đầy đủ thực thể, dịch vụ và kho dữ liệu liên quan vào một chỗ. Các thành phần dùng chung (kiểu liệt kê vai trò và trạng thái, bộ lọc xác thực, dịch vụ token, bộ xử lý ngoại lệ, lớp bao bọc phản hồi) được tách riêng. Cách tổ chức theo miền giúp mỗi tính năng dễ định vị và bảo trì hơn so với tổ chức theo tầng khi mã nguồn lớn dần.
+
+
+\subsection{Spring Security và kiến trúc phân quyền}
+
+
+Bài toán cần giải quyết: hệ thống có bảy vai trò với quyền hạn chồng lấp phức tạp. Cùng một thao tác xem danh sách nhân viên có thể được truy cập bởi nhân sự (xem tất cả), quản lý (xem nhân viên trong phòng ban) và nhân viên (xem chính mình). Thiết bị chấm công lại xác thực bằng khóa API thay vì token. Cần một cơ chế phân quyền đủ linh hoạt để xử lý mọi trường hợp này.
+
+
+Kiến trúc bảo mật được triển khai:
+
+
+Chuỗi bộ lọc bảo mật được sắp đặt theo thứ tự ưu tiên như Hình 3.1: một yêu cầu đi vào sẽ lần lượt qua \textit{bước xác thực thiết bị}, \textit{bước xác thực người dùng}, \textit{luật phân quyền theo đường dẫn}, rồi \textit{kiểm soát quyền ở mức phương thức} trước khi tới mã nghiệp vụ.
+
+
+\begin{figure}[ht]
+\centering
+\begin{verbatim}
+Yêu cầu HTTP
+  │
+  ▼
+Xác thực thiết bị        ← kiểm tra khóa API cho luồng gửi dữ liệu chấm công
+  │ (không phải luồng chấm công → bỏ qua bước này)
+  ▼
+Xác thực người dùng      ← kiểm tra token cho mọi luồng còn lại
+  │ (đọc danh tính từ token, nạp thông tin tài khoản vào ngữ cảnh bảo mật)
+  ▼
+Luật phân quyền đường dẫn ← kiểm tra quyền theo mẫu đường dẫn và phương thức HTTP
+  │
+  ▼
+Kiểm soát mức phương thức ← kiểm tra quyền chi tiết hơn cho từng nghiệp vụ
+  │
+  ▼
+Mã nghiệp vụ
+\end{verbatim}
+\caption{Thứ tự các bước trong chuỗi bộ lọc bảo mật}
+\end{figure}
+
+
+
+Bước xác thực thiết bị phải đứng trước bước xác thực người dùng vì thiết bị chấm công không sở hữu token --- nếu kiểm tra token chạy trước, thiết bị sẽ bị từ chối ngay. Khi thiết bị gửi dữ liệu chấm công kèm khóa API hợp lệ, hệ thống gán cho nó một quyền hạn riêng dành cho thiết bị và bỏ qua bước kiểm tra token.
+
+
+Ở mức phương thức, cơ chế kiểm soát quyền chi tiết xử lý các trường hợp vượt quá khả năng đối sánh theo đường dẫn: chẳng hạn chỉ vai trò phụ trách tài chính (và quản trị hệ thống) mới được phép kích hoạt tính lương, chỉ vai trò giám đốc mới được phê duyệt, còn nhân viên chỉ được xem phiếu lương của chính mình --- danh tính người gọi lấy trực tiếp từ token chứ không tin tham số do phía giao diện gửi lên.
+
+
+\subsection{Truy cập dữ liệu và quản lý lược đồ theo phiên bản}
+
+
+Thư viện truy cập dữ liệu giải quyết đồng thời ba bài toán:
+
+
+\textit{Bài toán 1 --- Ghi vết kiểm toán (audit trail):} mọi thay đổi dữ liệu nghiệp vụ cần lưu lại ai tạo, ai sửa và vào lúc nào. Đồ án triển khai bằng một lớp thực thể cơ sở dùng chung: mọi thực thể kế thừa lớp này tự động được bổ sung bốn trường --- thời điểm tạo, thời điểm sửa, người tạo, người sửa. Danh tính người thao tác được lấy từ ngữ cảnh bảo mật của phiên làm việc, nhờ vậy vết kiểm toán được ghi tự động mà không phải viết tay ở từng nghiệp vụ.
+
+
+\textit{Bài toán 2 --- Xóa mềm (soft delete):} dữ liệu lịch sử không bị xóa vật lý. Mọi thực thể có một cờ đánh dấu đã xóa kèm thời điểm xóa; các truy vấn tự động luôn lọc bỏ những bản ghi đã đánh dấu, nên dữ liệu vẫn còn cho mục đích tra cứu và kiểm toán.
+
+
+\textit{Bài toán 3 --- Truy vấn suy diễn:} thư viện tự sinh câu lệnh truy vấn từ chính tên phương thức khai báo trong kho dữ liệu, giảm đáng kể lượng mã truy vấn phải viết thủ công.
+
+
+Lược đồ cơ sở dữ liệu được quản lý bằng các \textbf{script SQL đánh số phiên bản}. Cách đơn giản ban đầu là để framework tự so sánh thực thể với cơ sở dữ liệu rồi tự cập nhật lược đồ, nhưng cách này không xử lý được các thao tác phức tạp như đổi tên cột, tách cột hay di trú dữ liệu, và không cho biết chính xác môi trường vận hành đang ở phiên bản lược đồ nào.
+
+
+Giải pháp của đồ án: mỗi thay đổi lược đồ là một tệp SQL có số thứ tự rõ ràng --- vừa là \textbf{nguồn sự thật} của lược đồ, vừa là \textbf{nhật ký} đầy đủ lịch sử thay đổi. Ứng dụng chạy ở chế độ không tự sửa lược đồ; các tệp được \textbf{áp thủ công theo đúng thứ tự} khi triển khai, hoặc dùng một bản hợp nhất (gộp toàn bộ lịch sử thành một tập lệnh khởi tạo phẳng) để dựng cơ sở dữ liệu từ đầu chỉ bằng một lệnh. Toàn bộ ba mươi mốt phiên bản lược đồ phản ánh trọn vẹn quá trình tiến hóa của hệ thống, từ bản nền ban đầu đến các thay đổi phức tạp như chuyển kiểu lưu ngày hợp đồng từ chuỗi sang kiểu ngày bằng kỹ thuật cột song song để không gián đoạn vận hành.
+
+
+\section{Nhóm dữ liệu}
+
+
+\subsection{PostgreSQL 15}
+
+
+Bài toán cần giải quyết: Hệ thống HRMS có ba yêu cầu đặc thù với cơ sở dữ liệu mà không phải mọi RDBMS đều hỗ trợ tốt:
+
+
+Yêu cầu 1 --- Cấu hình linh hoạt dạng JSON: bảng cấu hình hệ thống lưu các tham số tính lương (biểu thuế thu nhập cá nhân bảy bậc, bảng lương bậc thang, tỷ lệ bảo hiểm) dưới dạng cấu trúc JSON khác nhau tùy từng loại. Dùng nhiều bảng riêng cho mỗi loại sẽ phức tạp khi bổ sung loại mới; lưu JSON dưới dạng chuỗi thuần thì không thể truy vấn từng phần. Kiểu JSON nhị phân của PostgreSQL lưu dữ liệu ở dạng đã phân giải, có thể truy vấn và lập chỉ mục trực tiếp trong câu lệnh SQL, nên rút được riêng mảng bậc thuế mà không phải nạp toàn bộ cấu hình về tầng ứng dụng.
+
+
+Yêu cầu 2 --- Ràng buộc duy nhất có điều kiện: bảng hợp đồng dùng mô hình lịch sử --- mỗi nhân viên có nhiều bản ghi hợp đồng nhưng chỉ đúng một bản đang hiệu lực. Cần ràng buộc bảo đảm không tồn tại hai bản "đang hiệu lực" cho cùng một nhân viên, nhưng không hạn chế các bản đã hết hiệu lực. Chỉ mục duy nhất có điều kiện của PostgreSQL giải quyết chính xác yêu cầu này --- một khả năng mà MySQL 8 không có.
+
+
+Yêu cầu 3 --- Tối ưu truy vấn tổng hợp: việc kiểm tra hạn mức tăng ca tháng và năm của nhân viên đòi hỏi tổng hợp dữ liệu theo nhiều điều kiện. Thay vì viết truy vấn con phức tạp trong mỗi điểm gọi, hệ thống định nghĩa một khung nhìn cơ sở dữ liệu tổng hợp tăng ca theo tháng một lần, các truy vấn sau chỉ việc đọc từ khung nhìn này.
+
+
+So sánh với MySQL 8: MySQL 8 có hỗ trợ kiểu JSON nhưng hạn chế hơn PostgreSQL về toán tử thao tác JSON và không hỗ trợ chỉ mục duy nhất có điều kiện. MongoDB linh hoạt hơn về lược đồ nhưng thiếu giao dịch ACID đủ mạnh cho tính lương --- vốn yêu cầu chuỗi đọc--tính--ghi phải nguyên tử --- và việc kết nối dữ liệu giữa nhiều tập tài liệu phức tạp hơn phép nối trong SQL.
+
+
+Về cấu hình, hệ thống dùng một bể kết nối giới hạn ở mười kết nối đồng thời, phù hợp với quy mô hiện tại (dưới 100 người dùng đồng thời). Khi cần mở rộng, chỉ việc nâng kích thước bể kết nối và bổ sung bản sao chỉ-đọc mà không phải thay đổi kiến trúc.
+
+
+\subsection{Redis 7}
+
+
+Bài toán cần giải quyết: Hai nghiệp vụ của FaceZ HRMS cần lưu trạng thái chia sẻ nhanh giữa các request mà database quan hệ không phù hợp do overhead I/O:
+
+
+Bài toán 1 --- Thu hồi token đã đăng xuất: token truy cập có thời hạn ngắn (năm phút) và về bản chất phi trạng thái nên không thể thu hồi trực tiếp. Tuy vậy, khi người dùng đăng xuất, token cũ cần mất hiệu lực ngay. Giải pháp là lưu định danh của token đã thu hồi vào Redis với thời gian sống đúng bằng thời gian còn lại của token; mỗi yêu cầu, bước xác thực sẽ tra danh sách thu hồi này và từ chối nếu định danh có mặt, dù chữ ký token vẫn hợp lệ. Token làm mới (thời hạn mười bốn ngày) cũng được lưu định danh trong Redis để hỗ trợ cơ chế xoay vòng: mỗi lần làm mới, định danh cũ bị thu hồi và một định danh mới được cấp.
+
+
+Bài toán 2 --- Giới hạn tần suất đăng nhập: quy tắc tối đa mười lần đăng nhập sai trong mười lăm phút cho mỗi địa chỉ IP đòi hỏi một bộ đếm tự đặt lại sau khi hết hạn. Redis cung cấp thao tác tăng đếm nguyên tử kèm thời gian sống tự động, nên không cần một tác vụ dọn dẹp định kỳ: mỗi lần đăng nhập sai, bộ đếm gắn với địa chỉ IP tăng thêm một; lần đầu tạo bộ đếm sẽ gắn kèm hạn sống mười lăm phút.
+
+
+Tại sao không dùng bộ nhớ trong tiến trình? Vì không tương thích khi triển khai nhiều tiến trình --- bộ đếm ở tiến trình này không chia sẻ với tiến trình kia. Redis là kho lưu trữ chia sẻ chung cho tất cả các tiến trình.
+
+
+Tại sao không dùng cơ sở dữ liệu quan hệ? Vì mỗi yêu cầu đều phải kiểm tra danh sách thu hồi, tức thêm một lượt đọc vào đường đi nóng. Redis lưu trong bộ nhớ có độ trễ dưới một mili-giây, so với năm đến hai mươi mili-giây của truy vấn cơ sở dữ liệu thông thường; với hàng trăm yêu cầu mỗi giây, khác biệt này tích lũy đáng kể.
+
+
+Tại sao không dùng Memcached? Vì Memcached không hỗ trợ tốt thời gian sống theo từng khóa, thiếu khả năng kịch bản hóa cho các thao tác nguyên tử, và không hỗ trợ lưu bền nếu sau này cần mở rộng.
+
+
+\section{Xác thực và Bảo mật}
+
+
+\subsection{JSON Web Token (JWT)}
+
+
+Bài toán cần giải quyết: Ứng dụng SPA (Single Page Application) với frontend Next.js tách biệt hoàn toàn backend cần cơ chế xác thực stateless --- backend không lưu session state, mỗi request phải tự mang đủ thông tin xác thực.
+
+
+Kiến trúc JWT hai token:
+
+
+JWT thuần túy (chỉ dùng Access Token) có một vấn đề: nếu token có TTL dài (vài giờ), người dùng phải đăng nhập lại ít --- nhưng nếu token bị lộ, kẻ tấn công có nhiều giờ để dùng. Nếu TTL ngắn (5 phút), an toàn hơn nhưng người dùng phải đăng nhập lại mỗi 5 phút.
+
+
+Hệ thống giải quyết bằng kiến trúc hai token với vai trò bổ trợ nhau:
+
+
+\begin{itemize}
+\item \textbf{Token truy cập} có thời hạn ngắn (năm phút), được giữ trong bộ nhớ của ứng dụng giao diện (không lưu vào kho lưu trữ trình duyệt để tránh bị mã độc đánh cắp), gửi kèm trong tiêu đề ủy quyền của mỗi yêu cầu, và được làm mới ngầm khi hết hạn.
+\item \textbf{Token làm mới} có thời hạn dài (mười bốn ngày), được giữ trong một cookie chỉ truy cập được từ phía máy chủ (mã JavaScript không đọc được), tự động đính kèm khi gọi điểm làm mới phiên, và có định danh lưu trong Redis để phục vụ thu hồi và xoay vòng.
+\end{itemize}
+
+
+Luồng làm mới ngầm: khi tầng gọi dịch vụ phía giao diện nhận về mã từ chối truy cập, trước khi báo lỗi cho người dùng, nó tự gọi điểm làm mới phiên (cookie token làm mới tự động được gửi kèm). Nếu thành công, hệ thống nhận token truy cập mới, lưu vào bộ nhớ và thực hiện lại yêu cầu gốc. Người dùng không hề nhận ra token đã được làm mới --- trải nghiệm liền mạch.
+
+
+Cơ chế xoay vòng token: mỗi lần làm mới phiên, token làm mới cũ bị thu hồi và một token làm mới mới được cấp. Nhờ vậy, một token làm mới bị đánh cắp chỉ dùng được đúng một lần --- khi kẻ tấn công sử dụng nó, token của người dùng hợp lệ cũng bị vô hiệu và họ buộc phải đăng nhập lại, đó là tín hiệu cảnh báo tài khoản có thể đã bị xâm phạm.
+
+
+Nội dung token được giữ tối giản: chỉ chứa danh tính người dùng, một định danh duy nhất phục vụ thu hồi, vai trò để phân quyền, cùng thời điểm phát hành và hết hạn --- không lưu bất kỳ thông tin nhạy cảm nào, chỉ vừa đủ để xác thực và phân quyền.
+
+
+\subsection{Rate Limiting}
+
+
+Bài toán cần giải quyết: điểm cuối đăng nhập là mục tiêu của tấn công dò mật khẩu --- kẻ tấn công thử hàng nghìn mật khẩu tự động cho một tài khoản mục tiêu. Cần cơ chế giới hạn tần suất theo địa chỉ IP mà không ảnh hưởng người dùng hợp lệ.
+
+
+Thiết kế bộ giới hạn tần suất đăng nhập được mô tả ở Hình 3.2: mỗi địa chỉ IP ứng với một bộ đếm trong Redis. Đăng nhập thành công sẽ xóa bộ đếm (đặt lại về không); đăng nhập thất bại sẽ tăng bộ đếm, lần đầu tiên đồng thời gắn hạn sống mười lăm phút. Khi bộ đếm chạm ngưỡng mười, hệ thống trả về mã "quá nhiều yêu cầu" kèm thông tin thời gian phải chờ. Sau mười lăm phút, Redis tự xóa bộ đếm nhờ cơ chế hết hạn.
+
+
+\begin{figure}[ht]
+\centering
+\begin{verbatim}
+Địa chỉ IP → bộ đếm trong Redis
+│
+├── Đăng nhập thành công → xóa bộ đếm (đặt lại)
+├── Đăng nhập thất bại    → tăng bộ đếm
+│   ├── Lần đầu          → gắn hạn sống 15 phút
+│   └── Đạt ngưỡng 10    → trả mã "quá nhiều yêu cầu" + thời gian chờ
+└── Sau 15 phút          → bộ đếm tự hết hạn
+\end{verbatim}
+\caption{Luồng giới hạn tần suất đăng nhập theo địa chỉ IP}
+\end{figure}
+
+
+
+Cơ chế này được tự xây dựng thay vì dùng thư viện chuyên biệt vì đơn giản hơn, ít phụ thuộc hơn và đủ cho yêu cầu hiện tại; các thư viện chuyên biệt mạnh hơn (hỗ trợ nhiều thuật toán như gáo token, gáo rò) nhưng cần cấu hình phức tạp và thêm phụ thuộc không cần thiết. Địa chỉ IP của người gọi được nhận diện qua tiêu đề chuyển tiếp khi hệ thống đứng sau máy chủ ủy nhiệm hoặc bộ cân bằng tải, có dự phòng về địa chỉ kết nối trực tiếp, nhờ vậy việc giới hạn tần suất hoạt động đúng cả khi có lớp trung gian.
+
+
+\section{Nhóm giao diện người dùng --- Frontend}
+
+
+\subsection{Next.js 15 và React 19}
+
+
+Bài toán cần giải quyết: Frontend phục vụ 7 vai trò khác nhau với giao diện, menu, và quyền truy cập trang hoàn toàn khác nhau. Cần framework hỗ trợ routing linh hoạt, layout lồng nhau theo role, và hiệu suất tải trang tốt.
+
+
+Next.js 15 App Router được chọn vì ba lý do:
+
+
+\textit{Lý do 1 --- Bố cục lồng nhau:} kiến trúc định tuyến của Next.js cho phép định nghĩa bố cục theo từng cấp. Mỗi nhóm trang ứng với một vai trò (nhân viên, quản lý, nhân sự, tài chính, giám đốc, quản trị hệ thống) có bố cục riêng với thanh điều hướng phù hợp vai trò, nhưng dùng chung phần đầu trang và lớp bao bọc xác thực. Mỗi trang được bọc trong một thành phần bảo vệ, kiểm tra vai trò người dùng và chuyển hướng về trang đăng nhập nếu vai trò không hợp lệ.
+
+
+\textit{Lý do 2 --- Kết xuất phía máy chủ:} các trang không cần tương tác phía trình duyệt có thể kết xuất tại máy chủ, giảm khối lượng mã gửi về trình duyệt. Tuy nhiên trong hệ thống này, hầu hết trang cần trạng thái phía trình duyệt (cửa sổ nổi, phân trang, thông báo) nên phần lớn là thành phần phía trình duyệt.
+
+
+\textit{Lý do 3 --- Hỗ trợ TypeScript sẵn có:} Next.js tích hợp TypeScript mặc định với kiểm tra kiểu nghiêm ngặt cho thuộc tính thành phần, tham số đường dẫn và kiểu trả về.
+
+
+React 19 mang hai cải tiến được dùng trong dự án: khả năng đọc kết quả bất đồng bộ và ngữ cảnh ngay trong hàm kết xuất mà không cần khuôn mẫu phụ trợ; và việc gộp tự động nhiều lần cập nhật trạng thái trong cùng một thao tác bất đồng bộ thành một lần vẽ lại, cải thiện hiệu năng cập nhật giao diện sau mỗi lời gọi dịch vụ.
+
+
+Quản lý trạng thái dùng cơ chế ngữ cảnh sẵn có của React (không dùng thư viện quản lý trạng thái ngoài như Redux hay Zustand) vì trạng thái cần chia sẻ toàn ứng dụng chỉ gồm hai loại: trạng thái phiên đăng nhập (người dùng, vai trò, token, trạng thái tải, thao tác đăng xuất) và trạng thái thông báo. Trạng thái cục bộ của từng trang --- danh sách dữ liệu, đóng/mở cửa sổ nổi, giá trị biểu mẫu --- được quản lý ngay tại trang đó, không cần thư viện quản lý trạng thái toàn cục.
+
+
+Mỗi tính năng tuân theo mô hình \textbf{tách ba tệp} nhất quán: một thành phần khung giữ trạng thái dùng chung (khóa làm mới, trạng thái cửa sổ nổi, từ khóa tìm kiếm) và dựng bố cục; một thành phần bảng nạp dữ liệu phân trang và tự nạp lại khi khóa làm mới thay đổi; một thành phần biểu mẫu tạo/sửa nằm trong cửa sổ nổi. Sau mỗi thao tác thay đổi dữ liệu, khung chỉ việc tăng khóa làm mới để kích hoạt bảng nạp lại, tránh phải truyền thuộc tính qua nhiều cấp hay dùng trạng thái toàn cục.
+
+
+\subsection{TypeScript và Tailwind CSS}
+
+
+TypeScript bảo đảm an toàn kiểu xuyên suốt mã nguồn giao diện. Toàn bộ đối tượng truyền dữ liệu từ backend được khai báo tập trung một nơi và dùng làm kiểu trả về cho các hàm gọi dịch vụ. Khi backend đổi hình dạng phản hồi, trình biên dịch TypeScript báo lỗi tại mọi điểm sử dụng ngay từ lúc dịch, trước khi chạy. Một quy ước đáng chú ý là lớp gọi dịch vụ luôn kiểm tra hình dạng dữ liệu trả về để xử lý nhất quán hai trường hợp --- phản hồi là một danh sách thuần hay một trang dữ liệu có phân trang --- nhằm chấp nhận được cả hai kiểu mà backend có thể trả.
+
+
+Tailwind CSS theo hướng tiện ích --- không có tệp định kiểu riêng, toàn bộ định dạng đặt ngay trên thành phần qua các lớp tiện ích. Ưu điểm với bảng điều khiển phức tạp nhiều vai trò là không bị ràng buộc bởi hệ thống thiết kế của bên thứ ba, dễ tùy chỉnh chi tiết theo bản thiết kế. Bảng màu được cấu hình tập trung để bảo đảm nhất quán, còn thiết kế thích ứng dùng các điểm ngắt của Tailwind --- thanh điều hướng ẩn trên màn hình điện thoại và hiện từ máy tính bảng trở lên.
+
+
+\subsection{Recharts}
+
+
+Bài toán cần giải quyết: bảng điều khiển của bộ phận nhân sự và quản trị hệ thống cần hiển thị nhiều loại biểu đồ: xu hướng chi phí lao động theo tháng (line chart), phân bổ chi phí lao động theo loại (pie chart), tỷ lệ nghỉ phép theo bộ phận (bar chart), và xu hướng chấm công (area chart).
+
+
+Recharts được chọn vì:
+
+
+\begin{itemize}
+\item Cách khai báo theo phong cách React: biểu đồ được mô tả như một thành phần giao diện thay vì viết mã vẽ thủ công ở mức thấp; chỉ cần khai báo loại biểu đồ và trường dữ liệu là đủ để dựng biểu đồ cơ bản.
+\item Bộ chứa thích ứng: tự động co giãn biểu đồ theo kích thước khung cha, không phải tính toán chiều rộng thủ công và ăn khớp tốt với bố cục linh hoạt của Tailwind.
+\item Tích hợp tự nhiên với React: tự vẽ lại khi dữ liệu thay đổi, không cần can thiệp vòng đời thành phần để cập nhật biểu đồ.
+\end{itemize}
+
+
+Bảng điều khiển dùng bốn loại biểu đồ: biểu đồ cột để so sánh, biểu đồ vùng cho xu hướng có tô nền, biểu đồ đường cho xu hướng đơn giản, và biểu đồ tròn cho phân bổ tỷ lệ --- tất cả đặt trong bộ chứa thích ứng để tự co giãn theo khung hiển thị.
+
+
+\section{Hạ tầng và Triển khai}
+
+
+\subsection{Docker và Docker Compose}
+
+
+Bài toán cần giải quyết: FaceZ HRMS cần các dịch vụ hạ tầng (PostgreSQL, Redis, MinIO) chạy đồng nhất trên máy của mọi thành viên phát triển lẫn trên máy chủ vận hành. "Chạy được trên máy tôi" là vấn đề cổ điển khi mỗi người có môi trường khác nhau.
+
+
+Docker Compose giải quyết bằng cách mô tả toàn bộ ngăn xếp hạ tầng trong một tệp khai báo duy nhất, gồm ba dịch vụ: cơ sở dữ liệu quan hệ, bộ nhớ đệm, và kho lưu trữ đối tượng --- mỗi dịch vụ chỉ rõ ảnh chứa, cổng và vùng dữ liệu bền. Chỉ một lệnh là khởi động được toàn bộ; người phát triển không phải cài đặt thủ công từng dịch vụ và không lo xung đột phiên bản.
+
+
+Tại sao không dùng Kubernetes? Kubernetes phù hợp cho hệ vi dịch vụ quy mô lớn với nhiều nút, tự co giãn và tự phục hồi. FaceZ HRMS là một khối đơn, đơn tiến trình --- Kubernetes sẽ làm tăng độ phức tạp vận hành mà không mang lại giá trị tương xứng ở quy mô hiện tại.
+
+
+Chiến lược hồ sơ môi trường: hệ thống tách ba hồ sơ --- \textit{phát triển} (mặc định, bật nhật ký gỡ lỗi chi tiết), \textit{thử nghiệm} (nhật ký mức thông tin, quản lý bí mật từ bên ngoài), và \textit{vận hành} (nhật ký dạng cấu trúc, chỉ ghi cảnh báo cho thư viện nền) --- kích hoạt qua biến môi trường chọn hồ sơ.
+
+
+\subsection{SpringDoc OpenAPI (Swagger)}
+
+
+Bài toán cần giải quyết: REST API với hơn 60 endpoint cần tài liệu luôn đồng bộ với code thực tế. Tài liệu viết tay nhanh chóng lỗi thời khi endpoint thay đổi.
+
+
+Công cụ sinh tài liệu đọc trực tiếp các chú giải mô tả điểm cuối, phương thức, tham số và kiểu dữ liệu ngay trong mã nguồn để tạo ra đặc tả API theo chuẩn OpenAPI. Giao diện tài liệu tương tác cho phép xem đầy đủ điểm cuối kèm cấu trúc yêu cầu/phản hồi, thử trực tiếp điểm cuối có kèm xác thực, và xuất đặc tả để dùng với các công cụ kiểm thử hay sinh mã. Tài liệu luôn cập nhật vì được sinh tự động mỗi lần ứng dụng khởi động --- không thể xảy ra cảnh một điểm cuối tồn tại trong mã mà thiếu trong tài liệu.
+
+
+Chương này đã trình bày cơ sở lý luận cho tám quyết định công nghệ chính. Điểm chung xuyên suốt là ưu tiên giải pháp có hệ sinh thái trưởng thành cho nghiệp vụ doanh nghiệp, hỗ trợ tốt cho giao dịch phức tạp và xử lý đồng thời, đồng thời phù hợp với quy mô phát triển một developer. Bộ công nghệ đã chọn --- Spring Boot 4.0.0-M3 với Java 21, PostgreSQL 15, Redis 7, Next.js 15, và Docker Compose --- tạo nền tảng kỹ thuật cho quá trình thiết kế và xây dựng được trình bày trong Chương 4.
+
+

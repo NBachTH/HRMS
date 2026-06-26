@@ -1,0 +1,114 @@
+\chapter{GIỚI THIỆU ĐỀ TÀI}
+
+
+\section{Đặt vấn đề}
+
+
+\subsection{Thực trạng quản lý nhân sự tại doanh nghiệp công nghệ Việt Nam}
+
+
+Trong thập kỷ vừa qua, làn sóng phát triển của ngành công nghệ thông tin Việt Nam đã thúc đẩy sự ra đời của hàng nghìn doanh nghiệp phần mềm, outsourcing và startups. Theo số liệu của Bộ Thông tin và Truyền thông, số lượng doanh nghiệp công nghệ số tại Việt Nam đã vượt mốc 75.000 đơn vị vào năm 2024 [24], với đội ngũ nhân lực công nghệ thông tin lên tới hơn 1,5 triệu người. Quy mô tăng trưởng nhanh đặt ra áp lực đặc biệt lên công tác quản lý nhân sự: bài toán không còn dừng lại ở việc theo dõi giờ công hay tính lương mà trở thành yêu cầu về kiểm soát nội bộ, tuân thủ pháp luật lao động, và truy vết dữ liệu cho mục đích kiểm toán.
+
+
+Tuy nhiên, thực tế vận hành tại nhiều doanh nghiệp quy mô vừa và nhỏ trong ngành công nghệ cho thấy công tác quản lý nhân sự vẫn còn nhiều hạn chế đáng kể. Phần lớn các công ty ở phân khúc 50--500 nhân viên đang vận hành quy trình HR theo mô hình phân tán, sử dụng bảng tính Excel để theo dõi chấm công, nhờ nhân viên tự khai báo giờ tăng ca, và thực hiện tính lương thủ công mỗi tháng. Mô hình này tồn tại ba điểm yếu cấu trúc có tính hệ thống:
+
+
+Thứ nhất, thiếu kiểm soát tài chính nội bộ. Trong quy trình giấy tờ truyền thống, tính chính xác của bảng lương được đảm bảo qua việc nhiều bộ phận độc lập cùng tham gia và xác nhận bằng chữ ký vật lý ở từng bước. Khi chuyển sang môi trường số mà không thiết kế lại quy trình, ranh giới trách nhiệm này thường bị xóa mờ: một nhân viên HR có thể vừa nhập liệu chấm công, vừa tính lương, vừa xuất bảng lương mà không có cơ chế kiểm tra chéo nào, dẫn đến rủi ro gian lận nội bộ và sai sót không được phát hiện. Vấn đề kiểm soát nội bộ này được phân tích chi tiết và đề xuất giải pháp trong mục 5.1.
+
+
+Thứ hai, sai sót trong tính lương do tính toán thủ công. Hệ thống tính lương theo quy định pháp luật Việt Nam không đơn giản. Biểu thuế thu nhập cá nhân (TNCN) lũy tiến 7 bậc theo Thông tư 111/2013/TT-BTC đòi hỏi xác định chính xác thu nhập chịu thuế sau khi trừ các khoản giảm trừ bản thân (15,5 triệu đồng/tháng), giảm trừ người phụ thuộc (6,2 triệu đồng/người/tháng theo Nghị quyết 110/2025/UBTVQH15 áp dụng từ 01/01/2026 [23]) và các khoản bảo hiểm bắt buộc. Trần đóng BHXH và BHYT hiện ở mức 46,8 triệu đồng/tháng (tương đương 20 lần mức lương cơ sở), trong khi trần đóng bảo hiểm thất nghiệp (BHTN) được xác định riêng theo 20 lần mức lương tối thiểu vùng. Phụ cấp làm thêm giờ (OT) có hệ số nhân khác nhau tùy theo ngày thường ($\times$1,5), cuối tuần ($\times$2,0), ngày lễ ($\times$3,0), và khung giờ ban đêm 22:00--06:00 cộng thêm hệ số $\times$1,3 theo tỷ lệ chồng lấp thực tế. Mỗi sai sót trong bất kỳ công đoạn nào trong chuỗi tính toán này có thể dẫn đến trả lương thiếu cho nhân viên hoặc kê khai thuế sai với cơ quan thuế --- cả hai đều có hậu quả pháp lý.
+
+
+Thứ ba, thiếu tự động hóa trong chấm công. Ngay cả khi doanh nghiệp đầu tư thiết bị chấm công nhận diện khuôn mặt hoặc vân tay, dữ liệu từ thiết bị thường chỉ được xuất ra file CSV và nhập lại thủ công vào bảng tính. Quá trình này không chỉ tốn thời gian mà còn tạo ra khoảng cách về thời gian giữa sự kiện thực tế (nhân viên check-in) và dữ liệu được xử lý (tạo bản ghi chấm công), khiến việc phát hiện bất thường trong thời gian thực là không thể.
+
+
+\subsection{Hạn chế của các giải pháp hiện có}
+
+
+Thị trường phần mềm quản lý nhân sự tại Việt Nam hiện có nhiều sản phẩm, nhưng khi phân tích kỹ theo nhu cầu của các doanh nghiệp công nghệ quy mô vừa, vẫn tồn tại những khoảng trống chưa được lấp đầy.
+
+
+Nhóm phần mềm nội địa (MISA HRM, Base HR, ACheckin) có ưu thế về am hiểu thị trường Việt Nam và hỗ trợ ngôn ngữ tiếng Việt. Tuy nhiên, các sản phẩm này thường được xây dựng theo mô hình SaaS đóng, hạn chế khả năng tùy biến quy trình phê duyệt nội bộ và công thức tính lương theo đặc thù từng doanh nghiệp. API tích hợp của các nền tảng này chủ yếu được thiết kế theo hướng xuất dữ liệu định kỳ từ phần mềm ra hệ thống khác, thay vì nhận sự kiện theo thời gian thực (push event) từ thiết bị --- một khác biệt kiến trúc quan trọng đối với pipeline chấm công tự động. Quan trọng hơn, hầu hết không có cơ chế phân tách nhiệm vụ giữa HR, Kế toán và Ban Giám đốc được thực thi ở tầng ứng dụng, để lại rủi ro kiểm soát nội bộ đáng kể.
+
+
+Nhóm phần mềm quốc tế (BambooHR, Workday, SAP SuccessFactors) có hệ sinh thái tính năng phong phú và kiến trúc kỹ thuật tốt, nhưng không được thiết kế cho hệ thống pháp luật lao động và thuế của Việt Nam. Biểu thuế TNCN, tỷ lệ BHXH/BHYT/BHTN và trần đóng theo quy định Việt Nam không được hỗ trợ out-of-the-box. Chi phí bản quyền của các sản phẩm này, dao động từ 6 đến 25 USD/người dùng/tháng, cũng vượt khả năng đầu tư của đa số doanh nghiệp công nghệ trong nước có quy mô dưới 500 nhân viên.
+
+
+Nhóm tự phát triển nội bộ là lựa chọn của nhiều doanh nghiệp công nghệ có đội ngũ kỹ thuật. Tuy nhiên, kinh nghiệm thực tế cho thấy hầu hết các hệ thống tự phát triển này rơi vào bẫy kỹ thuật: thiết kế tốt về giao diện nhưng bỏ qua vấn đề kiểm soát nội bộ (một nhân viên nhân sự có thể làm tất cả mọi việc), thiếu cơ chế quản lý thay đổi lược đồ có kiểm soát (để framework tự cập nhật lược đồ), và không có vết kiểm toán đủ chi tiết để điều tra khi xảy ra tranh chấp.
+
+
+Khoảng trống thị trường nằm ở chỗ: chưa có một giải pháp mã nguồn mở, tích hợp thiết bị chấm công nhận diện khuôn mặt, tuân thủ đầy đủ pháp luật lao động và thuế Việt Nam, có kiến trúc phân tách nhiệm vụ đúng chuẩn, và cho phép doanh nghiệp tự triển khai với chi phí hạ tầng hợp lý.
+
+
+\section{Mục tiêu và phạm vi đề tài}
+
+
+\subsection{Mục tiêu}
+
+
+Đồ án đặt ra bốn mục tiêu cụ thể:
+
+
+Mục tiêu 1 --- Xây dựng hệ thống HRMS hoàn chỉnh: Phát triển ứng dụng web tích hợp đầy đủ các nghiệp vụ quản lý nhân sự của doanh nghiệp công nghệ quy mô vừa và nhỏ tại Việt Nam, bao gồm: quản lý nhân viên và phòng ban, vòng đời hợp đồng lao động, chấm công tự động qua thiết bị, nghỉ phép và tăng ca với phê duyệt đa cấp, và tính lương theo quy định pháp luật hiện hành.
+
+
+Mục tiêu 2 --- Phân tách nhiệm vụ trong kiểm soát tài chính nội bộ: Thiết kế mô hình phân quyền 7 vai trò phản ánh đúng cấu trúc tổ chức thực tế của doanh nghiệp, trong đó HR chuẩn bị dữ liệu đầu vào, Finance tính lương và báo cáo, Director phê duyệt chi trả --- đảm bảo không có vai trò nào đơn phương kiểm soát toàn bộ quy trình tài chính.
+
+
+Mục tiêu 3 --- Tự động hóa pipeline chấm công: Xây dựng pipeline xử lý sự kiện tự động từ thiết bị chấm công nhận diện khuôn mặt đến bản ghi chấm công đã được xử lý, loại bỏ hoàn toàn bước nhập liệu thủ công và đảm bảo dữ liệu đầu vào tính lương luôn cập nhật theo thời gian thực.
+
+
+Mục tiêu 4 --- Tuân thủ pháp luật Việt Nam: Triển khai công thức tính lương đúng theo quy định: biểu thuế TNCN lũy tiến 7 bậc (Thông tư 111/2013/TT-BTC), các tỷ lệ đóng bảo hiểm bắt buộc và trần đóng theo Luật BHXH hiện hành, giới hạn giờ làm thêm 40 giờ/tháng và 200 giờ/năm (Bộ Luật Lao Động 2019, Điều 107), hệ số phụ cấp OT theo ngày thường/cuối tuần/ngày lễ/ca đêm.
+
+
+\subsection{Phạm vi}
+
+
+Phạm vi thị trường: Đồ án hướng riêng tới các doanh nghiệp công nghệ tại Việt Nam, với quy mô nhân sự từ 20 đến 500 người. Các đặc thù pháp luật, ngôn ngữ giao diện và quy trình nghiệp vụ đều được thiết kế cho thị trường trong nước.
+
+
+Phạm vi tính năng: Hệ thống tập trung vào tám nhóm nghiệp vụ cốt lõi. Thứ nhất, quản lý nhân viên bao gồm thông tin cá nhân và pháp lý (CMND/CCCD, mã số thuế, số BHXH), tài khoản ngân hàng, ảnh đại diện và người phụ thuộc thuế. Thứ hai, quản lý tổ chức gồm phòng ban và phân công quản lý. Thứ ba, quản lý hợp đồng lao động theo vòng đời đầy đủ kèm cảnh báo hết hạn và đính kèm tài liệu hợp đồng PDF (lưu trên MinIO). Thứ tư, chấm công tích hợp thiết bị nhận diện khuôn mặt qua API key xác thực, xử lý tự động và chốt kỳ hằng tháng. Thứ năm, nghỉ phép và tăng ca với chín loại nghỉ phép theo Bộ luật Lao động, số dư theo dõi thời gian thực, phê duyệt hai cấp (trưởng nhóm $\rightarrow$ quản lý, quản lý là cấp duyệt cuối) và giới hạn tăng ca theo pháp luật. Thứ sáu, tính lương cá nhân và hàng loạt, phê duyệt qua luồng tài chính $\rightarrow$ giám đốc, kèm ba loại báo cáo tài chính (chi phí lao động, nộp bảo hiểm, tổng hợp thuế thu nhập). Thứ bảy, hệ thống thông báo trong ứng dụng cho các sự kiện nghiệp vụ. Thứ tám, cấu hình quản lý phiên bản các thông số tính lương gồm bậc lương, phụ cấp, thuế và bảo hiểm.
+
+
+Ngoài phạm vi: Hệ thống không bao gồm tích hợp phần mềm kế toán (MISA, Fast), xuất báo cáo theo mẫu biểu của Bộ Tài chính, quản lý tuyển dụng và đào tạo, phiếu lương dạng PDF có thể in, và tích hợp ngân hàng để thanh toán lương tự động. Đây là các hướng phát triển tiếp theo được xác định trong Chương 6.
+
+
+\section{Định hướng giải pháp}
+
+
+Đồ án đi theo hướng xây dựng một ứng dụng web theo mô hình client--server, trong đó frontend và backend tách biệt hoàn toàn và giao tiếp qua REST API. Quyết định này xuất phát từ hai lý do: (1) tách biệt concern --- backend thuần nghiệp vụ, frontend thuần giao diện; và (2) cho phép tương lai tích hợp ứng dụng di động hoặc ứng dụng bên thứ ba mà không phải thay đổi backend.
+
+
+Về backend, đồ án chọn Spring Boot 4.0.0-M3 trên Java 21 vì hệ sinh thái trưởng thành phù hợp với nghiệp vụ doanh nghiệp và hỗ trợ xử lý đồng thời tốt cho tác vụ tính lương hàng loạt. Về frontend, Next.js 15 và React 19 được chọn để cân bằng giữa hiệu suất tải trang và độ an toàn kiểu dữ liệu. Về dữ liệu, PostgreSQL 15 đáp ứng các nhu cầu lưu trữ linh hoạt và truy vấn tổng hợp của bài toán, kết hợp với Redis 7 cho các tác vụ bộ nhớ đệm và bảo mật phiên, và MinIO (lưu trữ đối tượng tương thích S3) cho tài liệu hợp đồng PDF. Lý do lựa chọn chi tiết của từng công nghệ, cùng các phương án thay thế được cân nhắc, được phân tích trong Chương 3.
+
+
+Về bảo mật, hệ thống áp dụng cơ chế xác thực dựa trên JWT cho người dùng và khóa API cho thiết bị chấm công, với các chi tiết thiết kế được trình bày trong mục 3.4.
+
+
+Sản phẩm của đồ án là hệ thống FaceZ HRMS --- nền tảng quản lý nhân sự hoàn chỉnh với backend cung cấp giao diện dịch vụ (lược đồ quản lý bằng 31 phiên bản có đánh số, tài liệu giao diện đầy đủ) và giao diện đa vai trò. Bốn đóng góp kỹ thuật chính, được trình bày chi tiết trong Chương 5, gồm: (1) kiến trúc phân tách nhiệm vụ 7 vai trò; (2) quy trình chấm công tự động theo hướng sự kiện; (3) công thức tính lương tuân thủ đầy đủ pháp luật Việt Nam; và (4) cơ chế trừ hai giai đoạn số dư nghỉ phép chống tranh chấp đồng thời.
+
+
+Hệ thống được thiết kế để triển khai bằng Docker Compose với cấu hình dịch vụ tối giản (backend + PostgreSQL + Redis + MinIO), phù hợp với hạ tầng VPS tiêu chuẩn mà các doanh nghiệp quy mô vừa đang sử dụng.
+
+
+\section{Bố cục đồ án}
+
+
+Phần còn lại của báo cáo được tổ chức như sau.
+
+
+Chương 2 trình bày quá trình khảo sát hiện trạng, phân tích yêu cầu và đặc tả chức năng của hệ thống. Phần đầu chương so sánh FaceZ HRMS với các giải pháp phổ biến trên thị trường để chỉ ra khoảng trống cần lấp. Tiếp đến là phần tổng quan chức năng gồm biểu đồ use case tổng quát và phân rã theo sáu nhóm nghiệp vụ, cùng mô tả ba quy trình nghiệp vụ trọng tâm. Phần đặc tả chức năng trình bày chi tiết năm ca sử dụng quan trọng nhất. Chương khép lại bằng các yêu cầu phi chức năng về hiệu năng, độ tin cậy, bảo mật, khả năng sử dụng và khả năng bảo trì.
+
+
+Chương 3 phân tích nền tảng lý thuyết và công nghệ được sử dụng. Với mỗi công nghệ --- trải từ framework backend, cơ sở dữ liệu và bộ nhớ đệm, cơ chế xác thực, đến framework frontend và hạ tầng container hóa --- chương làm rõ bài toán cụ thể mà công nghệ đó giải quyết, liệt kê các lựa chọn thay thế phổ biến và lý giải sự lựa chọn cuối cùng trong ngữ cảnh của đồ án.
+
+
+Chương 4 trình bày kết quả thiết kế và xây dựng hệ thống. Phần thiết kế kiến trúc mô tả kiến trúc phân tầng tổng thể và biểu đồ phụ thuộc mô-đun. Phần thiết kế chi tiết bao gồm thiết kế giao diện theo từng vai trò, biểu đồ lớp cho các miền nghiệp vụ cốt lõi (tính lương, nghỉ phép, chấm công), sơ đồ tuần tự cho hai luồng nghiệp vụ quan trọng, và biểu đồ thực thể liên kết đầy đủ. Phần xây dựng ứng dụng thống kê quy mô hệ thống và minh họa giao diện các chức năng chính. Phần kiểm thử trình bày phương pháp và kết quả kiểm thử ba phân hệ quan trọng nhất. Chương khép lại bằng mô tả cấu hình triển khai thực tế.
+
+
+Chương 5 đi sâu vào bốn đóng góp kỹ thuật chính của đồ án, mỗi đóng góp được trình bày theo cấu trúc ba phần: bài toán đặt ra, giải pháp cụ thể và kết quả đạt được. Bốn nội dung lần lượt là: kiến trúc phân tách nhiệm vụ khôi phục kiểm soát tài chính nội bộ; quy trình chấm công tự động theo hướng sự kiện; công thức tính lương tuân thủ đầy đủ pháp luật Việt Nam; và cơ chế trừ hai giai đoạn số dư nghỉ phép chống tranh chấp đồng thời.
+
+
+Chương 6 tổng kết kết quả đạt được, đối sánh với các giải pháp tương tự trên thị trường, chỉ ra các hạn chế kỹ thuật còn tồn tại và bài học rút ra từ quá trình phát triển. Phần cuối vạch ra các hướng phát triển ngắn hạn (payslip PDF, rollover nghỉ phép năm, xác nhận OT trước ca làm) và dài hạn (tích hợp mô hình AI nhận diện khuôn mặt, ứng dụng di động, kết nối ngân hàng).
+
+

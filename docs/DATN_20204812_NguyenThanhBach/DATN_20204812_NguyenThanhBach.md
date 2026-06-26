@@ -151,7 +151,7 @@ Qua phân tích, khoảng trống rõ ràng nhất là: chưa có giải pháp n
 
 ### 2.1.3 Xác định các phân hệ cốt lõi
 
-Từ phân tích nhu cầu người dùng và khoảng trống thị trường, đồ án xác định sáu phân hệ cốt lõi cần phát triển. Thứ nhất, phân hệ Quản lý nhân viên và Tổ chức quản lý đầy đủ thông tin cá nhân, pháp lý và nghề nghiệp của nhân viên, cùng cấu trúc phòng ban, phân công quản lý, ảnh đại diện và người phụ thuộc thuế. Thứ hai, phân hệ Chấm công và Quản lý thời gian tích hợp thiết bị nhận diện khuôn mặt qua API key, xử lý tự động sự kiện check-in/check-out, tính toán giờ công và giờ đến muộn, chốt kỳ hằng tháng và quản lý ngày lễ công. Thứ ba, phân hệ Nghỉ phép và Tăng ca hỗ trợ chín loại nghỉ phép, theo dõi số dư thời gian thực với cơ chế trừ hai giai đoạn, phê duyệt đa cấp, giới hạn giờ OT theo pháp luật và phân loại ca đêm. Thứ tư, phân hệ Hợp đồng lao động quản lý vòng đời hợp đồng với lịch sử đầy đủ, cảnh báo hết hạn trước 30 ngày và liên kết với dữ liệu tính lương. Thứ năm, phân hệ Tính lương và Phê duyệt thực hiện tính lương cá nhân và hàng loạt với công thức đầy đủ (hệ số bậc lương, KPI, OT, BHXH/BHYT/BHTN, thuế TNCN bảy bậc), luồng phê duyệt Finance → Director và ba báo cáo tài chính định kỳ. Thứ sáu, phân hệ Cấu hình hệ thống và Thông báo quản lý phiên bản các nhóm thông số tính lương (bậc lương, phụ cấp, thuế thu nhập cá nhân, bảo hiểm, lịch làm việc) và phát thông báo trong ứng dụng cho các sự kiện nghiệp vụ.
+Từ phân tích nhu cầu người dùng và khoảng trống thị trường, đồ án xác định sáu phân hệ cốt lõi cần phát triển. Thứ nhất, phân hệ Quản lý nhân viên và Tổ chức quản lý đầy đủ thông tin cá nhân, pháp lý và nghề nghiệp của nhân viên, cùng cấu trúc phòng ban, phân công quản lý, ảnh đại diện và người phụ thuộc thuế. Thứ hai, phân hệ Chấm công và Quản lý thời gian tích hợp thiết bị nhận diện khuôn mặt qua API key, xử lý tự động sự kiện check-in/check-out, tính toán giờ công và giờ đến muộn, chốt kỳ hằng tháng và quản lý ngày lễ công. Thứ ba, phân hệ Nghỉ phép và Tăng ca hỗ trợ chín loại nghỉ phép, theo dõi số dư thời gian thực với cơ chế trừ hai giai đoạn, phê duyệt đa cấp, giới hạn giờ OT theo pháp luật và phân loại ca đêm. Thứ tư, phân hệ Hợp đồng lao động quản lý vòng đời hợp đồng với lịch sử đầy đủ, cảnh báo hết hạn trước 30 ngày và liên kết với dữ liệu tính lương. Thứ năm, phân hệ Tính lương và Phê duyệt thực hiện tính lương cá nhân và hàng loạt với công thức đầy đủ (hệ số bậc lương, hệ số thi đua, tăng ca, các khoản bảo hiểm, thuế thu nhập cá nhân bảy bậc), luồng phê duyệt tài chính → giám đốc và ba báo cáo tài chính định kỳ. Thứ sáu, phân hệ Cấu hình hệ thống và Thông báo quản lý phiên bản bốn nhóm thông số tính lương (bậc lương, phụ cấp, thuế thu nhập cá nhân, bảo hiểm) và phát thông báo trong ứng dụng cho các sự kiện nghiệp vụ.
 
 ## 2.2 Tổng quan chức năng
 
@@ -316,7 +316,6 @@ graph TD
     DIR["Giám đốc"] --> F["Phê duyệt cả kỳ (chờ duyệt → đã duyệt)"]
     DIR --> G["Trả lại kỳ kèm lý do (chờ duyệt → nháp)"]
     EMP["Nhân viên"] --> H["Xem phiếu lương cá nhân (khi đã duyệt/đã trả)"]
-    SCHED["Tác vụ định kỳ đầu tháng"] --> A
 ```
 </details>
 
@@ -637,7 +636,7 @@ Bài toán cần giải quyết: hệ thống HRMS có độ phức tạp nghi�
 
 Lý do chọn Java 21 và Spring Boot 4.0.0-M3:
 
-Java 21 là phiên bản LTS (Long-Term Support) mới nhất, mang hai cải tiến quan trọng cho dự án này. Thứ nhất, Virtual Threads (Project Loom, ổn định từ Java 21): mỗi request HTTP được xử lý trên một virtual thread thay vì platform thread, cho phép hàng nghìn kết nối đồng thời với bộ nhớ tối thiểu mà không phải viết code bất đồng bộ phức tạp. Điều này đặc biệt quan trọng cho batch payroll processing khi nhiều tác vụ I/O-bound (đọc dữ liệu từ DB) chạy đồng thời. Thứ hai, Records và Sealed Classes giúp viết DTO và response type an toàn kiểu hơn, giảm boilerplate so với Java 8.
+Java 21 là phiên bản LTS (Long-Term Support) mới nhất, mang hai cải tiến quan trọng cho dự án này. Thứ nhất, luồng ảo (ổn định từ Java 21): mỗi yêu cầu được xử lý trên một luồng ảo thay vì luồng hệ điều hành, cho phép hàng nghìn kết nối đồng thời với bộ nhớ tối thiểu mà không phải viết mã bất đồng bộ phức tạp. Điều này đặc biệt hữu ích với các tác vụ thiên về vào/ra (đọc dữ liệu từ cơ sở dữ liệu) khi nhiều yêu cầu chạy đồng thời. Thứ hai, kiểu bản ghi và lớp niêm phong giúp viết đối tượng truyền dữ liệu an toàn kiểu hơn, giảm mã lặp.
 
 Spring Boot 4.0.0-M3 được chọn vì hệ sinh thái tích hợp sẵn:
 
@@ -645,7 +644,7 @@ Spring Boot 4.0.0-M3 được chọn vì hệ sinh thái tích hợp sẵn:
 - Mô-đun truy cập dữ liệu: giảm mã lặp khi thao tác cơ sở dữ liệu; tự động ghi vết người tạo/người sửa và thời điểm; chạy ở chế độ không để framework tự sửa lược đồ, nhường quyền kiểm soát lược đồ cho các script SQL có phiên bản.
 - Cơ chế sự kiện nội bộ: mô hình phát hành/đăng ký trong tiến trình, kích hoạt sau khi giao dịch hoàn tất, cho phép tách rời nghiệp vụ ghi nhận chấm công khỏi nghiệp vụ tổng hợp công mà không tạo phụ thuộc vòng và không cần hàng đợi tin nhắn bên ngoài.
 - Cơ chế tác vụ định kỳ: lập lịch theo biểu thức thời gian cho việc tổng hợp chấm công và rà soát hợp đồng sắp hết hạn.
-- Cơ chế xử lý bất đồng bộ: phục vụ tính lương hàng loạt mà không chiếm dụng luồng xử lý HTTP.
+- Cơ chế xử lý bất đồng bộ: phục vụ việc phát thông báo nghiệp vụ mà không chiếm dụng luồng xử lý của yêu cầu chính.
 
 So sánh với lựa chọn thay thế:
 
@@ -2045,10 +2044,10 @@ Bảng 4.7: Thống kê kỹ thuật dự án
 | Chỉ số | Giá trị |
 |---|---|
 | Backend | |
-| Số điểm cuối dịch vụ | > 80 |
+| Số điểm cuối dịch vụ | > 150 |
 | Số phiên bản lược đồ | 31 phiên bản, hợp nhất thành một tập lệnh khởi tạo |
 | Số mô-đun nghiệp vụ | 10 (nhân sự, phòng ban, chấm công, nghỉ phép, tăng ca, hợp đồng, tính lương, cấu hình lương, thông báo, xác thực) |
-| Số tác vụ định kỳ | 3 (tổng hợp chấm công, tính lương hằng tháng, rà soát hợp đồng hết hạn) |
+| Số tác vụ định kỳ | 2 (tổng hợp chấm công lúc nửa đêm, rà soát hợp đồng sắp hết hạn) |
 | Phạm vi kiểm thử | Kiểm thử đơn vị cho bộ máy tính lương; kiểm thử tích hợp cho luồng xác thực |
 | Giao diện | |
 | Số trang | > 25 trang |
@@ -2056,7 +2055,7 @@ Bảng 4.7: Thống kê kỹ thuật dự án
 | Số loại bảng điều khiển | 4 (nhân viên, quản lý, nhân sự, quản trị hệ thống) |
 | Số loại báo cáo tài chính | 3 (chi phí lao động, nộp bảo hiểm, tổng hợp thuế thu nhập) |
 | Cơ sở dữ liệu | |
-| Số bảng chính | 17 bảng |
+| Số bảng | 36 bảng (gồm bảng nghiệp vụ chính và các bảng cấu hình chi tiết) |
 | Số khung nhìn cơ sở dữ liệu | 1 (tổng hợp tăng ca theo tháng) |
 | Số chỉ mục duy nhất có điều kiện | 1 (cho hợp đồng đang hiệu lực) |
 | Số cột kiểu JSON | 1 (cho cấu hình hệ thống) |
@@ -2664,7 +2663,7 @@ Bảng 6.1: So sánh FaceZ HRMS với các giải pháp tương tự
 | Công thức lương tuân thủ Bộ luật Lao động 2019 và Thông tư 111 | ✅ | ✅ | ❌ (quốc tế) | ✅ |
 | Tăng ca đêm tính theo phút giao thoa | ❌ | ❌ | ❌ | ✅ |
 | Phân tách nhiệm vụ nhân sự / tài chính / giám đốc | ⚠️ Tùy cấu hình | ⚠️ Tùy cấu hình | ✅ | ✅ Thực thi ở máy chủ |
-| Phê duyệt lương đa cấp (Finance → Director) | ✅ | ✅ | ✅ | ✅ |
+| Phê duyệt lương đa cấp (tài chính → giám đốc) | ✅ | ✅ | ✅ | ✅ |
 | Quản lý số dư nghỉ phép chống tranh chấp đồng thời | ✅ | ✅ | ✅ | ✅ |
 | Cấu hình biểu thuế thu nhập động (không cần khởi động lại) | ✅ | ⚠️ | ❌ | ✅ |
 | Trần bảo hiểm theo quy định Việt Nam | ✅ | ✅ | ❌ | ✅ |
@@ -2697,7 +2696,7 @@ Bảng 6.2: Đánh giá mức độ hoàn thành mục tiêu đề tài
 | MT-3 | Công thức tính lương tuân thủ pháp luật Việt Nam | ✅ Hoàn thành — theo Bộ luật Lao động 2019 và Thông tư 111/2013 |
 | MT-4 | Mô hình phân tách nhiệm vụ bảy vai trò | ✅ Hoàn thành — thực thi ở tầng máy chủ |
 
-Về mặt kỹ thuật, hệ thống cung cấp hơn 80 điểm cuối dịch vụ phủ đầy đủ mười miền nghiệp vụ, ba mươi mốt phiên bản lược đồ quản lý trọn vẹn lịch sử thay đổi cấu trúc dữ liệu (hợp nhất thành một tập lệnh khởi tạo duy nhất), và đạt tỷ lệ 45/45 ca kiểm thử thành công ở cả ba mức đơn vị, tích hợp và chức năng. Về hiệu năng, thời gian phản hồi trung bình dưới 100 mili-giây và thời gian tính lương hàng loạt cho 100 nhân viên dưới ba giây. Hệ thống vận hành ổn định, không phát sinh lỗi trong suốt quá trình kiểm thử.
+Về mặt kỹ thuật, hệ thống cung cấp hơn 150 điểm cuối dịch vụ phủ đầy đủ mười miền nghiệp vụ, ba mươi mốt phiên bản lược đồ quản lý trọn vẹn lịch sử thay đổi cấu trúc dữ liệu (hợp nhất thành một tập lệnh khởi tạo duy nhất), và đạt tỷ lệ 45/45 ca kiểm thử thành công ở cả ba mức đơn vị, tích hợp và chức năng. Về hiệu năng, thời gian phản hồi trung bình dưới 100 mili-giây và thời gian tính lương hàng loạt cho 100 nhân viên dưới ba giây. Hệ thống vận hành ổn định, không phát sinh lỗi trong suốt quá trình kiểm thử.
 
 Hạn chế còn tồn tại:
 
